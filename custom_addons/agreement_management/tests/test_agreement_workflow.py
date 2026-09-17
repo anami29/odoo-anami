@@ -237,3 +237,56 @@ class TestAgreementWorkflow(TransactionCase):
             area.write({'signature': PNG_B64})
         with self.assertRaises(UserError):
             area.unlink()
+
+    def test_08_tampering_is_blocked(self):
+        """Server-side locks hold regardless of view attributes or client-supplied context."""
+        agreement = self._create_agreement()
+        agreement.action_confirm()
+        # workflow fields cannot be written directly, even by a manager, even with spoofed flags
+        for vals in ({'state': 'executed'}, {'number': 'AGR/2026/99999'}, {'executed_on': '2026-01-01 00:00:00'},
+                     {'locked_content': '<p>changed</p>'}, {'document_fingerprint': 'x'}):
+            with self.assertRaises(UserError):
+                agreement.with_context(agreement_workflow=True, agreement_force_write=True, agreement_internal=True).write(vals)
+        # business fields are frozen from confirmation
+        for vals in ({'partner_b_id': self.party_a.id}, {'date_to': '2030-01-01'},
+                     {'agreement_properties': {'contract_value': 1.0}}, {'signatory_b_id': self.signatory_a.id}):
+            with self.assertRaises(UserError):
+                agreement.write(vals)
+        agreement.write({'user_id': self.manager.id})  # still allowed
+        # signature areas: no direct signature, no required-flag change, no deletion
+        area_b = agreement.signature_ids.filtered(lambda s: s.party == 'b')[:1]
+        for vals in ({'signature': PNG_B64}, {'required': False}, {'party': 'a'}, {'sequence': 99}):
+            with self.assertRaises(UserError):
+                area_b.with_context(agreement_signing=True, agreement_workflow=True).write(vals)
+        with self.assertRaises(UserError):
+            area_b.unlink()
+        with self.assertRaises(UserError):
+            self.env['agreement.signature'].with_user(self.manager).create({'agreement_id': agreement.id, 'code': 'X1', 'name': 'x', 'party': 'b'})
+        # the document renders from the frozen values: a superuser-level partner rename does not change it
+        before = str(agreement._render_document_html())
+        self.party_b.sudo().write({'name': 'Renamed Counterparty'})
+        self.assertEqual(str(agreement._render_document_html()), before)
+        self.assertTrue(agreement._integrity_check())
+        # a change made outside the workflow is detected before any further signing
+        agreement.sudo().with_context(agreement_workflow=True).write({'locked_content': '<p>tampered {{sig:A1}} {{sig:B1}}</p>'})
+        agreement.invalidate_recordset()
+        self.assertFalse(agreement._integrity_check(raise_error=False))
+        with self.assertRaisesRegex(UserError, 'Integrity check failed'):
+            self._sign(agreement, 'a')
+
+    def test_09_executed_pdf_is_protected(self):
+        agreement = self._executed_agreement()
+        attachment = agreement.executed_pdf_attachment_id
+        self.assertEqual(attachment.mimetype, 'application/pdf')
+        self.assertTrue(agreement.integrity_ok)
+        with self.assertRaises(UserError):
+            attachment.with_user(self.manager).write({'datas': PNG_B64})
+        with self.assertRaises(UserError):
+            attachment.with_user(self.manager).unlink()
+        # a superuser-level replacement is at least detected
+        attachment.sudo().write({'raw': b'%PDF-1.4 replaced'})
+        agreement.invalidate_recordset()
+        self.assertFalse(agreement._integrity_check(raise_error=False))
+        action = agreement.action_verify_integrity()
+        self.assertEqual(action['params']['type'], 'danger')
+

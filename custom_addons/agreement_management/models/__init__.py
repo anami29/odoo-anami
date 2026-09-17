@@ -9,3 +9,4 @@ from . import agreement_distribution
 from . import res_company
 from . import res_config_settings
 from . import mail_compose_message
+from . import ir_attachment

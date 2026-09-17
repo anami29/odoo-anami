@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import hashlib
+import json
 import logging
 import re
+import secrets
 
 from markupsafe import Markup, escape
 
@@ -23,6 +25,11 @@ PLACEHOLDER_RE = re.compile(r'\{\{\s*([A-Za-z0-9_\.]+(?::[A-Za-z0-9_\-]+)?)\s*\}
 
 PARTY_LABEL = {'a': 'Party A', 'b': 'Party B'}
 
+# Server-side marker for workflow writes. It is generated per process and can only be
+# placed in the context by server code, never by a client request, so it cannot be
+# spoofed through RPC (unlike plain boolean context flags).
+WORKFLOW_MARK = secrets.token_hex(16)
+
 
 # --------------------------------------------------------------------------- #
 # Pure rendering helpers (also used by the template version sample preview)
@@ -37,7 +44,7 @@ def _signature_block_html(slot, mode, label_placeholders=False):
     signer = slot.get('signer_name') or ''
     title = slot.get('signer_title') or ''
     if slot['kind'] == 'initials':
-        if mode == 'signed' and slot.get('signature'):
+        if slot.get('signature'):
             return Markup(
                 '<span style="display:inline-block;vertical-align:middle;border:1px solid #198754;padding:2px 6px;margin:0 6px;">'
                 '<img src="data:image/png;base64,%s" style="height:22px;vertical-align:middle;"/>'
@@ -48,7 +55,7 @@ def _signature_block_html(slot, mode, label_placeholders=False):
             '<span style="display:inline-block;vertical-align:middle;border:1px dashed %s;color:%s;border-radius:3px;'
             'padding:2px 8px;margin:0 6px;font-size:9px;font-family:sans-serif;">Initials · %s%s</span>'
         ) % (color, color, escape(party_name), ' (required)' if slot['required'] else '')
-    if mode == 'signed' and slot.get('signature'):
+    if slot.get('signature'):
         return Markup(
             '<div class="agr-sig agr-sig-signed" style="display:inline-block;vertical-align:top;width:46%%;min-width:240px;'
             'border:1px solid #198754;border-radius:3px;padding:6px 10px;margin:8px 2%% 8px 0;font-family:sans-serif;font-size:10px;">'
@@ -77,7 +84,7 @@ def render_document_html(content, context, slots, mode, label_placeholders=False
     :param context: dict placeholder -> display value
     :param slots: list of slot dicts (see _signature_block_html); slots not referenced in the
                   content are appended in an execution block at the end (BR-SIG-002)
-    :param mode: 'preview' or 'signed'
+    :param mode: 'preview' or 'signed' (captured signatures are always shown; the mode drives the report chrome)
     :param label_placeholders: render unresolved placeholders as labels (template preview)
     """
     slots_by_code = {s['code']: s for s in slots}
@@ -127,6 +134,15 @@ class AgreementDocumentMixin(models.AbstractModel):
                                  help="Snapshot of the template content taken on confirmation (BR-VER-007).")
     executed_hash = fields.Char(string='Document Hash', readonly=True, copy=False,
                                 help="SHA-256 of the rendered executed document.")
+    executed_pdf_sha256 = fields.Char(string='Executed PDF SHA-256', readonly=True, copy=False,
+                                      help="SHA-256 of the stored executed PDF file, taken when it was generated.")
+    locked_values = fields.Json(string='Locked Values', readonly=True, copy=False,
+                                help="Placeholder values frozen on confirmation; the document renders from these, "
+                                     "not from the live fields.")
+    document_fingerprint = fields.Char(string='Document Fingerprint', readonly=True, copy=False,
+                                       help="SHA-256 of the confirmed document (content and values, without signatures). "
+                                            "Re-checked at every signing step and at execution.")
+    integrity_ok = fields.Boolean(compute='_compute_integrity_ok', string='Integrity Verified')
     executed_pdf_attachment_id = fields.Many2one('ir.attachment', string='Executed PDF', readonly=True, copy=False,
                                                  ondelete='restrict')
     executed_pdf = fields.Binary(related='executed_pdf_attachment_id.datas', string='Executed PDF File')
@@ -144,12 +160,29 @@ class AgreementDocumentMixin(models.AbstractModel):
 
     # Fields that may still be written once the document is executed (BR-INT-001).
     _EXECUTED_WRITABLE_FIELDS = {
-        'state', 'executed_on', 'executed_hash', 'executed_pdf_attachment_id', 'signed_b_on',
+        'state', 'executed_on', 'executed_hash', 'executed_pdf_sha256', 'executed_pdf_attachment_id', 'signed_b_on',
         'message_main_attachment_id', 'message_ids', 'message_follower_ids', 'message_partner_ids',
         'activity_ids', 'activity_user_id', 'activity_type_id', 'activity_date_deadline', 'activity_summary',
         'website_message_ids', 'rating_ids', 'access_token', 'annexure_ids', 'distribution_ids', 'signature_ids',
         'annexure_count', 'user_id', 'display_name',
     }
+    # Fields only the workflow may write (never a direct write, whatever the user's rights).
+    _WORKFLOW_FIELDS = {
+        'state', 'number', 'confirmed_on', 'confirmed_by_id', 'signed_a_on', 'signed_b_on', 'executed_on',
+        'locked_content', 'locked_values', 'document_fingerprint', 'executed_hash', 'executed_pdf_sha256',
+        'executed_pdf_attachment_id', 'sequence_number',
+    }
+
+    def _get_locked_fields(self):
+        """Business fields frozen from confirmation onwards (overridden per document type)."""
+        return set()
+
+    def _is_internal_write(self):
+        return self.env.su or self.env.context.get('agreement_workflow') == WORKFLOW_MARK
+
+    def _wf(self):
+        """Recordset carrying the workflow marker for server-side writes."""
+        return self.with_context(agreement_workflow=WORKFLOW_MARK)
 
     # ------------------------------------------------------------- abstract API
     def _document_label(self):
@@ -202,6 +235,15 @@ class AgreementDocumentMixin(models.AbstractModel):
     def _compute_is_locked(self):
         for doc in self:
             doc.is_locked = doc.state != 'draft'
+
+    @api.depends('document_fingerprint', 'locked_content', 'locked_values', 'executed_pdf_attachment_id',
+                 'executed_pdf_sha256', 'signature_ids.required', 'signature_ids.party', 'signature_ids.code')
+    def _compute_integrity_ok(self):
+        for doc in self:
+            try:
+                doc.integrity_ok = bool(doc.id) and doc._integrity_check(raise_error=False)
+            except Exception:  # pragma: no cover - defensive
+                doc.integrity_ok = False
 
     @api.depends('signature_ids.signature', 'signature_ids.required', 'state')
     def _compute_signature_progress(self):
@@ -306,6 +348,17 @@ class AgreementDocumentMixin(models.AbstractModel):
         return str(value)
 
     def _get_render_context(self):
+        """Placeholder values. After confirmation the frozen snapshot is used, so changes to
+        partners, dates or dynamic fields can no longer alter the document."""
+        self.ensure_one()
+        if self.locked_values and self.state not in ('draft', 'cancel'):
+            context = dict(self.locked_values)
+            context['execution_date'] = format_datetime(self.env, self.executed_on, dt_format='medium') if self.executed_on else ''
+            context['today'] = format_date(self.env, fields.Date.context_today(self))
+            return context
+        return self._compute_render_context()
+
+    def _compute_render_context(self):
         self.ensure_one()
         env = self.env
         parent = self._get_parent_agreement()
@@ -364,16 +417,16 @@ class AgreementDocumentMixin(models.AbstractModel):
         self.ensure_one()
         slots = []
         if self.signature_ids:
+            # names come from the values frozen on confirmation, not from the live partners
+            ctx = self._get_render_context()
             for sig in self.signature_ids.sorted(lambda s: (s.sequence, s.id)):
-                partner = self._get_party_partner(sig.party)
-                signer = self._get_signatory(sig.party)
                 slots.append({
                     'code': sig.code, 'name': sig.name, 'page': sig.page, 'party': sig.party, 'kind': sig.kind,
                     'required': sig.required, 'signature': sig.signature or None,
                     'signed_on': format_datetime(self.env, sig.signed_on, dt_format='medium') if sig.signed_on else '',
-                    'signer_name': sig.signer_name or (signer.name if signer else ''),
-                    'signer_title': signer.function if signer else '',
-                    'party_name': partner.display_name if partner else PARTY_LABEL[sig.party],
+                    'signer_name': sig.signer_name or ctx.get('signatory_%s' % sig.party, ''),
+                    'signer_title': ctx.get('signatory_%s_title' % sig.party, ''),
+                    'party_name': ctx.get('party_%s' % sig.party) or PARTY_LABEL[sig.party],
                 })
             return slots
         version = self._get_template_version()
@@ -396,6 +449,56 @@ class AgreementDocumentMixin(models.AbstractModel):
         mode = mode or ('signed' if self.state == 'executed' else 'preview')
         content = self.locked_content or self._get_content_source() or ''
         return render_document_html(content, self._get_render_context(), self._get_signature_slots(), mode)
+
+    # ------------------------------------------------------------- integrity
+    def _document_fingerprint(self):
+        """SHA-256 of the confirmed document rendered without signatures and without the
+        volatile placeholders (today, execution date). Stable from confirmation to execution."""
+        self.ensure_one()
+        context = dict(self._get_render_context())
+        context['today'] = ''
+        context['execution_date'] = ''
+        slots = []
+        for sig in self.signature_ids.sorted(lambda s: (s.sequence, s.id)):
+            slots.append({
+                'code': sig.code, 'name': sig.name, 'page': sig.page, 'party': sig.party, 'kind': sig.kind,
+                'required': sig.required, 'signature': None, 'signed_on': '',
+                'signer_name': context.get('signatory_%s' % sig.party, ''), 'signer_title': '',
+                'party_name': context.get('party_%s' % sig.party, ''),
+            })
+        html = str(render_document_html(self.locked_content or '', context, slots, 'preview'))
+        return hashlib.sha256(html.encode('utf-8')).hexdigest()
+
+    def _integrity_check(self, raise_error=True):
+        """Verify that content, values and signature configuration are unchanged since
+        confirmation, and that the stored executed PDF matches its recorded hash."""
+        self.ensure_one()
+        problems = []
+        if self.document_fingerprint and self.state not in ('draft', 'cancel'):
+            if self._document_fingerprint() != self.document_fingerprint:
+                problems.append(_("the document content, values or signature configuration changed after confirmation"))
+        if self.executed_pdf_attachment_id and self.executed_pdf_sha256:
+            data = self.executed_pdf_attachment_id.sudo().raw or b''
+            if hashlib.sha256(data).hexdigest() != self.executed_pdf_sha256:
+                problems.append(_("the stored executed PDF does not match its recorded SHA-256"))
+        if problems and raise_error:
+            raise UserError(_("Integrity check failed for %s %s: %s. The document cannot proceed; contact an "
+                              "Agreement Manager.", self._document_label(), self.number or '', '; '.join(problems)))
+        return not problems
+
+    def action_verify_integrity(self):
+        """Manual verification: fingerprint of the confirmed document and hash of the executed PDF."""
+        self.ensure_one()
+        ok = self._integrity_check(raise_error=False)
+        body = _("Integrity verification passed: document fingerprint %s%s.") % (
+            (self.document_fingerprint or '')[:16],
+            (_(" and executed PDF SHA-256 %s") % self.executed_pdf_sha256[:16]) if self.executed_pdf_sha256 else '') \
+            if ok else _("Integrity verification FAILED — the confirmed document or the executed PDF was modified outside the workflow.")
+        self.message_post(body=body)
+        return {
+            'type': 'ir.actions.client', 'tag': 'display_notification',
+            'params': {'type': 'success' if ok else 'danger', 'title': _('Integrity check'), 'message': body, 'sticky': not ok},
+        }
 
     # ------------------------------------------------------------ validation
     def _check_before_confirm(self):
@@ -446,14 +549,18 @@ class AgreementDocumentMixin(models.AbstractModel):
             doc._check_before_confirm()
             version = doc._get_template_version()
             number = doc._assign_number()
-            doc.write({
+            values = doc._compute_render_context()
+            values['agreement_number'] = number
+            doc._wf().write({
                 'number': number,
                 'state': 'pending_a',
                 'confirmed_on': fields.Datetime.now(),
                 'confirmed_by_id': self.env.user.id,
                 'locked_content': doc._get_content_source() or '',
+                'locked_values': json.loads(json.dumps(values, default=str)),
             })
             doc._create_signature_records()
+            doc._wf().write({'document_fingerprint': doc._document_fingerprint()})
             doc.message_post(body=_(
                 "%(label)s confirmed. Number %(number)s assigned; template %(template)s version %(version)s locked to "
                 "this record. Signing workflow opened — Party A signs first.",
@@ -478,7 +585,7 @@ class AgreementDocumentMixin(models.AbstractModel):
                 'kind': area.kind,
                 'required': area.required,
             })
-        self.env['agreement.signature'].create(vals_list)
+        self.env['agreement.signature'].sudo()._wf().create(vals_list)
 
     def action_preview(self):
         """BR-PRV-001: document-style preview (PDF, watermarked until executed)."""
@@ -528,13 +635,14 @@ class AgreementDocumentMixin(models.AbstractModel):
         expected = 'pending_a' if party == 'a' else 'pending_b'
         if self.state != expected:
             raise UserError(_("Signing is not open for %s on this document.", PARTY_LABEL[party]))
+        self._integrity_check()
         now = fields.Datetime.now()
         signatory = self._get_signatory(party)
         party_signatures = self.signature_ids.filtered(lambda s: s.party == party)
         for signature in party_signatures:
             value = signature_values.get(signature.id)
             if value:
-                signature.with_context(agreement_signing=True).write({
+                signature.sudo()._wf().write({
                     'signature': value,
                     'signed_on': now,
                     'signed_by_user_id': self.env.user.id,
@@ -557,13 +665,13 @@ class AgreementDocumentMixin(models.AbstractModel):
         done = len(self.signature_ids.filtered(lambda s: s.party == party and s.required and s.signature))
         signatory = self._get_signatory(party)
         if party == 'a':
-            self.write({'state': 'pending_b', 'signed_a_on': now})
+            self._wf().write({'state': 'pending_b', 'signed_a_on': now})
             self.message_post(body=_(
                 "Party A signing completed by %(who)s — %(done)s required signature area(s) signed. "
                 "Party B signature areas are now available.", who=signatory.name if signatory else '', done=done))
             self._notify_signatory('b')
         else:
-            self.write({'state': 'executed', 'signed_b_on': now, 'executed_on': now})
+            self._wf().write({'state': 'executed', 'signed_b_on': now, 'executed_on': now})
             self.message_post(body=_(
                 "Party B signing completed by %(who)s — %(done)s required signature area(s) signed. "
                 "%(label)s is now Fully Signed / Executed; signing is closed.",
@@ -577,8 +685,9 @@ class AgreementDocumentMixin(models.AbstractModel):
     def _generate_executed_pdf(self):
         """BR-PDF-001/003: render the executed document and store it as the official copy."""
         self.ensure_one()
+        self._integrity_check()
         html = str(self._render_document_html('signed'))
-        self.executed_hash = hashlib.sha256(html.encode('utf-8')).hexdigest()
+        self._wf().write({'executed_hash': hashlib.sha256(html.encode('utf-8')).hexdigest()})
         report = self.env.ref(self._get_report_ref())
         pdf_content, _ext = self.env['ir.actions.report'].with_context(agreement_signed_mode=True)._render_qweb_pdf(
             report.id, res_ids=self.ids)
@@ -592,7 +701,11 @@ class AgreementDocumentMixin(models.AbstractModel):
             'res_id': self.id,
             'description': _('Official executed copy generated on execution — do not modify.'),
         })
-        self.write({'executed_pdf_attachment_id': attachment.id, 'message_main_attachment_id': attachment.id})
+        self._wf().write({
+            'executed_pdf_attachment_id': attachment.id,
+            'executed_pdf_sha256': hashlib.sha256(pdf_content).hexdigest(),
+            'message_main_attachment_id': attachment.id,
+        })
         self.message_post(
             body=_("Executed PDF generated and stored as the official executed document (SHA-256 %s).",
                    self.executed_hash[:16]),
@@ -766,7 +879,7 @@ class AgreementDocumentMixin(models.AbstractModel):
                 raise UserError(_("An executed %s cannot be cancelled.", doc._document_label().lower()))
             if doc.signature_ids.filtered('signature'):
                 raise UserError(_("Signatures have already been captured; the document cannot be cancelled."))
-            doc.write({'state': 'cancel'})
+            doc._wf().write({'state': 'cancel'})
             doc.activity_ids.unlink()
         return True
 
@@ -774,14 +887,37 @@ class AgreementDocumentMixin(models.AbstractModel):
         for doc in self:
             if doc.state != 'cancel':
                 raise UserError(_("Only cancelled documents can be reset to draft."))
-            doc.signature_ids.unlink()
-            doc.write({'state': 'draft', 'locked_content': False, 'confirmed_on': False, 'confirmed_by_id': False})
+            doc.signature_ids.sudo()._wf().unlink()
+            doc._wf().write({'state': 'draft', 'number': False, 'locked_content': False, 'locked_values': False,
+                             'document_fingerprint': False, 'confirmed_on': False, 'confirmed_by_id': False})
         return True
 
     # ------------------------------------------------------------ integrity
+    @api.model_create_multi
+    def create(self, vals_list):
+        if not self._is_internal_write():
+            for vals in vals_list:
+                bad = set(vals) & self._WORKFLOW_FIELDS
+                if bad:
+                    raise UserError(_("These fields are set by the agreement workflow and cannot be entered directly: %s.",
+                                      ', '.join(sorted(bad))))
+        return super().create(vals_list)
+
     def write(self, vals):
-        """BR-INT-001: an executed document is locked against normal editing."""
-        if not self.env.context.get('agreement_force_write'):
+        """Server-side locks (BR-INT-001 and the signing phase). View attributes are not a
+        security boundary, so every rule is enforced here regardless of how the write arrives."""
+        if not self._is_internal_write():
+            bad = set(vals) & self._WORKFLOW_FIELDS
+            if bad:
+                raise UserError(_("These fields are managed by the agreement workflow and cannot be written directly: %s. "
+                                  "Use Confirm, the signing screen, Cancel or Reset to Draft.", ', '.join(sorted(bad))))
+            locked = set(vals) & self._get_locked_fields()
+            if locked:
+                for doc in self.filtered(lambda d: d.state not in ('draft', 'cancel')):
+                    raise UserError(_(
+                        "%s %s is confirmed: %s can no longer be changed. Cancel and reset it to draft (possible only "
+                        "before any signature is captured) or record the change through a Supplementary Annexure.",
+                        doc._document_label(), doc.number or '', ', '.join(sorted(locked))))
             touched = set(vals) - self._EXECUTED_WRITABLE_FIELDS
             if touched:
                 for doc in self.filtered(lambda d: d.state == 'executed'):
@@ -789,10 +925,6 @@ class AgreementDocumentMixin(models.AbstractModel):
                         "%s %s is fully executed and locked. Changes during its validity period must be recorded "
                         "through a Supplementary Annexure. (Fields: %s)",
                         doc._document_label(), doc.number, ', '.join(sorted(touched))))
-            if 'locked_content' in vals and not self.env.context.get('agreement_internal'):
-                for doc in self.filtered(lambda d: d.state not in ('draft', 'cancel') and d.locked_content):
-                    if vals.get('locked_content') != doc.locked_content:
-                        raise UserError(_("The locked content of a confirmed document cannot be modified."))
         return super().write(vals)
 
     def unlink(self):

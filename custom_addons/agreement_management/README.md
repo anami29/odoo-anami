@@ -8,7 +8,7 @@ email distribution with audit, and Supplementary Annexures linked to executed ag
 No OCA or Enterprise dependency. Depends on `base`, `mail`, `contacts`, `web`.
 
 Verified on Odoo 18.0 (Community, source of 2026-09) + PostgreSQL 16 + wkhtmltopdf 0.12.6:
-module installs with demo data, 7/7 unit tests pass, web client screens and the signing flow exercised end-to-end.
+module installs with demo data, 9/9 unit tests pass (workflow, constraints, tampering attempts), web client screens and the signing flow exercised end-to-end.
 
 ---
 
@@ -136,7 +136,33 @@ Mail templates: executed agreement / annexure, ready-for-signature notifications
 | §31 Security | — | groups, access rights, record rules |
 | §33 Messages | — | exact validation texts in `_check_before_confirm` / signing methods |
 
-## 9. Assumptions and limitations
+## 9. Integrity and tamper resistance
+
+All rules are enforced in the ORM (`write`, `create`, `unlink`), never only in the views, so they hold for any
+request — browser dev tools, edited RPC calls, imports or scripts:
+
+* **Workflow-only fields** (`state`, `number`, timestamps, `locked_content`, `locked_values`, `document_fingerprint`,
+  hashes, `executed_pdf_attachment_id`) can only be written by the workflow itself. The marker used for that is
+  generated server-side per process and cannot be supplied by a client; plain context flags are not accepted.
+* **Confirmation freezes the business fields** (template, version, parties, signatories, dates, dynamic fields —
+  annexure: parent, type, date, content, fields, summary) and takes a snapshot of every placeholder value
+  (`locked_values`). The document renders from that snapshot, so a later change to a partner, a date or a property
+  cannot change what is being signed.
+* **Fingerprint**: the confirmed document (content + values + signature configuration, without signatures) is hashed
+  on confirmation and re-verified before every signing step and before the executed PDF is generated; a mismatch
+  blocks the workflow with an explicit error. **Verify integrity now** on the Execution tab re-runs the check at any time.
+* **Signature areas** are created and written by the workflow only (users have read access); a signed area is
+  immutable; `required`, `party` and `code` cannot be edited after confirmation.
+* **Executed PDF**: the attachment cannot be modified or deleted (also protected against users with write access on
+  the agreement); its SHA-256 (`executed_pdf_sha256`) is recorded and checked by the integrity verification.
+* **Distribution logs** are read-only for all groups (written by the workflow).
+
+What this does not cover: a database administrator or someone with shell access to the server can alter anything —
+the fingerprint and hashes then make the alteration detectable, but not preventable. Cryptographic proof that a given
+person signed requires PKI (DSC / Aadhaar eSign), which is outside this scope. Deploy behind HTTPS, restrict database
+and filestore access, and keep backups.
+
+## 10. Assumptions and limitations
 
 * Signing happens inside Odoo (backend signing screen on a touch/stylus device); external portals and PKI-based
   signatures are out of scope (§40 Future Enhancements). A signatory who has an Odoo user (internal or portal user

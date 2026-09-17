@@ -101,7 +101,11 @@
                                     <field name="signed_a_on"/>
                                     <field name="signed_b_on"/>
                                     <field name="executed_on"/>
+                                    <field name="document_fingerprint"/>
                                     <field name="executed_hash"/>
+                                    <field name="executed_pdf_sha256"/>
+                                    <field name="integrity_ok" widget="boolean" invisible="state in ('draft', 'cancel')"/>
+                                    <button name="action_verify_integrity" type="object" string="Verify integrity now" class="btn-link p-0" icon="fa-shield" invisible="state in ('draft', 'cancel')"/>
                                 </group>
                                 <group string="Executed PDF">
                                     <field name="executed_pdf_attachment_id" readonly="1" invisible="not executed_pdf_attachment_id"/>

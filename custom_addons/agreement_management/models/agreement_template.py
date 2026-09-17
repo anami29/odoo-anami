@@ -352,7 +352,7 @@ class AgreementTemplateVersion(models.Model):
     }
 
     def write(self, vals):
-        if not self.env.context.get('agreement_version_unlock'):
+        if not self.env.su:
             locked_touch = set(vals) & self.LOCKED_VERSION_FIELDS
             if locked_touch:
                 for version in self.filtered(lambda v: v.state != 'draft'):
@@ -390,7 +390,7 @@ class AgreementTemplateVersion(models.Model):
             version._check_configuration()
             previous = version.template_id.version_ids.filtered(lambda v: v.state == 'active' and v != version)
             now = fields.Datetime.now()
-            previous.with_context(agreement_version_unlock=True).write({
+            previous.write({
                 'state': 'superseded',
                 'superseded_on': now,
                 'superseded_by_id': version.id,
@@ -437,7 +437,7 @@ class AgreementTemplateVersion(models.Model):
             if version.agreement_ids:
                 raise UserError(_("Version %s is referenced by agreements and cannot be reset to Draft.",
                                   version.display_name))
-            version.with_context(agreement_version_unlock=True).write(
+            version.write(
                 {'state': 'draft', 'superseded_on': False, 'superseded_by_id': False})
         return True
 

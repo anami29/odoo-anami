@@ -2,6 +2,8 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+from .agreement_document_mixin import WORKFLOW_MARK
+
 
 class AgreementSignature(models.Model):
     """One signature location instance on a confirmed agreement / annexure."""
@@ -67,17 +69,31 @@ class AgreementSignature(models.Model):
         self.ensure_one()
         return self.annexure_id or self.agreement_id
 
+    def _wf(self):
+        return self.with_context(agreement_workflow=WORKFLOW_MARK)
+
+    def _is_internal_write(self):
+        return self.env.su or self.env.context.get('agreement_workflow') == WORKFLOW_MARK
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if not self._is_internal_write():
+            raise UserError(_("Signature areas are created by the agreement workflow on confirmation."))
+        return super().create(vals_list)
+
     def write(self, vals):
-        """Signatures are captured through the signing wizard only; a signed area is immutable."""
-        if 'signature' in vals and not self.env.context.get('agreement_signing'):
-            raise UserError(_("Signatures must be captured through the signing screen."))
+        """Signature areas are written by the signing workflow only (server-side marker or
+        superuser); a signed area is immutable even for the workflow."""
+        if not self._is_internal_write():
+            raise UserError(_("Signature areas are managed by the signing workflow: use the signing screen."))
         for sig in self:
-            if sig.signature and ('signature' in vals or 'party' in vals or 'required' in vals):
-                if not self.env.context.get('agreement_force_write'):
-                    raise UserError(_("Signature area %s is already signed and cannot be modified.", sig.name))
+            if sig.signature and ({'signature', 'party', 'required', 'code', 'kind', 'signed_on', 'signer_name'} & set(vals)):
+                raise UserError(_("Signature area %s is already signed and cannot be modified.", sig.name))
         return super().write(vals)
 
     def unlink(self):
+        if not self._is_internal_write():
+            raise UserError(_("Signature areas are managed by the signing workflow."))
         for sig in self:
             doc = sig._get_document()
             if doc and doc.state not in ('draft', 'cancel'):

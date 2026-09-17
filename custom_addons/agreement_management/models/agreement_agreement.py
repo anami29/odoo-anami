@@ -164,6 +164,10 @@ class Agreement(models.Model):
     def _document_label(self):
         return _('Agreement')
 
+    def _get_locked_fields(self):
+        return {'template_id', 'template_version_id', 'type_id', 'company_id', 'partner_a_id', 'signatory_a_id',
+                'partner_b_id', 'signatory_b_id', 'date_from', 'date_to', 'agreement_properties'}
+
     def _get_party_partner(self, party):
         return self.partner_a_id if party == 'a' else self.partner_b_id
 

@@ -90,6 +90,9 @@ class AgreementAnnexure(models.Model):
     def _document_label(self):
         return _('Supplementary Annexure')
 
+    def _get_locked_fields(self):
+        return {'agreement_id', 'annexure_type_id', 'date_effective', 'content', 'annexure_properties', 'summary'}
+
     def _get_party_partner(self, party):
         return self.agreement_id.partner_a_id if party == 'a' else self.agreement_id.partner_b_id
 
@@ -134,7 +137,7 @@ class AgreementAnnexure(models.Model):
             return self.number
         siblings = self.search([('agreement_id', '=', self.agreement_id.id), ('sequence_number', '>', 0)])
         next_no = (max(siblings.mapped('sequence_number')) if siblings else 0) + 1
-        self.sequence_number = next_no
+        self._wf().write({'sequence_number': next_no})
         return '%s-ANN-%02d' % (self.agreement_id.number, next_no)
 
     def _check_before_confirm(self):
