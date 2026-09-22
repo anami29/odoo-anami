@@ -6,10 +6,12 @@
             /* Typography mirrors the source Word document: Aptos 12pt body, 28pt centred title,
                left-aligned paragraphs, bold article headings at body size. */
             .agr-doc { font-family: Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 15px; line-height: 1.5; color: #000; }
-            .agr-doc h2 { font-family: 'Aptos Display', Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 35px; font-weight: normal; letter-spacing: -0.5px; line-height: 1.2; text-align: center; margin: 0 0 18px; }
+            .agr-doc h2 { font-family: 'Aptos Display', Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 35px; font-weight: normal; letter-spacing: -0.5px; line-height: 1.2; text-align: center; margin: 0 0 8px; }
             .agr-doc h2 small { font-size: 15px; font-weight: bold; letter-spacing: normal; line-height: 1.8; }
+            /* h4 is the centred subtitle line under the document title (h2). */
             .agr-doc h3 { font-size: 15px; font-weight: bold; letter-spacing: 0; margin: 16px 0 6px; }
-            .agr-doc h4 { font-size: 15px; font-weight: bold; margin: 12px 0 4px; }
+            .agr-doc h4 { font-size: 15px; font-weight: bold; text-align: center; margin: 0 0 6px; }
+            .agr-doc h4 + p { margin-top: 16px; }
             .agr-doc p { margin: 0 0 8px; text-align: left; }
             .agr-doc ul, .agr-doc ol { margin: 0 0 8px; padding-left: 22px; }
             .agr-doc table { border-collapse: collapse; width: 100%; margin: 4px 0 10px; }
