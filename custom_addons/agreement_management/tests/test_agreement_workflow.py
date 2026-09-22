@@ -274,6 +274,17 @@ class TestAgreementWorkflow(TransactionCase):
         with self.assertRaisesRegex(UserError, 'Integrity check failed'):
             self._sign(agreement, 'a')
 
+    def test_08b_create_accepts_the_form_defaults(self):
+        """The web client posts the form's defaults on create; the status bar sends
+        state='draft'. That must not be mistaken for tampering (BR-INT-001)."""
+        agreement = self._create_agreement(state='draft', number=False, executed_on=False)
+        self.assertEqual(agreement.state, 'draft')
+        self.assertFalse(agreement.number)
+        # a real value for a workflow field is still refused
+        for bad in ({'state': 'executed'}, {'number': 'AGR/2026/99999'}, {'document_fingerprint': 'x'}):
+            with self.assertRaises(UserError):
+                self._create_agreement(**bad)
+
     def test_09_executed_pdf_is_protected(self):
         agreement = self._executed_agreement()
         attachment = agreement.executed_pdf_attachment_id

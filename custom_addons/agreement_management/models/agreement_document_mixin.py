@@ -172,6 +172,9 @@ class AgreementDocumentMixin(models.AbstractModel):
         'locked_content', 'locked_values', 'document_fingerprint', 'executed_hash', 'executed_pdf_sha256',
         'executed_pdf_attachment_id', 'sequence_number',
     }
+    # Values a workflow field may legitimately carry on create: the web client posts the
+    # form's defaults with every new record, and the status bar puts state='draft' among them.
+    _WORKFLOW_CREATE_DEFAULTS = {'state': 'draft'}
 
     def _get_locked_fields(self):
         """Business fields frozen from confirmation onwards (overridden per document type)."""
@@ -897,7 +900,8 @@ class AgreementDocumentMixin(models.AbstractModel):
     def create(self, vals_list):
         if not self._is_internal_write():
             for vals in vals_list:
-                bad = set(vals) & self._WORKFLOW_FIELDS
+                bad = {name for name in set(vals) & self._WORKFLOW_FIELDS
+                       if vals[name] and vals[name] != self._WORKFLOW_CREATE_DEFAULTS.get(name)}
                 if bad:
                     raise UserError(_("These fields are set by the agreement workflow and cannot be entered directly: %s.",
                                       ', '.join(sorted(bad))))
