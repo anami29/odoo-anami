@@ -3,25 +3,41 @@
     <!-- Shared styles for the document-style preview and the executed PDF -->
     <template id="report_agreement_style">
         <style type="text/css">
-            .agr-doc { font-family: 'Times New Roman', Georgia, serif; font-size: 11.5px; line-height: 1.55; color: #111; }
-            .agr-doc h2 { font-size: 15px; letter-spacing: .06em; margin: 0 0 4px; }
-            .agr-doc h3 { font-size: 12.5px; letter-spacing: .04em; margin: 16px 0 6px; }
-            .agr-doc h4 { font-size: 11.5px; margin: 12px 0 4px; }
-            .agr-doc p { margin: 0 0 8px; text-align: justify; }
-            .agr-doc table { border-collapse: collapse; width: 100%; }
-            .agr-doc td, .agr-doc th { border: 1px solid #999; padding: 3px 6px; vertical-align: top; }
+            /* Typography mirrors the source Word document: Aptos 12pt body, 28pt centred title,
+               left-aligned paragraphs, bold article headings at body size. */
+            .agr-doc { font-family: Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 15px; line-height: 1.5; color: #000; }
+            .agr-doc h2 { font-family: 'Aptos Display', Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 35px; font-weight: normal; letter-spacing: -0.5px; line-height: 1.2; text-align: center; margin: 0 0 18px; }
+            .agr-doc h2 small { font-size: 15px; font-weight: bold; letter-spacing: normal; line-height: 1.8; }
+            .agr-doc h3 { font-size: 15px; font-weight: bold; letter-spacing: 0; margin: 16px 0 6px; }
+            .agr-doc h4 { font-size: 15px; font-weight: bold; margin: 12px 0 4px; }
+            .agr-doc p { margin: 0 0 8px; text-align: left; }
+            .agr-doc ul, .agr-doc ol { margin: 0 0 8px; padding-left: 22px; }
+            .agr-doc table { border-collapse: collapse; width: 100%; margin: 4px 0 10px; }
+            .agr-doc td, .agr-doc th { border: 1px solid #999; padding: 4px 6px; vertical-align: top; }
+            .agr-doc th { font-weight: bold; text-align: left; }
             .agr-ph { color: #111; }
-            .agr-meta { font-family: Arial, sans-serif; font-size: 8.5px; color: #555; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-bottom: 14px; }
+            .agr-meta { font-family: Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 9px; color: #555; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-bottom: 18px; }
             .agr-meta b { color: #222; }
             .agr-doc { position: relative; }
             .agr-watermark { position: absolute; top: 240px; left: 0; width: 100%; text-align: center; font-family: Arial, sans-serif; font-size: 40px; font-weight: bold; letter-spacing: .12em; color: rgba(180, 40, 40, 0.16); transform: rotate(-22deg); -webkit-transform: rotate(-22deg); }
-            .agr-exec { page-break-before: always; font-family: Arial, sans-serif; font-size: 9.5px; }
-            .agr-exec h3 { font-size: 12px; margin: 0 0 8px; letter-spacing: .06em; }
+            .agr-exec { page-break-before: always; font-family: Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 11px; }
+            .agr-exec h3 { font-size: 13px; margin: 0 0 8px; letter-spacing: .06em; }
             .agr-exec table { border-collapse: collapse; width: 100%; }
             .agr-exec td, .agr-exec th { border: 1px solid #bbb; padding: 3px 6px; vertical-align: top; }
             .agr-exec th { background: #f1f1f1; text-align: left; }
             .agr-exec img { max-height: 36px; }
         </style>
+    </template>
+
+    <!-- Minimal page layout: no company letterhead (the source contract has none), page numbers only. -->
+    <template id="report_agreement_layout">
+        <div class="header"/>
+        <div class="footer" style="font-family: Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 10px; color: #666; text-align: center; padding-top: 6px;">
+            Page <span class="page"/> / <span class="topage"/>
+        </div>
+        <div class="article">
+            <t t-out="0"/>
+        </div>
     </template>
 
     <!-- Common body: header line, watermark, rendered content, execution record -->
@@ -80,7 +96,7 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
                 <t t-set="doc_label" t-value="'Agreement'"/>
-                <t t-call="web.external_layout">
+                <t t-call="agreement_management.report_agreement_layout">
                     <t t-call="agreement_management.report_agreement_document_body"/>
                 </t>
             </t>
@@ -91,7 +107,7 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
                 <t t-set="doc_label" t-value="'Supplementary Annexure'"/>
-                <t t-call="web.external_layout">
+                <t t-call="agreement_management.report_agreement_layout">
                     <t t-call="agreement_management.report_agreement_document_body"/>
                 </t>
             </t>
@@ -102,7 +118,7 @@
     <template id="report_agreement_version_sample">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="version">
-                <t t-call="web.external_layout">
+                <t t-call="agreement_management.report_agreement_layout">
                     <t t-call="agreement_management.report_agreement_style"/>
                     <div class="page agr-doc">
                         <div class="agr-watermark">TEMPLATE PREVIEW</div>

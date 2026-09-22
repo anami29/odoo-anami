@@ -1,9 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- 1 inch margins, as in the source Word document; no header band. -->
+    <record id="paperformat_agreement" model="report.paperformat">
+        <field name="name">Agreement Document A4</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">25</field>
+        <field name="margin_bottom">20</field>
+        <field name="margin_left">25</field>
+        <field name="margin_right">25</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
     <record id="action_report_agreement" model="ir.actions.report">
         <field name="name">Agreement Document</field>
         <field name="model">agreement.agreement</field>
         <field name="report_type">qweb-pdf</field>
+        <field name="paperformat_id" ref="paperformat_agreement"/>
         <field name="report_name">agreement_management.report_agreement_document</field>
         <field name="report_file">agreement_management.report_agreement_document</field>
         <field name="print_report_name">('%s - %s' % ((object.number or 'Agreement').replace('/', '-'), 'Executed' if object.state == 'executed' else 'Preview'))</field>
@@ -15,6 +31,7 @@
         <field name="name">Supplementary Annexure Document</field>
         <field name="model">agreement.annexure</field>
         <field name="report_type">qweb-pdf</field>
+        <field name="paperformat_id" ref="paperformat_agreement"/>
         <field name="report_name">agreement_management.report_agreement_annexure_document</field>
         <field name="report_file">agreement_management.report_agreement_annexure_document</field>
         <field name="print_report_name">('%s - %s' % ((object.number or 'Annexure').replace('/', '-'), 'Executed' if object.state == 'executed' else 'Preview'))</field>
@@ -26,6 +43,7 @@
         <field name="name">Template Layout Preview</field>
         <field name="model">agreement.template.version</field>
         <field name="report_type">qweb-pdf</field>
+        <field name="paperformat_id" ref="paperformat_agreement"/>
         <field name="report_name">agreement_management.report_agreement_version_sample</field>
         <field name="report_file">agreement_management.report_agreement_version_sample</field>
         <field name="print_report_name">('Template %s v%s - Preview' % (object.template_id.code, object.name))</field>
