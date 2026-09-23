@@ -21,3 +21,5 @@ access_agreement_distribution_user,agreement.distribution user,model_agreement_d
 access_agreement_distribution_manager,agreement.distribution manager,model_agreement_distribution,group_agreement_manager,1,0,0,0
 access_agreement_sign_wizard_user,agreement.sign.wizard user,model_agreement_sign_wizard,group_agreement_user,1,1,1,1
 access_agreement_sign_wizard_line_user,agreement.sign.wizard.line user,model_agreement_sign_wizard_line,group_agreement_user,1,1,1,1
+access_agreement_font_user,agreement.font user,model_agreement_font,group_agreement_user,1,0,0,0
+access_agreement_font_manager,agreement.font manager,model_agreement_font,group_agreement_manager,1,1,1,1

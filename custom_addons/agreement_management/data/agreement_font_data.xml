@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!--
+        Starter list. The families lead with the metric-compatible fonts installed by the
+        Dockerfile, so what the editor shows is what the PDF prints. Editable and
+        extendable under Agreements > Configuration > Fonts.
+    -->
+    <record id="font_default" model="agreement.font">
+        <field name="name">Document default</field>
+        <field name="font_family"></field>
+        <field name="sequence">1</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="font_times_new_roman" model="agreement.font">
+        <field name="name">Times New Roman</field>
+        <field name="font_family">'Liberation Serif', 'Times New Roman', Times, serif</field>
+        <field name="sequence">10</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="font_arial" model="agreement.font">
+        <field name="name">Arial</field>
+        <field name="font_family">'Liberation Sans', Arial, Helvetica, sans-serif</field>
+        <field name="sequence">20</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="font_calibri" model="agreement.font">
+        <field name="name">Calibri</field>
+        <field name="font_family">Carlito, Calibri, 'Segoe UI', sans-serif</field>
+        <field name="sequence">30</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="font_cambria" model="agreement.font">
+        <field name="name">Cambria</field>
+        <field name="font_family">Caladea, Cambria, Georgia, serif</field>
+        <field name="sequence">40</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="font_georgia" model="agreement.font">
+        <field name="name">Georgia</field>
+        <field name="font_family">'DejaVu Serif', Georgia, serif</field>
+        <field name="sequence">50</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="font_verdana" model="agreement.font">
+        <field name="name">Verdana</field>
+        <field name="font_family">'DejaVu Sans', Verdana, sans-serif</field>
+        <field name="sequence">60</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="font_courier_new" model="agreement.font">
+        <field name="name">Courier New</field>
+        <field name="font_family">'Liberation Mono', 'Courier New', monospace</field>
+        <field name="sequence">70</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

@@ -95,6 +95,10 @@ def render_document_html(content, context, slots, mode, label_placeholders=False
         lkey = key.lower()
         if lkey == 'page_break':
             return Markup('<div style="page-break-after:always;"></div>')
+        if lkey == 'insert_blank_page':
+            # A break, a page holding only a non-breaking space, then another break. The
+            # space is what makes the empty page render at all — an empty block collapses.
+            return Markup('<div style="page-break-before:always;page-break-after:always;">&nbsp;</div>')
         if lkey.startswith('sig:'):
             code = key[4:].upper()
             slot = slots_by_code.get(code)
@@ -452,6 +456,32 @@ class AgreementDocumentMixin(models.AbstractModel):
         mode = mode or ('signed' if self.state == 'executed' else 'preview')
         content = self.locked_content or self._get_content_source() or ''
         return render_document_html(content, self._get_render_context(), self._get_signature_slots(), mode)
+
+    # ------------------------------------------------------- per-page footer
+    def _page_footer_parties(self):
+        """Signature and name printed in each page footer, per party.
+
+        The signature is the party's first captured one — the same mark repeated down
+        the document, as when a signatory initials every page on paper. Names come from
+        the values frozen on confirmation, like the rest of the document.
+        """
+        self.ensure_one()
+        context = self._get_render_context()
+        parties = {}
+        for party in ('a', 'b'):
+            signed = self.signature_ids.filtered(
+                lambda s, p=party: s.party == p and s.signature
+            ).sorted(lambda s: (s.sequence, s.id))
+            parties[party] = {
+                'signature': signed[:1].signature or False,
+                'name': context.get('party_%s' % party) or PARTY_LABEL[party],
+            }
+        return parties
+
+    def _sign_every_page(self):
+        self.ensure_one()
+        version = self._get_template_version()
+        return bool(version and version.sign_every_page)
 
     # ------------------------------------------------------------- integrity
     def _document_fingerprint(self):

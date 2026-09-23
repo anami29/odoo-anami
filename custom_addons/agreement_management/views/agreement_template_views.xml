@@ -168,6 +168,10 @@
                             <field name="date_effective"/>
                             <field name="change_note"/>
                             <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="sign_every_page" readonly="is_locked"/>
+                            <field name="cover_page_filename" invisible="1"/>
+                            <field name="cover_page" widget="binary" filename="cover_page_filename"
+                                   readonly="is_locked"/>
                         </group>
                         <group string="Lifecycle">
                             <field name="activated_on"/>
@@ -182,7 +186,7 @@
                                 Placeholders: <code>{{agreement_number}}</code> <code>{{party_a}}</code> <code>{{party_a_address}}</code> <code>{{party_b}}</code> <code>{{party_b_address}}</code>
                                 <code>{{signatory_a}}</code> <code>{{signatory_a_title}}</code> <code>{{signatory_b}}</code> <code>{{signatory_b_title}}</code> <code>{{effective_from}}</code> <code>{{effective_to}}</code>
                                 <code>{{execution_date}}</code> <code>{{template_code}}</code> <code>{{template_version}}</code> <code>{{agreement_type}}</code> <code>{{company}}</code> <code>{{today}}</code>,
-                                the technical name of any dynamic field (e.g. <code>{{contract_value}}</code>), <code>{{page_break}}</code> and <code>{{sig:CODE}}</code> for a signature location.
+                                the technical name of any dynamic field (e.g. <code>{{contract_value}}</code>), <code>{{page_break}}</code>, <code>{{insert_blank_page}}</code> for a deliberately blank page, and <code>{{sig:CODE}}</code> for a signature location.
                                 Locations not placed in the content are appended in an execution block at the end of the document.
                             </div>
                             <field name="content" readonly="is_locked" nolabel="1"/>

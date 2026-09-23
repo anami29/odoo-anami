@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import base64
 import re
 
 from markupsafe import Markup
@@ -204,6 +205,16 @@ class AgreementTemplateVersion(models.Model):
     date_effective = fields.Date(string='Effective Date', tracking=True,
                                  help="Date from which this version is applicable (BR-VER-005).")
     change_note = fields.Text(string='Change Note')
+    sign_every_page = fields.Boolean(
+        string='Signature on Every Page',
+        help="Print a signature strip in the footer of every page: Party A on the left, Party B on the right, "
+             "each above a rule carrying the party's name. Off by default — the page footer then shows only the "
+             "page number.")
+    cover_page = fields.Binary(
+        string='Cover Page', attachment=True,
+        help="Optional PDF placed in front of the rendered document — in the layout preview, in agreement "
+             "previews and in the executed PDF. Locked with the version like the rest of the document.")
+    cover_page_filename = fields.Char(string='Cover Page Filename')
     activated_on = fields.Datetime(readonly=True, copy=False)
     activated_by_id = fields.Many2one('res.users', readonly=True, copy=False)
     superseded_on = fields.Datetime(readonly=True, copy=False)
@@ -481,6 +492,21 @@ class AgreementTemplateVersion(models.Model):
             'signer_title': '',
         } for area in self._get_areas('agreement')]
         return render_document_html(self.content or '', {}, slots, 'preview', label_placeholders=True)
+
+    def _page_footer_parties(self):
+        """Footer preview for a template version: the layout, with no signatures yet."""
+        self.ensure_one()
+        return {
+            'a': {'signature': False, 'name': 'Party A'},
+            'b': {'signature': False, 'name': 'Party B'},
+        }
+
+    @api.constrains('cover_page')
+    def _check_cover_page_is_pdf(self):
+        for version in self:
+            if version.cover_page and not base64.b64decode(version.cover_page).startswith(b'%PDF'):
+                raise ValidationError(_("The cover page must be a PDF file (%s is not one).",
+                                        version.cover_page_filename or _('the uploaded file')))
 
 
 class AgreementTemplateField(models.Model):

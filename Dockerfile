@@ -8,6 +8,10 @@ RUN apt-get update && apt-get install -y \
     libsasl2-dev \
     libssl-dev \
     libmagic1 \
+    fonts-liberation \
+    fonts-crosextra-carlito \
+    fonts-crosextra-caladea \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --break-system-packages html2text python-magic

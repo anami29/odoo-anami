@@ -32,4 +32,5 @@
     <menuitem id="menu_agreement_type" name="Agreement Types" parent="menu_agreement_config" action="action_agreement_type" sequence="10"/>
     <menuitem id="menu_agreement_annexure_type" name="Annexure Types" parent="menu_agreement_config" action="action_agreement_annexure_type" sequence="20"/>
     <menuitem id="menu_agreement_mail_templates" name="Email Templates" parent="menu_agreement_config" action="action_agreement_mail_templates" sequence="30"/>
+    <menuitem id="menu_agreement_font" name="Fonts" parent="menu_agreement_config" action="action_agreement_font" sequence="40"/>
 </odoo>

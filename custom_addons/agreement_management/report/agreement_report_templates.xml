@@ -3,6 +3,9 @@
     <!-- Shared styles for the document-style preview and the executed PDF -->
     <template id="report_agreement_style">
         <style type="text/css">
+            <!-- Fonts added under Agreements > Configuration > Fonts, embedded as data: URIs
+                 so wkhtmltopdf can render them without fetching anything. -->
+            <t t-out="env['agreement.font']._document_fonts()._font_face_css()"/>
             /* Typography mirrors the source Word document: Aptos 12pt body, 28pt centred title,
                left-aligned paragraphs, bold article headings at body size. */
             .agr-doc { font-family: Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 15px; line-height: 1.5; color: #000; }
@@ -34,8 +37,35 @@
     <!-- Minimal page layout: no company letterhead (the source contract has none), page numbers only. -->
     <template id="report_agreement_layout">
         <div class="header"/>
-        <div class="footer" style="font-family: Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 10px; color: #666; text-align: center; padding-top: 6px;">
-            Page <span class="page"/> / <span class="topage"/>
+        <div class="footer" style="font-family: Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 10px; color: #666; padding-top: 4px;">
+            <!-- With "Signature on Every Page" set, each page carries Party A on the left and
+                 Party B on the right, signature above the rule and the party's name below it. -->
+            <t t-if="sign_footer and footer_parties">
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <t t-foreach="['a', 'b']" t-as="party">
+                            <t t-if="party == 'b'">
+                                <td style="width:24%; border:0; padding:0; text-align:center; vertical-align:bottom;">
+                                    Page <span class="page"/> / <span class="topage"/>
+                                </td>
+                            </t>
+                            <td style="width:38%; border:0; padding:0 8px; text-align:center; vertical-align:bottom;">
+                                <div style="height:26px;">
+                                    <img t-if="footer_parties[party]['signature']"
+                                         t-att-src="image_data_uri(footer_parties[party]['signature'])"
+                                         style="max-height:26px; max-width:100%;"/>
+                                </div>
+                                <div style="border-top:1px solid #000; padding-top:2px; color:#111;">
+                                    <t t-out="footer_parties[party]['name']"/>
+                                </div>
+                            </td>
+                        </t>
+                    </tr>
+                </table>
+            </t>
+            <t t-else="">
+                <div style="text-align:center;">Page <span class="page"/> / <span class="topage"/></div>
+            </t>
         </div>
         <div class="article">
             <t t-out="0"/>
@@ -98,6 +128,8 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
                 <t t-set="doc_label" t-value="'Agreement'"/>
+                <t t-set="sign_footer" t-value="doc._sign_every_page()"/>
+                <t t-set="footer_parties" t-value="doc._page_footer_parties() if sign_footer else None"/>
                 <t t-call="agreement_management.report_agreement_layout">
                     <t t-call="agreement_management.report_agreement_document_body"/>
                 </t>
@@ -109,6 +141,8 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
                 <t t-set="doc_label" t-value="'Supplementary Annexure'"/>
+                <t t-set="sign_footer" t-value="doc._sign_every_page()"/>
+                <t t-set="footer_parties" t-value="doc._page_footer_parties() if sign_footer else None"/>
                 <t t-call="agreement_management.report_agreement_layout">
                     <t t-call="agreement_management.report_agreement_document_body"/>
                 </t>
@@ -120,6 +154,8 @@
     <template id="report_agreement_version_sample">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="version">
+                <t t-set="sign_footer" t-value="version.sign_every_page"/>
+                <t t-set="footer_parties" t-value="version._page_footer_parties() if version.sign_every_page else None"/>
                 <t t-call="agreement_management.report_agreement_layout">
                     <t t-call="agreement_management.report_agreement_style"/>
                     <div class="page agr-doc">

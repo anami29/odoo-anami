@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import patch
 
+from odoo.addons.agreement_management.models.agreement_document_mixin import render_document_html
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
@@ -284,6 +285,15 @@ class TestAgreementWorkflow(TransactionCase):
         for bad in ({'state': 'executed'}, {'number': 'AGR/2026/99999'}, {'document_fingerprint': 'x'}):
             with self.assertRaises(UserError):
                 self._create_agreement(**bad)
+
+    def test_08c_blank_page_placeholder(self):
+        """{{insert_blank_page}} yields a page that is deliberately empty, in any casing."""
+        for token in ('{{insert_blank_page}}', '{{ insert_blank_page }}', '{{INSERT_BLANK_PAGE}}'):
+            html = str(render_document_html('<p>A</p>%s<p>B</p>' % token, {}, [], 'preview'))
+            self.assertIn('page-break-before:always', html, token)
+            self.assertIn('page-break-after:always', html, token)
+            # not mistaken for an unknown placeholder
+            self.assertNotIn('[insert blank page]', html)
 
     def test_09_executed_pdf_is_protected(self):
         agreement = self._executed_agreement()

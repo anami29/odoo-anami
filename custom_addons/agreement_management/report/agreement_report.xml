@@ -15,6 +15,22 @@
         <field name="dpi">90</field>
     </record>
 
+    <!-- Same page, deeper foot: used automatically when the version prints a signature
+         strip on every page, which needs more room than the page number alone. -->
+    <record id="paperformat_agreement_sign_footer" model="report.paperformat">
+        <field name="name">Agreement Document A4 (signature footer)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">8</field>
+        <field name="margin_bottom">28</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
     <record id="action_report_agreement" model="ir.actions.report">
         <field name="name">Agreement Document</field>
         <field name="model">agreement.agreement</field>

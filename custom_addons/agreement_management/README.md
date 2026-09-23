@@ -53,7 +53,7 @@ Annexures: `<parent number>-ANN-01`, `-ANN-02`, … per parent agreement.
      `{{party_b}}`, `{{party_b_address}}`, `{{signatory_a}}`, `{{signatory_a_title}}`, `{{signatory_b}}`, `{{signatory_b_title}}`,
      `{{effective_from}}`, `{{effective_to}}`, `{{execution_date}}`, `{{template_code}}`, `{{template_version}}`,
      `{{agreement_type}}`, `{{company}}`, `{{today}}`, the technical name of any dynamic field (`{{contract_value}}`),
-     `{{page_break}}`, and `{{sig:CODE}}` for a signature location. Locations not placed in the content are appended in
+     `{{page_break}}`, `{{insert_blank_page}}` for a deliberately blank page, and `{{sig:CODE}}` for a signature location. Locations not placed in the content are appended in
      an *Execution* block.
    * **Dynamic Fields** — label, technical name, type (Text, Long Text, Number, Currency, Date, Boolean, Selection,
      Contact, Tags), Mandatory, Editable, Searchable, default. Stored as Odoo *Properties* on the agreement
