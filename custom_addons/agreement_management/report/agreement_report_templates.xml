@@ -37,7 +37,7 @@
     <!-- Minimal page layout: no company letterhead (the source contract has none), page numbers only. -->
     <template id="report_agreement_layout">
         <div class="header"/>
-        <div class="footer" style="font-family: Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 10px; color: #666; padding-top: 4px;">
+        <div class="footer" style="font-family: Aptos, 'Segoe UI', Lato, Arial, sans-serif; font-size: 11px; color: #666; padding-top: 4px;">
             <!-- With "Signature on Every Page" set, each page carries Party A on the left and
                  Party B on the right, signature above the rule and the party's name below it. -->
             <t t-if="sign_footer and footer_parties">
@@ -50,13 +50,16 @@
                                 </td>
                             </t>
                             <td style="width:38%; border:0; padding:0 8px; text-align:center; vertical-align:bottom;">
-                                <div style="height:26px;">
+                                <div style="height:44px;">
                                     <img t-if="footer_parties[party]['signature']"
                                          t-att-src="image_data_uri(footer_parties[party]['signature'])"
-                                         style="max-height:26px; max-width:100%;"/>
+                                         style="max-height:44px; max-width:100%;"/>
                                 </div>
-                                <div style="border-top:1px solid #000; padding-top:2px; color:#111;">
+                                <div style="border-top:1px solid #cfd4d9; padding-top:3px; color:#111; font-weight:bold;">
                                     <t t-out="footer_parties[party]['name']"/>
+                                </div>
+                                <div t-if="footer_parties[party]['signed_on']" style="color:#666; font-size:9px;">
+                                    Signed electronically on <t t-out="footer_parties[party]['signed_on']"/>
                                 </div>
                             </td>
                         </t>

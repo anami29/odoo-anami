@@ -25,6 +25,16 @@ PLACEHOLDER_RE = re.compile(r'\{\{\s*([A-Za-z0-9_\.]+(?::[A-Za-z0-9_\-]+)?)\s*\}
 
 PARTY_LABEL = {'a': 'Party A', 'b': 'Party B'}
 
+# Written invisibly onto a {{insert_blank_page}} page so the PDF layer can find it.
+BLANK_PAGE_MARKER = 'AGRBLANKPAGE7F3A'
+
+
+def _signer_line(party_name, signer):
+    """The line under a signature: "For <party>, <person>", or whichever half exists."""
+    if party_name and signer:
+        return 'For %s, %s' % (party_name, signer)
+    return signer or party_name or ''
+
 # Server-side marker for workflow writes. It is generated per process and can only be
 # placed in the context by server code, never by a client request, so it cannot be
 # spoofed through RPC (unlike plain boolean context flags).
@@ -46,8 +56,8 @@ def _signature_block_html(slot, mode, label_placeholders=False):
     if slot['kind'] == 'initials':
         if slot.get('signature'):
             return Markup(
-                '<span style="display:inline-block;vertical-align:middle;border:1px solid #198754;padding:2px 6px;margin:0 6px;">'
-                '<img src="data:image/png;base64,%s" style="height:22px;vertical-align:middle;"/>'
+                '<span style="display:inline-block;vertical-align:middle;border:1px solid #cfd4d9;border-radius:3px;padding:3px 8px;margin:0 6px;">'
+                '<img src="data:image/png;base64,%s" style="height:30px;vertical-align:middle;"/>'
                 '<span style="font-size:8px;color:#555;margin-left:4px;">%s</span></span>'
             ) % (slot['signature'].decode() if isinstance(slot['signature'], bytes) else slot['signature'],
                  escape(signer))
@@ -57,15 +67,14 @@ def _signature_block_html(slot, mode, label_placeholders=False):
         ) % (color, color, escape(party_name), ' (required)' if slot['required'] else '')
     if slot.get('signature'):
         return Markup(
-            '<div class="agr-sig agr-sig-signed" style="display:inline-block;vertical-align:top;width:46%%;min-width:240px;'
-            'border:1px solid #198754;border-radius:3px;padding:6px 10px;margin:8px 2%% 8px 0;font-family:sans-serif;font-size:10px;">'
-            '<div style="font-weight:bold;color:#222;">For and on behalf of %s (%s)</div>'
-            '<img src="data:image/png;base64,%s" style="max-height:64px;max-width:240px;display:block;margin:4px 0;"/>'
-            '<div style="font-weight:bold;">%s</div>%s'
-            '<div style="color:#666;">Signed electronically on %s</div></div>'
-        ) % (escape(party_name), PARTY_LABEL[party],
-             slot['signature'].decode() if isinstance(slot['signature'], bytes) else slot['signature'],
-             escape(signer), Markup('<div style="color:#444;">%s</div>') % escape(title) if title else Markup(''),
+            '<div class="agr-sig agr-sig-signed" style="display:inline-block;vertical-align:top;width:46%%;min-width:280px;'
+            'border:1px solid #cfd4d9;border-radius:3px;padding:10px 14px;margin:10px 2%% 10px 0;font-family:sans-serif;font-size:11px;">'
+            '<img src="data:image/png;base64,%s" style="max-height:90px;max-width:260px;display:block;margin:2px 0 6px;"/>'
+            '<div style="font-weight:bold;color:#111;font-size:12px;">%s</div>%s'
+            '<div style="color:#666;font-size:10px;">Signed electronically on %s</div></div>'
+        ) % (slot['signature'].decode() if isinstance(slot['signature'], bytes) else slot['signature'],
+             escape(_signer_line(party_name, signer)),
+             Markup('<div style="color:#444;">%s</div>') % escape(title) if title else Markup(''),
              escape(slot.get('signed_on') or ''))
     return Markup(
         '<div class="agr-sig agr-sig-placeholder" style="display:inline-block;vertical-align:top;width:46%%;min-width:240px;min-height:84px;'
@@ -96,9 +105,13 @@ def render_document_html(content, context, slots, mode, label_placeholders=False
         if lkey == 'page_break':
             return Markup('<div style="page-break-after:always;"></div>')
         if lkey == 'insert_blank_page':
-            # A break, a page holding only a non-breaking space, then another break. The
-            # space is what makes the empty page render at all — an empty block collapses.
-            return Markup('<div style="page-break-before:always;page-break-after:always;">&nbsp;</div>')
+            # A break, a page carrying only an invisible marker, then another break. The
+            # marker gives the page content (an empty block collapses and produces no page
+            # at all) and lets the PDF layer find the page afterwards and replace it with a
+            # truly empty one — which is also how it loses the per-page signature footer.
+            return Markup(
+                '<div style="page-break-before:always;page-break-after:always;">'
+                '<span style="color:#ffffff;font-size:2px;">%s</span></div>') % BLANK_PAGE_MARKER
         if lkey.startswith('sig:'):
             code = key[4:].upper()
             slot = slots_by_code.get(code)
@@ -472,9 +485,12 @@ class AgreementDocumentMixin(models.AbstractModel):
             signed = self.signature_ids.filtered(
                 lambda s, p=party: s.party == p and s.signature
             ).sorted(lambda s: (s.sequence, s.id))
+            first = signed[:1]
             parties[party] = {
-                'signature': signed[:1].signature or False,
-                'name': context.get('party_%s' % party) or PARTY_LABEL[party],
+                'signature': first.signature or False,
+                'name': _signer_line(context.get('party_%s' % party) or PARTY_LABEL[party],
+                                     first.signer_name or context.get('signatory_%s' % party, '')),
+                'signed_on': format_datetime(self.env, first.signed_on, dt_format='medium') if first.signed_on else '',
             }
         return parties
 

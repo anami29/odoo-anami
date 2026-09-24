@@ -497,8 +497,8 @@ class AgreementTemplateVersion(models.Model):
         """Footer preview for a template version: the layout, with no signatures yet."""
         self.ensure_one()
         return {
-            'a': {'signature': False, 'name': 'Party A'},
-            'b': {'signature': False, 'name': 'Party B'},
+            'a': {'signature': False, 'name': 'For Party A, Signatory A', 'signed_on': ''},
+            'b': {'signature': False, 'name': 'For Party B, Signatory B', 'signed_on': ''},
         }
 
     @api.constrains('cover_page')
