@@ -1,0 +1,13 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Palette and proportions follow Odoo's own portal card icons
+       (portal/static/src/img/portal-connection.svg). -->
+  <ellipse cx="32" cy="55.5" rx="16" ry="3.2" fill="#C1DBF6"/>
+  <path d="M17 8.5C17 7.11929 18.1193 6 19.5 6H37L47 16V50.5C47 51.8807 45.8807 53 44.5 53H19.5C18.1193 53 17 51.8807 17 50.5V8.5Z" fill="#FFFFFF" stroke="#374874" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M37 6L47 16H39.5C38.1193 16 37 14.8807 37 13.5V6Z" fill="#C1DBF6" stroke="#374874" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M23 24H41" stroke="#C1DBF6" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M23 30H41" stroke="#C1DBF6" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M23 36H33" stroke="#C1DBF6" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- the signature -->
+  <path d="M23.5 45.5C26 41.5 27.4 44.6 28.6 46.2C29.8 47.8 31.2 43.2 33 41.4C34.4 40 35.6 43.4 37 45C38.1 46.2 39.4 45.4 40.5 44.2" stroke="#374874" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M22 49.5H42" stroke="#C1DBF6" stroke-width="1.6" stroke-linecap="round"/>
+</svg>

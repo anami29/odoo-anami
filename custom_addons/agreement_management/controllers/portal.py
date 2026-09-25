@@ -77,6 +77,24 @@ class AgreementCustomerPortal(CustomerPortal):
             return None
         return party if agreement.sudo()._user_can_sign(party) else None
 
+    # -------------------------------------------------------------- download
+    @http.route(['/my/agreements/<int:agreement_id>/download'], type='http', auth='public', website=True)
+    def portal_agreement_download(self, agreement_id, access_token=None, **kw):
+        """Serve the executed PDF through the portal.
+
+        /web/content cannot be used: it checks ir.attachment access directly, which a
+        portal user does not have on the agreement's attachment, and answers 404. Access
+        to the agreement is what should decide this, so check that and stream as sudo.
+        """
+        try:
+            agreement = self._document_check_access('agreement.agreement', agreement_id, access_token)
+        except (AccessError, MissingError):
+            return request.redirect('/my')
+        attachment = agreement.executed_pdf_attachment_id.sudo()
+        if not attachment:
+            return request.redirect(agreement.get_portal_url())
+        return request.env['ir.binary']._get_stream_from(attachment).get_response(as_attachment=True)
+
     # --------------------------------------------------------------- signing
     @http.route(['/my/agreements/<int:agreement_id>/sign'], type='json', auth='public', website=True)
     def portal_agreement_sign(self, agreement_id, access_token=None, name=None, signature=None, **kw):

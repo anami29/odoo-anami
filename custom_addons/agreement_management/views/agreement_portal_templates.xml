@@ -2,10 +2,10 @@
 <odoo>
     <!-- My Account: the Agreements card, next to Connection & Security -->
     <template id="portal_my_home_agreement" name="Portal My Home: agreements"
-              inherit_id="portal.portal_my_home" priority="40">
+              inherit_id="portal.portal_my_home" priority="30">
         <xpath expr="//div[@id='portal_common_category']" position="inside">
             <t t-call="portal.portal_docs_entry">
-                <t t-set="icon" t-value="'/agreement_management/static/description/icon.png'"/>
+                <t t-set="icon" t-value="'/agreement_management/static/src/img/agreement_icon.svg'"/>
                 <t t-set="title">Agreements</t>
                 <t t-set="text">Review and sign your agreements</t>
                 <t t-set="url" t-value="'/my/agreements'"/>
@@ -82,7 +82,7 @@
                         </h4>
                         <a t-if="agreement.state == 'executed' and agreement.executed_pdf_attachment_id"
                            class="btn btn-secondary"
-                           t-attf-href="/web/content/#{agreement.executed_pdf_attachment_id.id}?download=true">
+                           t-att-href="agreement.get_portal_url(suffix='/download')">
                             <i class="fa fa-download me-1"/>Download signed agreement
                         </a>
                     </div>

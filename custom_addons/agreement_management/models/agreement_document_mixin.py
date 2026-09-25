@@ -572,18 +572,31 @@ class AgreementDocumentMixin(models.AbstractModel):
                               "explicitly permits it (Configuration › Settings)."))
         if not self._get_effective_from():
             raise UserError(_("Please enter the effective date before confirming the %s.", self._document_label().lower()))
-        missing = []
+        missing, zeros = [], []
         values = self._property_values()
         required_keys = {f.key for f in version._get_fields(self._get_areas_applies_to()) if f.required}
         for definition in self._property_definitions():
             key = definition.get('name')
             if key in required_keys and definition.get('type') != 'boolean':
                 value = values.get(key)
-                if value in (None, False, '', []):
-                    missing.append(definition.get('string') or key)
-        if missing:
-            raise UserError(_("Please complete all mandatory information before confirming the %s. Missing: %s.",
-                              self._document_label().lower(), ', '.join(missing)))
+                label = definition.get('string') or key
+                # A number the user has not entered and one they set to zero read the
+                # same, so both are refused — but say which it is, because the widget
+                # shows an untouched amount as 0.00 and it looks filled in.
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    if not value:
+                        zeros.append(label)
+                elif value in (None, False, '', []):
+                    missing.append(label)
+        if missing or zeros:
+            problems = []
+            if missing:
+                problems.append(_("not filled in: %s", ', '.join(missing)))
+            if zeros:
+                problems.append(_("still zero, which is not accepted for a mandatory amount: %s",
+                                  ', '.join(zeros)))
+            raise UserError(_("Please complete all mandatory information before confirming the %s — %s.",
+                              self._document_label().lower(), '; '.join(problems)))
         areas = version._get_areas(self._get_areas_applies_to())
         if not areas.filtered(lambda a: a.party == 'a' and a.required) or not areas.filtered(lambda a: a.party == 'b' and a.required):
             raise UserError(_("The template version has no required signature location for both parties. "

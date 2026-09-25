@@ -13,7 +13,7 @@ Agreement Management Module — Odoo 18 Community
 * Supplementary Annexures linked to executed agreements, with their own numbering, fields, signing and PDF
 * Search, filters, grouping, history, audit trail (chatter tracking), security groups and record rules
 """,
-    'version': '18.0.1.1.0',
+    'version': '18.0.1.1.4',
     'category': 'Productivity/Documents',
     'author': 'Riamona Luxury and Fashion Brands',
     'website': 'https://www.rlfb.in',
@@ -47,6 +47,7 @@ Agreement Management Module — Odoo 18 Community
         'web.assets_backend': [
             'agreement_management/static/src/scss/agreement_document.scss',
             'agreement_management/static/src/js/agreement_editor.js',
+            'agreement_management/static/src/js/agreement_properties.js',
         ],
     },
     'application': True,

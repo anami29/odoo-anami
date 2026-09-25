@@ -13,3 +13,11 @@
     border-radius: 2px;
     padding: 0 2px;
 }
+
+// Mandatory dynamic fields: the server appends "*" to the label, agreement_properties.js
+// splits it out, this colours it.
+.o_agreement_required_mark {
+    color: var(--bs-danger, #d9534f);
+    font-weight: 700;
+    margin-left: 2px;
+}

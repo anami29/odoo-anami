@@ -17,6 +17,13 @@ VERSION_STATES = [
 
 # Template-field types exposed to the Agreement Manager (BR-FLD-002) and their
 # mapping onto Odoo property types.
+# Appended to the label of a mandatory dynamic field; styled red by agreement_properties.js.
+REQUIRED_MARK = '*'
+
+# A label that already names a currency is left alone when tagging a monetary field.
+CURRENCY_IN_LABEL_RE = re.compile(r'[$\u20ac\u00a3\u00a5\u20b9\u00a2]|\b(?:USD|EUR|GBP|INR|JPY|AED|SGD|AUD|CAD)\b',
+                                  re.IGNORECASE)
+
 FIELD_TYPES = [
     ('char', 'Text'),
     ('text', 'Long Text'),
@@ -270,7 +277,7 @@ class AgreementTemplateVersion(models.Model):
 
     @api.depends('field_ids.name', 'field_ids.key', 'field_ids.field_type', 'field_ids.applies_to',
                  'field_ids.selection_values', 'field_ids.default_value', 'field_ids.sequence',
-                 'field_ids.show_in_cards')
+                 'field_ids.show_in_cards', 'field_ids.required')
     def _compute_properties_definition(self):
         for version in self:
             fields_ = version.field_ids.sorted(lambda f: (f.sequence, f.id))
@@ -580,10 +587,21 @@ class AgreementTemplateField(models.Model):
     def _to_property_definition(self):
         self.ensure_one()
         ptype = FIELD_TYPE_TO_PROPERTY.get(self.field_type, 'char')
+        # Odoo's property definitions allow only name, string, type, comodel, default,
+        # selection, tags, domain and view_in_cards — there is no 'required', so a
+        # mandatory field is marked in its label instead. _check_before_confirm is what
+        # actually enforces it.
+        label = self.name
+        # Tag a monetary field with the company currency, unless the label already names
+        # one — an agreement priced in US$ should not be labelled with the company's ₹.
+        symbol = self.version_id.company_id.currency_id.symbol
+        if self.field_type == 'monetary' and symbol and not CURRENCY_IN_LABEL_RE.search(label):
+            label += ' (%s)' % symbol
+        if self.required:
+            label += ' %s' % REQUIRED_MARK
         definition = {
             'name': self.key,
-            'string': self.name + (' (%s)' % self.version_id.company_id.currency_id.symbol
-                                   if self.field_type == 'monetary' and self.version_id.company_id.currency_id.symbol else ''),
+            'string': label,
             'type': ptype,
             'view_in_cards': bool(self.show_in_cards),
         }
