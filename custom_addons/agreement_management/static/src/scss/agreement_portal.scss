@@ -1,0 +1,16 @@
+// My Account card grid: even out the vertical gaps.
+//
+// Cards sit in category rows (.o_portal_category) inside an outer row (.o_portal_docs).
+// A gap between two categories is the category's own mt-3 plus the outer row's vertical
+// gutter, while a gap between rows that merely wrap inside one category is just that
+// category's gutter — so the grid reads as 1.5rem above a category and 0.5rem inside it.
+// Drop the outer gutter and make the inner one match the margin, so every row is 1rem apart.
+.o_portal_my_home {
+    .o_portal_docs {
+        --bs-gutter-y: 0;
+    }
+
+    .o_portal_category {
+        --bs-gutter-y: 1rem;
+    }
+}
