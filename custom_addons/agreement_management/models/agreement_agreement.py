@@ -6,7 +6,8 @@ from odoo.exceptions import UserError, ValidationError
 class Agreement(models.Model):
     _name = 'agreement.agreement'
     _description = 'Agreement'
-    _inherit = ['agreement.document.mixin', 'mail.thread.main.attachment', 'mail.activity.mixin']
+    _inherit = ['agreement.document.mixin', 'mail.thread.main.attachment', 'mail.activity.mixin',
+                'portal.mixin']
     _order = 'id desc'
     _rec_name = 'number'
     _check_company_auto = True
@@ -163,6 +164,13 @@ class Agreement(models.Model):
     # --------------------------------------------------------- mixin hooks
     def _document_label(self):
         return _('Agreement')
+
+    def _compute_access_url(self):
+        """Portal address of an agreement, used by the My Account pages and the
+        tokenised link a signatory can be sent."""
+        super()._compute_access_url()
+        for agreement in self:
+            agreement.access_url = '/my/agreements/%s' % agreement.id
 
     def _get_locked_fields(self):
         return {'template_id', 'template_version_id', 'type_id', 'company_id', 'partner_a_id', 'signatory_a_id',

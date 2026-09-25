@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- My Account: the Agreements card, next to Connection & Security -->
+    <template id="portal_my_home_agreement" name="Portal My Home: agreements"
+              inherit_id="portal.portal_my_home" priority="40">
+        <xpath expr="//div[@id='portal_common_category']" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/agreement_management/static/description/icon.png'"/>
+                <t t-set="title">Agreements</t>
+                <t t-set="text">Review and sign your agreements</t>
+                <t t-set="url" t-value="'/my/agreements'"/>
+                <t t-set="placeholder_count" t-value="'agreement_count'"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_my_home_menu_agreement" name="Portal layout: agreements menu entry"
+              inherit_id="portal.portal_breadcrumbs" priority="40">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name == 'agreement'" class="breadcrumb-item">
+                <a t-if="agreement" t-attf-href="/my/agreements?{{ keep_query() }}">Agreements</a>
+                <t t-else="">Agreements</t>
+            </li>
+            <li t-if="agreement" class="breadcrumb-item active">
+                <t t-out="agreement.number or 'Draft'"/>
+            </li>
+        </xpath>
+    </template>
+
+    <!-- The list -->
+    <template id="portal_my_agreements" name="My Agreements">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Agreements</t>
+            </t>
+            <t t-if="not agreements">
+                <div class="alert alert-info" role="status">There are no agreements for you yet.</div>
+            </t>
+            <t t-else="">
+                <table class="table table-hover o_portal_my_doc_table">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Counterparty</th>
+                            <th class="text-end">Effective From</th>
+                            <th class="text-end">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="agreements" t-as="agreement">
+                            <td>
+                                <a t-att-href="agreement.get_portal_url()">
+                                    <t t-out="agreement.number or 'Draft'"/>
+                                </a>
+                            </td>
+                            <td><t t-out="agreement.partner_b_id.display_name"/></td>
+                            <td class="text-end"><t t-out="agreement.date_from"/></td>
+                            <td class="text-end">
+                                <span t-attf-class="badge rounded-pill #{'text-bg-success' if agreement.state == 'executed' else 'text-bg-info'}">
+                                    <t t-out="agreement._state_label()"/>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </t>
+        </t>
+    </template>
+
+    <!-- The document, and the signature pad when it is this visitor's turn -->
+    <template id="portal_agreement_page" name="Agreement">
+        <t t-call="portal.portal_layout">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+                        <h4 class="mb-0">
+                            <t t-out="agreement.number or 'Draft'"/>
+                            <span t-attf-class="ms-2 badge rounded-pill #{'text-bg-success' if agreement.state == 'executed' else 'text-bg-info'}">
+                                <t t-out="agreement._state_label()"/>
+                            </span>
+                        </h4>
+                        <a t-if="agreement.state == 'executed' and agreement.executed_pdf_attachment_id"
+                           class="btn btn-secondary"
+                           t-attf-href="/web/content/#{agreement.executed_pdf_attachment_id.id}?download=true">
+                            <i class="fa fa-download me-1"/>Download signed agreement
+                        </a>
+                    </div>
+
+                    <div t-if="signing_party" class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Sign this agreement</h5>
+                            <p class="mb-3">
+                                By signing you confirm acceptance on behalf of
+                                <b t-out="agreement.partner_b_id.display_name if signing_party == 'b' else agreement.partner_a_id.display_name"/>.
+                                Your signature is applied to every signature area assigned to you.
+                            </p>
+                            <t t-call="portal.signature_form">
+                                <t t-set="call_url" t-value="agreement.get_portal_url(suffix='/sign')"/>
+                                <t t-set="default_name"
+                                   t-value="(agreement.signatory_b_id if signing_party == 'b' else agreement.signatory_a_id).name"/>
+                                <t t-set="send_label">Sign agreement</t>
+                            </t>
+                        </div>
+                    </div>
+                    <div t-elif="agreement.state == 'pending_a'" class="alert alert-info" role="status">
+                        Waiting for <b t-out="agreement.partner_a_id.display_name"/> to sign. You will be notified
+                        when it is your turn.
+                    </div>
+
+                    <div class="o_portal_html_view bg-white border rounded p-3">
+                        <t t-out="document_html"/>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

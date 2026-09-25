@@ -99,5 +99,19 @@
             <field name="domain_force">[('company_id', 'in', company_ids)]</field>
             <field name="global" eval="True"/>
         </record>
+        <record id="rule_agreement_portal" model="ir.rule">
+            <field name="name">Agreement: portal user sees agreements they are party to</field>
+            <field name="model_id" ref="model_agreement_agreement"/>
+            <field name="domain_force">['|', '|', '|',
+                ('signatory_a_id', 'child_of', [user.commercial_partner_id.id]),
+                ('signatory_b_id', 'child_of', [user.commercial_partner_id.id]),
+                ('partner_a_id', 'child_of', [user.commercial_partner_id.id]),
+                ('partner_b_id', 'child_of', [user.commercial_partner_id.id])]</field>
+            <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
     </data>
 </odoo>
