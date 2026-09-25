@@ -1,16 +1,25 @@
-// My Account card grid: even out the vertical gaps.
+// My Account card grid: one uniform vertical gap between every row of cards.
 //
-// Cards sit in category rows (.o_portal_category) inside an outer row (.o_portal_docs).
-// A gap between two categories is the category's own mt-3 plus the outer row's vertical
-// gutter, while a gap between rows that merely wrap inside one category is just that
-// category's gutter — so the grid reads as 1.5rem above a category and 0.5rem inside it.
-// Drop the outer gutter and make the inner one match the margin, so every row is 1rem apart.
+// The grid stacks three sources of vertical space: the outer .o_portal_docs row's
+// gutter, each .o_portal_category's mt-3, and the category's own gutter between rows
+// that wrap inside it. A gap between two categories gets the first two; a wrapped row
+// gets only the third — hence the uneven rhythm.
+//
+// Gutters cannot balance it: .row compensates for --bs-gutter-y with a negative
+// margin-top, but mt-3 is a utility class and its !important overrides that
+// compensation, so raising the gutter only adds space. Zero all three instead and put
+// the rhythm on the cards, where a row boundary makes no difference.
 .o_portal_my_home {
-    .o_portal_docs {
+    .o_portal_docs,
+    .o_portal_category {
         --bs-gutter-y: 0;
     }
 
     .o_portal_category {
-        --bs-gutter-y: 1rem;
+        margin-top: 0 !important; // beats the mt-3 utility
+    }
+
+    .o_portal_index_card {
+        margin-bottom: 1rem;
     }
 }
