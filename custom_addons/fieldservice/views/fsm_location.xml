@@ -102,11 +102,14 @@
                         <group id="main-left">
                             <field name="id" invisible="1" />
                             <field name="parent_id" domain="[('id', '!=', id)]" />
-                            <field
-                                name="partner_id"
-                                groups="base.group_no_one"
-                                readonly="1"
-                            />
+                            <!-- LOCAL CHANGE (not upstream OCA): partner_id removed from
+                                 the form. It is required=True on the model but was rendered
+                                 readonly, so the web client refused to submit the form with
+                                 "Invalid fields: Related Partner" and a location could never
+                                 be created. Nothing needs to set it: fsm.location delegates
+                                 to res.partner via _inherits, so the ORM creates the partner
+                                 from the name and address on save. Re-apply this if the
+                                 module is ever re-downloaded from OCA. -->
                             <field name="owner_id" />
                             <field
                                 name="contact_id"
