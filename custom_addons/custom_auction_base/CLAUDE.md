@@ -62,6 +62,14 @@ wrong for this system.
 - Denylist, checked by test: `estimated_value`, undisclosed `ceiling_price`,
   undisclosed `reserve_price`, `dek_wrapped`, `envelope`, proxy maximum.
 
+### Odoo data files
+- To modify a record that belongs to another module (`base.user_admin`,
+  `base.group_user`), a `<record>` is SILENTLY SKIPPED on upgrade if that
+  record's `ir.model.data` row has noupdate=True. Use a `<function>` tag and
+  a model method instead. This cost a full round trip on FIX-001.
+- Never put `--` inside an XML comment. It is illegal and the file will not
+  parse.
+
 ## Working method
 - Odoo 18 source is at `./odoo`. GREP IT for API signatures. Do not recall
   them — training data contains Odoo 16 and 17 patterns that no longer apply

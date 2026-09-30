@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from . import res_users
 from . import auction_category
 from . import auction_rule_set
 from . import auction_event
