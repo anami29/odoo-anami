@@ -23,7 +23,7 @@ NOT in this module: live and clock mechanisms, OWL consoles, websocket
 transport, evaluation and comparative, award and downstream generation,
 spreadsheet round-trip. See SCP-AUC-001 for the v1.0 stage plan.
 """,
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "category": "Purchases",
     "author": "Riamona Luxury and Fashion Brands",
     "website": "https://www.riamona.com",
