@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="module_category_auction" model="ir.module.category">
+        <field name="name">Auctions</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <record id="group_auction_observer" model="res.groups">
+        <field name="name">Observer</field>
+        <field name="category_id" ref="module_category_auction"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_auction_evaluator" model="res.groups">
+        <field name="name">Evaluator</field>
+        <field name="category_id" ref="module_category_auction"/>
+        <field name="implied_ids" eval="[(4, ref('group_auction_observer'))]"/>
+    </record>
+
+    <record id="group_auction_event_owner" model="res.groups">
+        <field name="name">Event Owner</field>
+        <field name="category_id" ref="module_category_auction"/>
+        <field name="implied_ids" eval="[(4, ref('group_auction_observer'))]"/>
+    </record>
+
+    <record id="group_auction_opener" model="res.groups">
+        <field name="name">Envelope Opener</field>
+        <field name="category_id" ref="module_category_auction"/>
+        <field name="implied_ids" eval="[(4, ref('group_auction_observer'))]"/>
+        <field name="comment">Requires MFA at the point of action, not only
+            at login. BR-SEC-006.</field>
+    </record>
+
+    <record id="group_auction_approver" model="res.groups">
+        <field name="name">Award Approver</field>
+        <field name="category_id" ref="module_category_auction"/>
+        <field name="implied_ids" eval="[(4, ref('group_auction_observer'))]"/>
+    </record>
+
+    <record id="group_auction_finance" model="res.groups">
+        <field name="name">Bid Security Finance</field>
+        <field name="category_id" ref="module_category_auction"/>
+        <field name="implied_ids" eval="[(4, ref('group_auction_observer'))]"/>
+    </record>
+
+    <record id="group_auction_manager" model="res.groups">
+        <field name="name">Manager</field>
+        <field name="category_id" ref="module_category_auction"/>
+        <field name="implied_ids" eval="[(4, ref('group_auction_event_owner'))]"/>
+    </record>
+
+    <record id="group_auction_admin" model="res.groups">
+        <field name="name">Administrator</field>
+        <field name="category_id" ref="module_category_auction"/>
+        <field name="implied_ids" eval="[(4, ref('group_auction_manager'))]"/>
+        <field name="comment">System configuration. Explicitly EXCLUDED from
+            ledger mutation and audit mutation -- there is no group that can
+            write to either.</field>
+    </record>
+
+    <!-- One group grants portal access to the module. The per-event role is
+         DATA on auction.participant.user, never a group. AMD-AUC-001 AMD-07. -->
+    <record id="group_auction_bidder" model="res.groups">
+        <field name="name">Bidder (portal)</field>
+        <field name="category_id" ref="module_category_auction"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_portal'))]"/>
+    </record>
+</odoo>

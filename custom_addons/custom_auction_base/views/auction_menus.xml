@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_auction_root" name="Auctions"
+              web_icon="custom_auction_base,static/description/icon.png"
+              sequence="52"/>
+
+    <menuitem id="menu_auction_events" name="Events"
+              parent="menu_auction_root" action="action_auction_event"
+              sequence="10"/>
+
+    <menuitem id="menu_auction_participants" name="Participants"
+              parent="menu_auction_root" action="action_auction_participant"
+              sequence="20"/>
+
+    <menuitem id="menu_auction_security" name="Bid Security"
+              parent="menu_auction_root" action="action_auction_bid_security"
+              sequence="30" groups="custom_auction_base.group_auction_finance"/>
+
+    <menuitem id="menu_auction_ledger" name="Bid Ledger"
+              parent="menu_auction_root" action="action_auction_bid"
+              sequence="40"/>
+
+    <menuitem id="menu_auction_audit" name="Audit Log"
+              parent="menu_auction_root" action="action_auction_audit"
+              sequence="50"/>
+</odoo>

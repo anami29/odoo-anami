@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_auction_bid_security_list" model="ir.ui.view">
+        <field name="name">auction.bid.security.list</field>
+        <field name="model">auction.bid.security</field>
+        <field name="arch" type="xml">
+            <list string="Bid Security" multi_edit="1">
+                <field name="event_id"/>
+                <field name="partner_id"/>
+                <field name="mode"/>
+                <field name="instrument_ref"/>
+                <field name="instrument_date"/>
+                <field name="amount_required" sum="Required"/>
+                <field name="amount_received" sum="Received"/>
+                <field name="declared_date"/>
+                <field name="state" widget="badge"
+                       decoration-success="state in ('verified','refunded')"
+                       decoration-warning="state in ('declared','in_clearing')"
+                       decoration-danger="state in ('rejected','dishonoured')"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auction_bid_security_form" model="ir.ui.view">
+        <field name="name">auction.bid.security.form</field>
+        <field name="model">auction.bid.security</field>
+        <field name="arch" type="xml">
+            <form string="Bid Security">
+                <header>
+                    <button name="action_declare" type="object" string="Declare"
+                            class="oe_highlight"
+                            invisible="state not in ('draft','rejected')"/>
+                    <button name="action_mark_received" type="object"
+                            string="Mark Received"
+                            groups="custom_auction_base.group_auction_finance"
+                            invisible="state != 'declared'"/>
+                    <button name="action_verify" type="object" string="Verify"
+                            class="oe_highlight"
+                            groups="custom_auction_base.group_auction_finance"
+                            invisible="state not in ('received','in_clearing')"/>
+                    <button name="action_reject" type="object" string="Reject"
+                            groups="custom_auction_base.group_auction_finance"
+                            invisible="state not in ('declared','received','in_clearing')"/>
+                    <button name="action_dishonour" type="object" string="Dishonoured"
+                            groups="custom_auction_base.group_auction_finance"
+                            invisible="state not in ('in_clearing','received','verified')"/>
+                    <button name="action_refund" type="object" string="Refund"
+                            groups="custom_auction_base.group_auction_finance"
+                            invisible="state not in ('verified','received','in_clearing')"/>
+                    <button name="action_forfeit" type="object" string="Forfeit"
+                            groups="custom_auction_base.group_auction_approver"
+                            invisible="state != 'verified'"/>
+                    <button name="action_convert_to_performance" type="object"
+                            string="Convert to Performance Security"
+                            groups="custom_auction_base.group_auction_finance"
+                            invisible="state != 'verified'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,declared,received,verified"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Participation">
+                            <field name="event_id"/>
+                            <field name="participant_id"/>
+                            <field name="partner_id" readonly="1"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="amount_required"/>
+                        </group>
+                        <group string="Instrument">
+                            <field name="mode"/>
+                            <field name="amount_declared"/>
+                            <field name="instrument_ref"
+                                   invisible="mode in ('declaration','exempt')"
+                                   required="mode not in ('declaration','exempt')"/>
+                            <field name="instrument_date"
+                                   invisible="mode in ('declaration','exempt')"/>
+                            <field name="bank_name"
+                                   invisible="mode in ('declaration','exempt','online')"/>
+                            <field name="branch"
+                                   invisible="mode not in ('cheque','bankers_cheque','dd')"/>
+                            <field name="remitter_account_name"
+                                   invisible="mode not in ('neft','rtgs','imps')"/>
+                            <field name="validity_date"
+                                   invisible="mode not in ('bg','fdr')"
+                                   required="mode in ('bg','fdr')"/>
+                            <field name="claim_period_date" invisible="mode != 'bg'"/>
+                            <field name="lien_marked" invisible="mode != 'fdr'"/>
+                        </group>
+                    </group>
+                    <group string="Exemption" invisible="mode != 'exempt'">
+                        <field name="exemption_basis"/>
+                        <field name="exemption_reg_no"/>
+                        <field name="exemption_valid_to"/>
+                    </group>
+                    <group>
+                        <group string="Verification"
+                               groups="custom_auction_base.group_auction_finance">
+                            <field name="amount_received"/>
+                            <field name="received_date" readonly="1"/>
+                            <field name="verified_date" readonly="1"/>
+                            <field name="verified_by" readonly="1"/>
+                            <field name="rejection_reason"
+                                   invisible="state != 'rejected'"/>
+                        </group>
+                        <group string="Settlement"
+                               groups="custom_auction_base.group_auction_finance">
+                            <field name="refund_ref"/>
+                            <field name="refund_date"/>
+                            <field name="forfeit_condition"/>
+                            <field name="forfeit_date" readonly="1"/>
+                            <field name="move_id" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_auction_bid_security_search" model="ir.ui.view">
+        <field name="name">auction.bid.security.search</field>
+        <field name="model">auction.bid.security</field>
+        <field name="arch" type="xml">
+            <search string="Bid Security">
+                <field name="instrument_ref"/>
+                <field name="partner_id"/>
+                <field name="event_id"/>
+                <filter name="pending" string="Awaiting finance"
+                        domain="[('state','in',['declared','received','in_clearing'])]"/>
+                <filter name="declared" string="Declared only"
+                        domain="[('state','=','declared')]"/>
+                <filter name="held" string="Held" domain="[('state','=','verified')]"/>
+                <separator/>
+                <filter name="online" string="Online"
+                        domain="[('mode','=','online')]"/>
+                <filter name="transfer" string="NEFT / RTGS / IMPS"
+                        domain="[('mode','in',['neft','rtgs','imps'])]"/>
+                <filter name="instrument" string="Cheque / DD / BG / FDR"
+                        domain="[('mode','in',['cheque','bankers_cheque','dd','bg','fdr'])]"/>
+                <group expand="0" string="Group By">
+                    <filter name="g_event" string="Event" context="{'group_by':'event_id'}"/>
+                    <filter name="g_state" string="Status" context="{'group_by':'state'}"/>
+                    <filter name="g_mode" string="Mode" context="{'group_by':'mode'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_auction_bid_security" model="ir.actions.act_window">
+        <field name="name">Bid Security</field>
+        <field name="res_model">auction.bid.security</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_pending': 1, 'search_default_g_event': 1}</field>
+    </record>
+</odoo>

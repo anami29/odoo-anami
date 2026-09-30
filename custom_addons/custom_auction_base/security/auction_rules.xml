@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Internal: company isolation on every engine model. -->
+        <record id="rule_event_company" model="ir.rule">
+            <field name="name">Auction event: company</field>
+            <field name="model_id" ref="model_auction_event"/>
+            <field name="domain_force">[('company_id','in',company_ids)]</field>
+            <field name="global" eval="True"/>
+        </record>
+
+        <!-- Portal bidders see only events they participate in. Global rule:
+             no group can widen it, and no context key modifies it. -->
+        <record id="rule_event_portal" model="ir.rule">
+            <field name="name">Auction event: own participation only</field>
+            <field name="model_id" ref="model_auction_event"/>
+            <field name="groups" eval="[(4, ref('group_auction_bidder'))]"/>
+            <field name="domain_force">[('participant_ids.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
+        </record>
+
+        <!-- Cross-bidder isolation. BR-SEC-004. The bid line rule is
+             INDEPENDENT rather than inherited through bid_id, so a direct
+             search_read on the line model is also constrained. -->
+        <record id="rule_bid_portal" model="ir.rule">
+            <field name="name">Auction bid: own organisation only</field>
+            <field name="model_id" ref="model_auction_bid"/>
+            <field name="groups" eval="[(4, ref('group_auction_bidder'))]"/>
+            <field name="domain_force">[('participant_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
+        </record>
+
+        <record id="rule_bid_line_portal" model="ir.rule">
+            <field name="name">Auction bid line: own organisation only</field>
+            <field name="model_id" ref="model_auction_bid_line"/>
+            <field name="groups" eval="[(4, ref('group_auction_bidder'))]"/>
+            <field name="domain_force">[('bid_id.participant_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
+        </record>
+
+        <record id="rule_participant_portal" model="ir.rule">
+            <field name="name">Participant: own organisation only</field>
+            <field name="model_id" ref="model_auction_participant"/>
+            <field name="groups" eval="[(4, ref('group_auction_bidder'))]"/>
+            <field name="domain_force">[('commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
+        </record>
+
+        <record id="rule_security_portal" model="ir.rule">
+            <field name="name">Bid security: own organisation only</field>
+            <field name="model_id" ref="model_auction_bid_security"/>
+            <field name="groups" eval="[(4, ref('group_auction_bidder'))]"/>
+            <field name="domain_force">[('participant_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
+        </record>
+
+    </data>
+</odoo>
