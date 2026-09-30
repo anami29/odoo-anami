@@ -65,4 +65,29 @@
         <field name="category_id" ref="module_category_auction"/>
         <field name="implied_ids" eval="[(4, ref('base.group_portal'))]"/>
     </record>
+
+    <!-- ==================================================================
+         Group assignment on install.
+
+         Without this NO user holds any auction group, every ACL denies, and
+         Odoo hides every menu whose model the user cannot read. Audit Log is
+         the exception only because access_auction_audit_system also grants
+         base.group_system, which the administrator already has.
+
+         implied_ids runs the other way: group_auction_observer implies
+         base.group_user (auction observers are internal users), NOT the
+         reverse. So membership has to be granted explicitly.
+
+         Opener and Approver are deliberately NOT granted here. TSD-AUC-001
+         #15.2 and BR-AUD-008 enforce segregation of duties, and auto-granting
+         them to the installing administrator defeats the control on day one.
+         Assign those to distinct named users.
+         ================================================================== -->
+    <record id="base.user_admin" model="res.users">
+        <field name="groups_id" eval="[
+            (4, ref('custom_auction_base.group_auction_admin')),
+            (4, ref('custom_auction_base.group_auction_finance'))
+        ]"/>
+    </record>
+
 </odoo>

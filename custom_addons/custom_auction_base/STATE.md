@@ -1,6 +1,22 @@
 # STATE
 
-Last updated: 2026-09-29   Stage: 1–2 partial, 4 partial, 7   Commit: initial
+Last updated: 2026-09-30   Stage: 1-2 partial, 4 partial, 7   Commit: initial+fix1
+
+## Install status
+
+FIRST INSTALL SUCCEEDED on Odoo 18 CE, 2026-09-30. The module loads, the
+post-install numeric-type assertion passes, and the Auctions app appears.
+
+Defect found on first install, fixed in `security/auction_groups.xml`:
+
+  FIX-001  No user held any auction group after install, so every ACL denied
+           and Odoo hid every menu except Audit Log -- visible only because
+           access_auction_audit_system also grants base.group_system.
+           `implied_ids` runs the other way (observer implies base.group_user,
+           not the reverse), so membership must be granted explicitly.
+           Resolution: base.user_admin granted group_auction_admin and
+           group_auction_finance. Opener and Approver left unassigned by
+           design, per BR-AUD-008.
 
 ## Completed
 
