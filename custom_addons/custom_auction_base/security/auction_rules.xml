@@ -50,5 +50,23 @@
             <field name="domain_force">[('participant_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
         </record>
 
+        <record id="rule_bid_line_schedule_portal" model="ir.rule">
+            <field name="name">Offered schedule: own organisation only</field>
+            <field name="model_id" ref="model_auction_bid_line_schedule"/>
+            <field name="groups" eval="[(4, ref('group_auction_bidder'))]"/>
+            <field name="domain_force">[('bid_line_id.bid_id.participant_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
+        </record>
+
+        <!-- Defence in depth. A bidder has no ACL on the evaluation working
+             set at all, so this rule grants nothing today; it exists so
+             that if anyone ever adds a read row for bidders, competitors'
+             opened prices are already fenced rather than newly exposed. -->
+        <record id="rule_evaluation_portal" model="ir.rule">
+            <field name="name">Opened bid: own organisation only</field>
+            <field name="model_id" ref="model_auction_evaluation_line"/>
+            <field name="groups" eval="[(4, ref('group_auction_bidder'))]"/>
+            <field name="domain_force">[('participant_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
+        </record>
+
     </data>
 </odoo>

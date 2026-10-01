@@ -1,14 +1,31 @@
 # -*- coding: utf-8 -*-
 """Event header — the governing record. BRD group EVT."""
+import json
 import logging
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
 from ..services import crypto as crypto_svc
-from ..services import registry as mech_registry
 
 _logger = logging.getLogger(__name__)
+
+
+def _payload_id(value):
+    """Recover a record id from a canonical payload leaf.
+
+    ``chain.canonical_payload`` renders every numeric leaf as a fixed
+    precision string so that the tamper-evidence hash is reproducible. An
+    id therefore comes back as "42.000000". This turns it back into 42.
+    """
+    if value is None:
+        return None
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
 
 
 class AuctionEvent(models.Model):
@@ -24,8 +41,15 @@ class AuctionEvent(models.Model):
         [("reverse", "Reverse — procurement"),
          ("forward", "Forward — disposal")],
         required=True, default="reverse", tracking=True)
-    mechanism = fields.Selection(
-        selection="_selection_mechanism", required=True, tracking=True)
+    mechanism_id = fields.Many2one(
+        "auction.mechanism", required=True, tracking=True,
+        domain="[('direction', '=', direction)]",
+        help="Filtered by direction. A reverse event cannot be given a "
+             "forward mechanism.")
+    mechanism = fields.Char(
+        related="mechanism_id.code", store=True, readonly=True, index=True,
+        help="The registry lookup key. Kept so that engine code addresses "
+             "a mechanism by code rather than by record id.")
     structure = fields.Selection(
         [("single", "Single stage"), ("two_envelope", "Two envelope")],
         required=True, default="single",
@@ -78,6 +102,16 @@ class AuctionEvent(models.Model):
     participant_ids = fields.One2many("auction.participant", "event_id")
     bid_ids = fields.One2many("auction.bid", "event_id")
     security_ids = fields.One2many("auction.bid.security", "event_id")
+    award_ids = fields.One2many("auction.award", "event_id")
+    award_count = fields.Integer(compute="_compute_award_count")
+    order_count = fields.Integer(compute="_compute_award_count")
+
+    def _compute_award_count(self):
+        for ev in self:
+            ev.award_count = len(ev.award_ids)
+            ev.order_count = (
+                len(ev.award_ids.mapped("order_ids"))
+                + len(ev.award_ids.mapped("sale_order_ids")))
 
     require_bid_security = fields.Boolean(default=True)
     bid_security_amount = fields.Monetary()
@@ -96,9 +130,80 @@ class AuctionEvent(models.Model):
     dek_salt = fields.Binary(attachment=False, copy=False,
                              groups="custom_auction_base.group_auction_opener")
 
-    @api.model
-    def _selection_mechanism(self):
-        return mech_registry.selection()
+    # Dual authorisation for the opening. Two DIFFERENT people must act.
+    #
+    # This is dual AUTHORISATION, not split-key custody: the data key is
+    # recovered from the KEK server side, so somebody holding the KEK and
+    # database access could open alone. That matches the SME key custody
+    # position already stated in SCP-AUC-001 #3, where the KEK lives in the
+    # application host environment and protects against a database
+    # administrator rather than against root. The full profile splits the
+    # key between the two openers; the crypto for it is already written and
+    # tested in services/crypto.py.
+    # Optional nomination, the way a tender opening committee is named in
+    # advance. Leave both empty and any two distinct authorised openers may
+    # act; name them and only those two may. The domain cannot be expressed
+    # declaratively against a group xmlid, so it is a constraint.
+    opener_a_id = fields.Many2one(
+        "res.users", string="First Opener", copy=False)
+    opener_b_id = fields.Many2one(
+        "res.users", string="Second Opener", copy=False)
+    opening_requested_by = fields.Many2one("res.users", readonly=True, copy=False)
+    opening_requested_on = fields.Datetime(readonly=True, copy=False)
+    opening_ids = fields.One2many("auction.opening", "event_id", readonly=True)
+    evaluation_line_ids = fields.One2many(
+        "auction.evaluation.line", "event_id", readonly=True)
+    evaluation_count = fields.Integer(compute="_compute_evaluation_count")
+
+    def _compute_evaluation_count(self):
+        for ev in self:
+            ev.evaluation_count = len(ev.evaluation_line_ids)
+
+    @api.constrains("opener_a_id", "opener_b_id")
+    def _check_nominated_openers(self):
+        for ev in self:
+            pair = ev.opener_a_id | ev.opener_b_id
+            if ev.opener_a_id and ev.opener_a_id == ev.opener_b_id:
+                raise ValidationError(_(
+                    "The two openers must be different people. One person "
+                    "acting twice is not a dual control."))
+            for user in pair:
+                if not user.has_group(
+                        "custom_auction_base.group_auction_opener"):
+                    raise ValidationError(_(
+                        "%s is not an authorised envelope opener.") % user.name)
+
+    def _assert_may_open(self, user):
+        """Nominated openers, where any were nominated."""
+        self.ensure_one()
+        if not user.has_group("custom_auction_base.group_auction_opener"):
+            raise UserError(_("You are not an authorised envelope opener."))
+        nominated = self.opener_a_id | self.opener_b_id
+        if nominated and user not in nominated:
+            raise UserError(_(
+                "This opening is reserved to the nominated openers: %s.")
+                % ", ".join(nominated.mapped("name")))
+
+    # Provenance only. Recorded for reporting and NEVER read at runtime:
+    # BR-TPL-009 requires instantiation to copy by value, so a template edit
+    # must not be able to reach an event that already exists.
+    template_id = fields.Many2one(
+        "auction.event.template", readonly=True, ondelete="set null")
+    template_version = fields.Integer(readonly=True)
+
+    def action_save_as_template(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Save as Template"),
+            "res_model": "auction.template.save.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_event_id": self.id,
+                "default_name": self.title,
+            },
+        }
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -129,14 +234,24 @@ class AuctionEvent(models.Model):
                 raise ValidationError(_(
                     "Commercial opening cannot precede technical opening."))
 
-    @api.constrains("mechanism", "direction")
+    @api.constrains("mechanism_id", "direction")
     def _check_mechanism_direction(self):
+        """Belt and braces. The domain stops it in the interface; this stops
+        it from any other route."""
         for ev in self:
-            if ev.mechanism and \
-                    mech_registry.get(ev.mechanism).direction != ev.direction:
+            if ev.mechanism_id and ev.mechanism_id.direction != ev.direction:
                 raise ValidationError(_(
-                    "Mechanism %(m)s is not available for a %(d)s event.",
-                    m=ev.mechanism, d=ev.direction))
+                    "'%(m)s' is a %(md)s mechanism and this is a %(d)s event.",
+                    m=ev.mechanism_id.name, md=ev.mechanism_id.direction,
+                    d=ev.direction))
+
+    @api.onchange("direction")
+    def _onchange_direction(self):
+        """Clear a mechanism that no longer fits, rather than leaving a
+        stale value sitting behind a filtered dropdown."""
+        for ev in self:
+            if ev.mechanism_id and ev.mechanism_id.direction != ev.direction:
+                ev.mechanism_id = False
 
     # ------------------------------------------------------------------
     def action_publish(self):
@@ -191,17 +306,257 @@ class AuctionEvent(models.Model):
         kek = crypto_svc.kek_from_environment()
         return crypto_svc.unwrap_dek(self.sudo().dek_wrapped, kek)
 
-    def _stage_evaluation_values(self, bid, plaintext):
-        """Decrypted values go into the evaluation working set. The ledger
-        envelope is never overwritten. Evaluation lands in stage 10."""
-        _logger.info("auction.event: staged %d bytes for bid %s",
-                     len(plaintext), bid.reference)
+    def _stage_evaluation_values(self, bid, plaintext, opening=None):
+        """Write the decrypted values into the evaluation working set.
+
+        The ledger envelope is never overwritten and never decrypted in
+        place, so the sealed record stays verifiable after the opening.
+        BR-SLD-013.
+        """
+        self.ensure_one()
+        payload = json.loads(plaintext.decode("utf-8"))["payload"]
+        Evaluation = self.env["auction.evaluation.line"].sudo()
+        by_line = {bl.line_id.id: bl for bl in bid.line_ids}
+
+        items = payload.get("lines", [])
+        staged = 0
+        for item in items:
+            # chain.canonical_payload quantizes EVERY numeric leaf to a
+            # fixed-precision string, so the record id arrives as the string
+            # "42.000000" and not as the integer 42. Looking that up in a
+            # dict keyed by integer id misses every time, which would stage
+            # nothing at all while the opening reported success.
+            bid_line = by_line.get(_payload_id(item.get("line")))
+            if not bid_line:
+                continue
+            price = float(item["price_unit"])
+            qty = float(item["qty_offered"])
+            staged += 1
+            Evaluation.create({
+                "event_id": self.id,
+                "opening_id": opening.id if opening else False,
+                "bid_id": bid.id,
+                "bid_line_id": bid_line.id,
+                "participant_id": bid.participant_id.id,
+                "lot_id": bid.lot_id.id,
+                "line_id": bid_line.line_id.id,
+                "price_unit": price,
+                "qty_offered": qty,
+                "norm_value": price,
+                "max_deviation_days": bid_line.max_deviation_days,
+            })
+
+        if items and not staged:
+            # Refuse silently producing nothing. An opening that decrypts a
+            # payload and stages zero rows is a defect, not an empty bid:
+            # the envelope opened, so the lines were there.
+            raise UserError(_(
+                "Bid %(ref)s decrypted but none of its %(count)d priced "
+                "lines could be matched to the ledger. The opening has been "
+                "rolled back; nothing was staged and the envelope is "
+                "untouched.",
+                ref=bid.reference, count=len(items)))
 
     def action_open_bidding(self):
         for ev in self:
             ev.write({"state": "live"})
             ev.lot_ids.filtered(lambda l: l.state == "pending").write({
                 "state": "open"})
+
+    def action_close_bidding(self):
+        """Close the window. Nothing else in the module did this.
+
+        Without it an event could reach ``live`` and stop there for ever:
+        opening refuses anything but ``bidding_closed``, so the envelopes
+        could never be opened and no award could be made.
+
+        Closing early is a deliberate act and is logged with the shortfall,
+        because bringing a deadline forward is the manipulation that
+        procurement rules exist to prevent (CVC; GFR 2017 corrigendum
+        practice). The rule is not enforced here — an SME buyer closing an
+        internal event early is legitimate — but it is never silent.
+        """
+        for ev in self:
+            if ev.state != "live":
+                raise UserError(_(
+                    "Only a live event can be closed. '%(name)s' is %(state)s.",
+                    name=ev.display_name, state=ev.state))
+            now = fields.Datetime.now()
+            early = bool(ev.bid_close_datetime and now < ev.bid_close_datetime)
+            shortfall = (
+                int((ev.bid_close_datetime - now).total_seconds() // 60)
+                if early else 0)
+            ev.lot_ids.filtered(lambda l: l.state == "open").write({
+                "state": "closed"})
+            ev.write({"state": "bidding_closed"})
+            ev.env["auction.audit"].log(
+                action="bidding_closed", model=ev._name, res_id=ev.id,
+                event_id=ev.id,
+                detail={"by": ev.env.user.login,
+                        "scheduled": str(ev.bid_close_datetime or ""),
+                        "actual": str(now),
+                        "early": early,
+                        "minutes_early": shortfall})
+            if early:
+                ev.message_post(body=_(
+                    "Bidding closed %(mins)d minutes before the published "
+                    "deadline of %(due)s, by %(user)s.",
+                    mins=shortfall, due=ev.bid_close_datetime,
+                    user=ev.env.user.name))
+
+    @api.model
+    def _cron_close_expired_bidding(self):
+        """Close events whose published deadline has passed.
+
+        A cron is the right instrument here and was the wrong one for clock
+        mechanisms: the one-minute floor cannot drive a 5–30 second extension
+        tick, but it is perfectly adequate for a sealed close, where the
+        deadline that counts is the one already stamped on each bid by
+        ``clock_timestamp()`` at acceptance. This only moves the header
+        state; it never decides whether an individual bid was in time.
+        """
+        candidates = self.sudo().search([
+            ("state", "=", "live"),
+            ("bid_close_datetime", "!=", False),
+            ("bid_close_datetime", "<=", fields.Datetime.now()),
+        ])
+        # A lot may carry its own later deadline under a staggered close.
+        # The event is not closed while any lot is still taking bids,
+        # otherwise the header would say closed while a lot accepted a bid.
+        due = candidates.filtered(
+            lambda e: not e.lot_ids.filtered(lambda l: l.state == "open"))
+        for ev in due:
+            try:
+                with self.env.cr.savepoint():
+                    ev.action_close_bidding()
+            except Exception:
+                # One event failing to close must not strand the rest.
+                _logger.exception("Scheduled close failed for event %s", ev.id)
+        return len(due)
+
+    def _stage_from_clear(self, bid, opening=None):
+        """Stage an unsealed bid. Values are already on the ledger line."""
+        self.ensure_one()
+        Evaluation = self.env["auction.evaluation.line"].sudo()
+        for bid_line in bid.line_ids:
+            Evaluation.create({
+                "event_id": self.id,
+                "opening_id": opening.id if opening else False,
+                "bid_id": bid.id,
+                "bid_line_id": bid_line.id,
+                "participant_id": bid.participant_id.id,
+                "lot_id": bid.lot_id.id,
+                "line_id": bid_line.line_id.id,
+                "price_unit": bid_line.price_unit,
+                "qty_offered": bid_line.qty_offered,
+                "norm_value": bid_line.norm_value or bid_line.price_unit,
+                "max_deviation_days": bid_line.max_deviation_days,
+            })
+
+    def action_request_opening(self):
+        """Step one of two. The first opener registers their presence."""
+        self.ensure_one()
+        self._assert_may_open(self.env.user)
+        if self.state != "bidding_closed":
+            raise UserError(_(
+                "Envelopes can only be opened once bidding has closed."))
+        if self.comm_open_datetime and \
+                fields.Datetime.now() < self.comm_open_datetime:
+            raise UserError(_(
+                "Opening is scheduled for %s. Envelopes cannot be opened "
+                "before that time.") % self.comm_open_datetime)
+        if self.opening_requested_by:
+            raise UserError(_(
+                "%s has already requested the opening. A second, different "
+                "opener must now confirm it.")
+                % self.opening_requested_by.name)
+
+        self.sudo().write({
+            "opening_requested_by": self.env.user.id,
+            "opening_requested_on": fields.Datetime.now(),
+        })
+        self.env["auction.audit"].log(
+            action="opening_requested", model=self._name, res_id=self.id,
+            event_id=self.id, detail={"by": self.env.user.login})
+
+    def action_confirm_opening(self):
+        """Step two. A DIFFERENT opener confirms, and the envelopes open.
+
+        Two distinct identities are the control. One person clicking twice
+        is refused, which is the whole point.
+        """
+        self.ensure_one()
+        self._assert_may_open(self.env.user)
+        if not self.opening_requested_by:
+            raise UserError(_(
+                "The opening has not been requested yet. The first opener "
+                "must request it before you can confirm."))
+        if self.opening_requested_by == self.env.user:
+            raise UserError(_(
+                "You requested this opening. A second, different opener must "
+                "confirm it. That is what makes it a dual control."))
+
+        opening = self.env["auction.opening"].execute_dual(
+            event=self,
+            opener_a=self.opening_requested_by,
+            opener_b=self.env.user,
+        )
+        # An opener holds observer rights on the event and nothing more, so
+        # moving the header state is a sudo. The authority for the act was
+        # established above; this is only the bookkeeping that follows it.
+        self.sudo().write({"state": "under_evaluation"})
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "auction.opening",
+            "res_id": opening.id,
+            "view_mode": "form",
+        }
+
+    def action_view_evaluation(self):
+        """The opened prices. This is 'see the prices' step."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Opened Bids"),
+            "res_model": "auction.evaluation.line",
+            "domain": [("event_id", "=", self.id)],
+            "view_mode": "list,form",
+            "context": {"search_default_group_line": 1},
+        }
+
+    def action_create_award(self):
+        """Start an award proposal from the opened bids.
+
+        Minimal award: the winner is chosen by a person reading the opened
+        prices. Computed ranking on landed cost is stage 10. The proposal is
+        pre-filled with one row per line so the operator adjusts rather than
+        types from nothing.
+        """
+        self.ensure_one()
+        if self.state not in ("bidding_closed", "under_evaluation"):
+            raise UserError(_(
+                "An award can only be proposed once bidding has closed."))
+        draft = self.award_ids.filtered(lambda a: a.state == "draft")
+        if draft:
+            return draft[0]._open_form()
+
+        award = self.env["auction.award"].create({"event_id": self.id})
+        self.write({"state": "under_evaluation"})
+        self.env["auction.audit"].log(
+            action="award_proposal_created", model="auction.award",
+            res_id=award.id, event_id=self.id, detail={})
+        return award._open_form()
+
+    def action_view_awards(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Awards"),
+            "res_model": "auction.award",
+            "domain": [("event_id", "=", self.id)],
+            "view_mode": "list,form",
+            "context": {"default_event_id": self.id},
+        }
 
     def action_cancel(self, reason=None):
         """GAP-024: cancellation after bids are received is not the same act

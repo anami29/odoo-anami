@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================= Sourcing categories ================= -->
+    <record id="view_auction_category_list" model="ir.ui.view">
+        <field name="name">auction.category.list</field>
+        <field name="model">auction.category</field>
+        <field name="arch" type="xml">
+            <list string="Sourcing Categories">
+                <field name="complete_name"/>
+                <field name="category_type"/>
+                <field name="parent_id"/>
+                <field name="product_category_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auction_category_form" model="ir.ui.view">
+        <field name="name">auction.category.form</field>
+        <field name="model">auction.category</field>
+        <field name="arch" type="xml">
+            <form string="Sourcing Category">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Bearings"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="category_type"/>
+                            <field name="parent_id"/>
+                            <field name="product_category_id"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        The category type drives the default content model.
+                        Works and Services tender quantities as estimates that
+                        are re-measured on completion; Goods do not.
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_auction_category" model="ir.actions.act_window">
+        <field name="name">Sourcing Categories</field>
+        <field name="res_model">auction.category</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your first sourcing category</p>
+            <p>Every auction event belongs to a category. Create at least one
+               before you create an event.</p>
+        </field>
+    </record>
+
+    <!-- ================= Rule sets ================= -->
+    <record id="view_auction_rule_set_list" model="ir.ui.view">
+        <field name="name">auction.rule.set.list</field>
+        <field name="model">auction.rule.set</field>
+        <field name="arch" type="xml">
+            <list string="Rule Sets">
+                <field name="name"/>
+                <field name="visibility"/>
+                <field name="entry_mode"/>
+                <field name="rank_basis"/>
+                <field name="bid_validity_days"/>
+                <field name="is_snapshot" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auction_rule_set_form" model="ir.ui.view">
+        <field name="name">auction.rule.set.form</field>
+        <field name="model">auction.rule.set</field>
+        <field name="arch" type="xml">
+            <form string="Rule Set">
+                <sheet>
+                    <div class="alert alert-info" role="status"
+                         invisible="not is_snapshot">
+                        This is a frozen snapshot taken when an event was
+                        published. Editing it has no effect on that event.
+                        Edit the original rule set instead.
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Sealed - standard"/></h1>
+                    </div>
+                    <group>
+                        <group string="Disclosure and entry">
+                            <field name="visibility"/>
+                            <field name="entry_mode"/>
+                            <field name="rank_basis"/>
+                            <field name="precision_digits"/>
+                            <field name="bid_validity_days"/>
+                        </group>
+                        <group string="Bidding rules">
+                            <field name="partial_qty"/>
+                            <field name="all_or_nothing"/>
+                            <field name="self_improvement"/>
+                            <field name="tie_break"/>
+                            <field name="limit_enforcement"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Improvement bounds">
+                            <field name="min_improvement"/>
+                            <field name="min_improvement_basis"/>
+                            <field name="max_improvement"/>
+                        </group>
+                        <group string="Anti-snipe">
+                            <field name="anti_snipe"/>
+                            <field name="anti_snipe_window_min" invisible="not anti_snipe"/>
+                            <field name="anti_snipe_extension_min" invisible="not anti_snipe"/>
+                            <field name="anti_snipe_max_extensions" invisible="not anti_snipe"/>
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        Anti-snipe has no effect in this release: all three
+                        mechanisms are sealed, so there is no live bidding to
+                        extend.
+                    </div>
+                    <field name="is_snapshot" invisible="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_auction_rule_set" model="ir.actions.act_window">
+        <field name="name">Rule Sets</field>
+        <field name="res_model">auction.rule.set</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_snapshot', '=', False)]</field>
+        <field name="context">{'search_default_live': 1}</field>
+    </record>
+
+    <!-- ================= Lot, with its line items ================= -->
+    <record id="view_auction_lot_form" model="ir.ui.view">
+        <field name="name">auction.lot.form</field>
+        <field name="model">auction.lot</field>
+        <field name="arch" type="xml">
+            <form string="Lot">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Bay 1 - Machining"/></h1>
+                    </div>
+                    <group>
+                        <group string="Award">
+                            <field name="award_basis"/>
+                            <field name="all_or_nothing"/>
+                            <field name="close_datetime"/>
+                            <field name="precision_digits"/>
+                        </group>
+                        <group string="Price limit">
+                            <field name="reserve_price"/>
+                            <field name="ceiling_price"/>
+                            <field name="disclose_limit"/>
+                            <field name="rule_set_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Line Items">
+                            <div class="text-muted mb-2">
+                                Open a line to set its specification and a
+                                phased delivery schedule.
+                            </div>
+                            <field name="line_ids" context="{'form_view_ref': 'custom_auction_base.view_auction_line_form'}">
+                                <list>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="line_type"/>
+                                    <field name="product_code" optional="show"/>
+                                    <field name="product_id"/>
+                                    <field name="product_qty"/>
+                                    <field name="product_uom_id"/>
+                                    <field name="base_price"/>
+                                    <field name="delivery_summary"/>
+                                    <field name="schedule_count" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Status">
+                            <group>
+                                <field name="state"/>
+                                <field name="chain_seq" readonly="1"/>
+                                <field name="chain_head_hash" readonly="1"/>
+                                <field name="extension_count" readonly="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================= Envelope openings ================= -->
+    <record id="view_auction_opening_list" model="ir.ui.view">
+        <field name="name">auction.opening.list</field>
+        <field name="model">auction.opening</field>
+        <field name="arch" type="xml">
+            <list string="Envelope Openings" create="false" edit="false" delete="false">
+                <field name="opened_at"/>
+                <field name="event_id"/>
+                <field name="envelope_type"/>
+                <field name="opener_a_id"/>
+                <field name="opener_b_id"/>
+                <field name="envelopes_opened"/>
+                <field name="envelopes_withheld"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auction_opening_form" model="ir.ui.view">
+        <field name="name">auction.opening.form</field>
+        <field name="model">auction.opening</field>
+        <field name="arch" type="xml">
+            <form string="Envelope Opening" create="false" edit="false" delete="false">
+                <sheet>
+                    <div class="alert alert-info" role="status">
+                        This record is immutable. It is the evidence that the
+                        opening took place, who performed it and what was
+                        opened.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="event_id"/>
+                            <field name="envelope_type"/>
+                            <field name="opened_at"/>
+                            <field name="key_fingerprint"/>
+                        </group>
+                        <group>
+                            <field name="opener_a_id"/>
+                            <field name="opener_b_id"/>
+                            <field name="envelopes_opened"/>
+                            <field name="envelopes_withheld"/>
+                        </group>
+                    </group>
+                    <field name="minutes"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_auction_opening" model="ir.actions.act_window">
+        <field name="name">Envelope Openings</field>
+        <field name="res_model">auction.opening</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'create': False}</field>
+    </record>
+
+    <!-- ================= Line item, with its delivery schedule ========= -->
+    <record id="view_auction_line_form" model="ir.ui.view">
+        <field name="name">auction.line.form</field>
+        <field name="model">auction.line</field>
+        <field name="arch" type="xml">
+            <form string="Line Item">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Deep groove ball bearing 6205"/></h1>
+                    </div>
+                    <group>
+                        <group string="Item">
+                            <field name="product_category_id" invisible="1"/>
+                            <field name="product_id"
+                                   domain="product_category_id and [('categ_id','child_of',product_category_id)] or []"
+                                   options="{'no_create_edit': True}"/>
+                            <field name="product_code" readonly="1"
+                                   invisible="not product_code"/>
+                            <field name="product_qty"/>
+                            <field name="product_uom_id"/>
+                            <field name="line_type"/>
+                            <field name="hsn_sac"/>
+                        </group>
+                        <group string="Delivery">
+                            <field name="delivery_location"/>
+                            <field name="required_by"
+                                   invisible="schedule_count &gt; 0"/>
+                            <field name="delivery_summary" readonly="1"
+                                   invisible="schedule_count == 0"/>
+                            <field name="schedule_count" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Pricing">
+                        <group>
+                            <field name="base_price"/>
+                            <field name="start_price"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Delivery Schedule">
+                            <div class="text-muted mb-2">
+                                Leave this empty for a single delivery on the
+                                required date. Add tranches for a phased
+                                schedule; the quantities must add up to the
+                                line quantity.
+                            </div>
+                            <button name="action_open_schedule_wizard"
+                                    type="object" string="Generate Schedule"
+                                    class="btn-secondary mb-2"
+                                    icon="fa-calendar"/>
+                            <field name="schedule_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="quantity" sum="Total"/>
+                                    <field name="product_uom_id"/>
+                                    <field name="required_by"/>
+                                    <field name="delivery_location"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Specification">
+                            <field name="specification"
+                                   placeholder="Technical specification, drawing references, tolerances"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================= Schedule generator ================= -->
+    <record id="view_auction_schedule_wizard_form" model="ir.ui.view">
+        <field name="name">auction.schedule.wizard.form</field>
+        <field name="model">auction.schedule.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Generate Delivery Schedule">
+                <group>
+                    <group>
+                        <field name="line_id" invisible="1"/>
+                        <field name="line_qty" readonly="1"/>
+                        <field name="uom_id" readonly="1"/>
+                        <field name="periods"/>
+                        <field name="frequency"/>
+                    </group>
+                    <group>
+                        <field name="start_date"/>
+                        <field name="split"/>
+                        <field name="replace_existing"/>
+                    </group>
+                </group>
+                <div class="text-muted">
+                    Quantities are split evenly and any rounding remainder
+                    goes on the last tranche, so the total always matches the
+                    line quantity exactly. Edit individual rows afterwards if
+                    the phasing is uneven.
+                </div>
+                <footer>
+                    <button name="action_generate" type="object"
+                            string="Generate" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_auction_mechanism_list" model="ir.ui.view">
+        <field name="name">auction.mechanism.list</field>
+        <field name="model">auction.mechanism</field>
+        <field name="arch" type="xml">
+            <list string="Mechanisms" create="false" delete="false">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="direction"/>
+                <field name="sealed"/>
+                <field name="revisable"/>
+                <field name="note"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_auction_mechanism" model="ir.actions.act_window">
+        <field name="name">Mechanisms</field>
+        <field name="res_model">auction.mechanism</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'create': False}</field>
+    </record>
+
+</odoo>

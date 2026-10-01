@@ -25,6 +25,20 @@
             <field name="code">model._cron_close_due()</field>
             <field name="interval_number">1</field>
             <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <!-- The event header closes only once no lot is still taking bids.
+             Runs after the lot cron, so a staggered close settles first. -->
+        <record id="cron_close_expired_bidding" model="ir.cron">
+            <field name="name">Auction: close bidding on expired events</field>
+            <field name="model_id" ref="model_auction_event"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_close_expired_bidding()</field>
+            <field name="interval_number">2</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
             <field name="active" eval="True"/>
         </record>
 
@@ -35,6 +49,7 @@
             <field name="code">model._cron_verification_deadline()</field>
             <field name="interval_number">30</field>
             <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
             <field name="active" eval="True"/>
         </record>
     </data>

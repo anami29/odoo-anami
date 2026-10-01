@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_auction_event_template_list" model="ir.ui.view">
+        <field name="name">auction.event.template.list</field>
+        <field name="model">auction.event.template</field>
+        <field name="arch" type="xml">
+            <list string="Event Templates" decoration-muted="not active">
+                <field name="name"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'locked'"
+                       decoration-warning="state == 'draft'"/>
+                <field name="active" column_invisible="1"/>
+                <field name="direction"/>
+                <field name="mechanism_id" options="{'no_create': True}"/>
+                <field name="category_id"/>
+                <field name="lot_count"/>
+                <field name="line_count"/>
+                <field name="usage_count"/>
+                <field name="last_used"/>
+                <field name="version"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auction_event_template_form" model="ir.ui.view">
+        <field name="name">auction.event.template.form</field>
+        <field name="model">auction.event.template</field>
+        <field name="arch" type="xml">
+            <form string="Event Template">
+                <header>
+                    <button name="action_lock" type="object" string="Lock"
+                            class="oe_highlight" icon="fa-lock"
+                            invisible="state != 'draft'"
+                            confirm="Once locked this template cannot be edited. To change it later you take a New Version. Lock it now?"/>
+                    <button name="action_create_event" type="object"
+                            string="Create Event" class="oe_highlight"
+                            icon="fa-play"
+                            invisible="state != 'locked' or not active"/>
+                    <button name="action_new_version" type="object"
+                            string="New Version" icon="fa-code-fork"
+                            invisible="state != 'locked'"
+                            help="Make a draft copy to edit. The original and every event built from it stay untouched."/>
+                    <button name="action_archive_template" type="object"
+                            string="Archive" icon="fa-archive"
+                            invisible="not active"/>
+                    <button name="action_unarchive_template" type="object"
+                            string="Unarchive" icon="fa-undo"
+                            invisible="active"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,locked"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <widget name="web_ribbon" title="Locked" bg_color="text-bg-success"
+                            invisible="state != 'locked' or not active"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" icon="fa-repeat" disabled="1">
+                            <field name="usage_count" widget="statinfo" string="Used"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Monthly bearings tender"/></h1>
+                    </div>
+                    <field name="description" placeholder="When to use this template"
+                           readonly="state == 'locked'"/>
+                    <group readonly="state == 'locked'">
+                        <group string="Event shape">
+                            <field name="direction"/>
+                            <field name="mechanism_id" options="{'no_create': True}"/>
+                            <field name="structure"/>
+                            <field name="category_id"/>
+                            <field name="rule_set_id"/>
+                            <field name="anonymise"/>
+                        </group>
+                        <group string="Timing (relative)">
+                            <field name="publish_lead_days"/>
+                            <field name="bid_window_days"/>
+                            <field name="comm_open_offset_hours"/>
+                            <field name="tech_open_offset_hours"
+                                   invisible="structure != 'two_envelope'"/>
+                            <field name="currency_id" groups="base.group_multi_currency"/>
+                            <field name="version" readonly="1"/>
+                        </group>
+                    </group>
+                    <div class="text-muted mb-3">
+                        Timing is stored as offsets, never as dates, so the
+                        template does not go stale. Real dates are worked out
+                        when you create an event from it.
+                    </div>
+                    <group string="Bid security" readonly="state == 'locked'">
+                        <group>
+                            <field name="require_bid_security"/>
+                            <field name="security_basis"
+                                   invisible="not require_bid_security"/>
+                            <field name="security_amount"
+                                   invisible="security_basis != 'fixed' or not require_bid_security"/>
+                            <field name="security_percent"
+                                   invisible="security_basis != 'percent' or not require_bid_security"/>
+                        </group>
+                        <group>
+                            <field name="security_verify_lead_hours"
+                                   invisible="not require_bid_security"/>
+                            <field name="security_grace_hours"
+                                   invisible="not require_bid_security"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lots and Line Items">
+                            <field name="lot_ids" readonly="state == 'locked'">
+                                <list>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="award_basis"/>
+                                    <field name="all_or_nothing"/>
+                                </list>
+                                <form string="Template Lot">
+                                    <group>
+                                        <group>
+                                            <field name="name"/>
+                                            <field name="award_basis"/>
+                                            <field name="all_or_nothing"/>
+                                        </group>
+                                        <group>
+                                            <field name="disclose_limit"/>
+                                            <field name="precision_digits"/>
+                                        </group>
+                                    </group>
+                                    <field name="line_ids">
+                                        <list editable="bottom">
+                                            <field name="sequence" widget="handle"/>
+                                            <field name="product_id"
+                                                   options="{'no_create_edit': True}"/>
+                                            <field name="product_code" optional="show"/>
+                                            <field name="name"/>
+                                            <field name="product_qty"/>
+                                            <field name="product_uom_id"/>
+                                            <field name="line_type" optional="hide"/>
+                                            <field name="delivery_offset_days"/>
+                                            <field name="schedule_periods"/>
+                                            <field name="schedule_frequency"
+                                                   optional="show"/>
+                                            <field name="delivery_location" optional="hide"/>
+                                            <field name="hsn_sac" optional="hide"/>
+                                        </list>
+                                    </field>
+                                </form>
+                            </field>
+                            <div class="text-muted mt-2">
+                                Delivery offset is days after bidding closes.
+                                Set Schedule Periods above one to generate a
+                                phased schedule automatically on each event.
+                            </div>
+                        </page>
+                        <page string="Default Participants">
+                            <field name="partner_ids" widget="many2many_tags"
+                                   readonly="state == 'locked'"/>
+                            <div class="text-muted mt-2">
+                                These bidders are invited automatically. You
+                                can add or remove participants on the event
+                                afterwards.
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_auction_event_template_search" model="ir.ui.view">
+        <field name="name">auction.event.template.search</field>
+        <field name="model">auction.event.template</field>
+        <field name="arch" type="xml">
+            <search string="Event Templates">
+                <field name="name"/>
+                <field name="category_id"/>
+                <filter name="f_locked" string="Locked"
+                        domain="[('state','=','locked')]"/>
+                <filter name="f_draft" string="Draft"
+                        domain="[('state','=','draft')]"/>
+                <filter name="f_used" string="In use"
+                        domain="[('usage_count','&gt;',0)]"/>
+                <separator/>
+                <filter name="f_archived" string="Archived"
+                        domain="[('active','=',False)]"/>
+                <group expand="0" string="Group By">
+                    <filter name="g_direction" string="Direction"
+                            context="{'group_by':'direction'}"/>
+                    <filter name="g_category" string="Category"
+                            context="{'group_by':'category_id'}"/>
+                    <filter name="g_state" string="Status"
+                            context="{'group_by':'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_auction_event_template" model="ir.actions.act_window">
+        <field name="name">Event Templates</field>
+        <field name="res_model">auction.event.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your first template</p>
+            <p>A template holds the rules, content skeleton and bidder panel
+               for a recurring event, so you do not rebuild it every month.
+               You can also save an existing event as a template.</p>
+        </field>
+    </record>
+
+    <!-- ================= Wizards ================= -->
+    <record id="view_auction_template_apply_wizard" model="ir.ui.view">
+        <field name="name">auction.template.apply.wizard.form</field>
+        <field name="model">auction.template.apply.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Create Event from Template">
+                <group>
+                    <field name="template_id" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="title" placeholder="e.g. Bearings - October"/>
+                    <field name="bid_open_datetime"/>
+                    <field name="owner_id"/>
+                    <field name="estimated_value"/>
+                </group>
+                <separator string="This will create"/>
+                <field name="preview" readonly="1" nolabel="1"/>
+                <footer>
+                    <button name="action_apply" type="object" string="Create Event"
+                            class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_auction_template_save_wizard" model="ir.ui.view">
+        <field name="name">auction.template.save.wizard.form</field>
+        <field name="model">auction.template.save.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Save as Template">
+                <group>
+                    <field name="event_id" invisible="1"/>
+                    <field name="name"/>
+                    <field name="description"/>
+                    <field name="include_content"/>
+                    <field name="include_participants"/>
+                </group>
+                <div class="text-muted">
+                    Dates are converted to offsets from the bidding window, so
+                    the template stays usable. Bids and bidder submissions are
+                    never carried across.
+                </div>
+                <footer>
+                    <button name="action_save" type="object" string="Save Template"
+                            class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

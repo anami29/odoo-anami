@@ -126,7 +126,16 @@ class AuctionLine(models.Model):
     sequence = fields.Integer(default=10)
     lot_id = fields.Many2one("auction.lot", required=True, index=True,
                              ondelete="cascade")
-    product_id = fields.Many2one("product.product")
+    product_id = fields.Many2one(
+        "product.product",
+        help="Optional. Works and services often have no product record; "
+             "the description alone is enough.")
+    product_code = fields.Char(related="product_id.default_code", readonly=True)
+    # Soft filter: set a Product Category on the sourcing category and the
+    # product picker narrows to it. Leave it empty for no filter.
+    product_category_id = fields.Many2one(
+        related="lot_id.event_id.category_id.product_category_id",
+        readonly=True)
     specification = fields.Text()
     product_qty = fields.Float(digits=(18, 6), required=True, default=1.0)
     product_uom_id = fields.Many2one("uom.uom")
@@ -147,7 +156,74 @@ class AuctionLine(models.Model):
          ("provisional", "Provisional sum")],
         required=True, default="firm")
 
+    # Phased delivery. Empty means a single delivery on required_by.
+    schedule_ids = fields.One2many("auction.line.schedule", "line_id")
+    schedule_count = fields.Integer(compute="_compute_schedule")
+    delivery_summary = fields.Char(compute="_compute_schedule")
+
+    def _compute_schedule(self):
+        for line in self:
+            tranches = line.schedule_ids.sorted("required_by")
+            line.schedule_count = len(tranches)
+            if not tranches:
+                line.delivery_summary = (
+                    fields.Date.to_string(line.required_by)
+                    if line.required_by else "")
+            elif len(tranches) == 1:
+                line.delivery_summary = "%s on %s" % (
+                    tranches.quantity, tranches.required_by)
+            else:
+                line.delivery_summary = "%d tranches, %s to %s" % (
+                    len(tranches), tranches[0].required_by,
+                    tranches[-1].required_by)
+
+    def action_open_schedule_wizard(self):
+        """Generate evenly spaced tranches instead of typing twelve rows."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Generate Delivery Schedule"),
+            "res_model": "auction.schedule.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {"default_line_id": self.id},
+        }
+
     _sql_constraints = [
         ("line_qty_positive", "CHECK(product_qty > 0)",
          "Quantity must be positive."),
     ]
+
+    @api.onchange("product_id")
+    def _onchange_product_id(self):
+        """Populate the line from the product.
+
+        Only fills what is empty, so a description already edited by hand is
+        never overwritten when the product is re-selected.
+        """
+        for line in self:
+            product = line.product_id
+            if not product:
+                continue
+
+            if not line.name:
+                line.name = product.display_name
+            if not line.product_uom_id:
+                line.product_uom_id = product.uom_id
+            if not line.specification:
+                line.specification = (
+                    product.description_purchase or product.description or "")
+
+            # HSN only exists where the Indian localisation is installed.
+            if not line.hsn_sac:
+                for field in ("l10n_in_hsn_code",):
+                    if field in product._fields:
+                        line.hsn_sac = product[field] or ""
+                        break
+
+            # Base price is the denominator for savings reporting. Cost is a
+            # sensible default when buying; on a disposal event the book cost
+            # says nothing about what scrap will fetch, so leave it alone.
+            direction = line.lot_id.event_id.direction
+            if direction == "reverse" and not line.base_price:
+                line.base_price = product.standard_price

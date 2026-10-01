@@ -19,9 +19,15 @@ from decimal import Decimal, ROUND_HALF_UP
 ZERO64 = "0" * 64
 
 #: Incremented only when the canonical payload shape changes. Records store
-#: the version they were written under; verification recomputes using that
-#: version's rules. NEVER renumber an existing version.
-PAYLOAD_VERSION = 1
+#: the version they were written under. NEVER renumber an existing version.
+#:
+#: Verification recomputes the chain link from the STORED payload_digest, not
+#: by re-serialising the record, so extending the payload never invalidates
+#: records written under an earlier version.
+#:
+#:   1  price_unit and qty_offered per line
+#:   2  adds the offered delivery schedule per line
+PAYLOAD_VERSION = 2
 
 
 class ChainError(Exception):

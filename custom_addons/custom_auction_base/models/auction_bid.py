@@ -32,6 +32,7 @@ import time
 
 from odoo import _, api, fields, models, registry
 from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.tools import float_compare
 
 from ..services import chain as chain_svc
 from ..services import crypto as crypto_svc
@@ -474,11 +475,16 @@ class AuctionBid(models.Model):
                     and price < lot.reserve_price and lot.disclose_limit:
                 errors.append(("line_%d" % line.id, _(
                     "Your bid is below the reserve of %s.") % lot.reserve_price))
+            schedule, deviation = self._validate_schedule(
+                line, given.get("schedule") or [], errors)
+
             lines.append({
                 "line_id": line.id,
                 "price_unit": price,
                 "qty_offered": qty,
                 "norm_value": price,     # landed cost normalisation: stage 10
+                "schedule": schedule,
+                "max_deviation_days": deviation,
             })
 
         if not lines:
@@ -486,6 +492,60 @@ class AuctionBid(models.Model):
         if errors:
             raise ValidationError("\n".join("%s: %s" % e for e in errors))
         return lines
+
+    def _validate_schedule(self, line, offered, errors):
+        """Validate an offered delivery schedule against the required one.
+
+        Returns ``(rows, max_deviation_days)``. An empty offer means the
+        bidder accepted the required schedule as stated, which is the normal
+        case and is not an error.
+        """
+        if not offered:
+            return [], 0
+
+        rows, worst = [], 0
+        total = 0.0
+        required = {s.id: s for s in line.schedule_ids}
+
+        for index, item in enumerate(offered):
+            qty = item.get("quantity")
+            when = item.get("offered_date")
+            if not qty or qty <= 0:
+                errors.append(("line_%d" % line.id, _(
+                    "Delivery tranche %s has no quantity.") % (index + 1)))
+                continue
+            if not when:
+                errors.append(("line_%d" % line.id, _(
+                    "Delivery tranche %s has no date.") % (index + 1)))
+                continue
+
+            offered_date = fields.Date.to_date(when)
+            tranche = required.get(item.get("schedule_id"))
+            # Where the bidder proposed their own shape, measure against the
+            # final required date rather than refusing the bid outright.
+            benchmark = (tranche.required_by if tranche
+                         else (line.schedule_ids.sorted("required_by")[-1].required_by
+                               if line.schedule_ids else line.required_by))
+            deviation = (offered_date - benchmark).days if benchmark else 0
+            worst = max(worst, deviation)
+            total += qty
+
+            rows.append({
+                "schedule_id": tranche.id if tranche else False,
+                "sequence": (index + 1) * 10,
+                "quantity": qty,
+                "offered_date": offered_date,
+                "deviation_days": deviation,
+            })
+
+        if rows and float_compare(total, line.product_qty,
+                                  precision_digits=6) != 0:
+            errors.append(("line_%d" % line.id, _(
+                "Your delivery schedule for '%(line)s' adds up to %(total)s "
+                "but the line quantity is %(qty)s.",
+                line=line.name, total=total, qty=line.product_qty)))
+
+        return rows, worst
 
     def _canonical_payload(self, vals, lines, server_ts, participant, lot):
         return {
@@ -498,7 +558,15 @@ class AuctionBid(models.Model):
             "lines": [
                 {"line": l["line_id"],
                  "price_unit": l["price_unit"],
-                 "qty_offered": l["qty_offered"]}
+                 "qty_offered": l["qty_offered"],
+                 # PAYLOAD_VERSION 2 added the schedule. Older records keep
+                 # their stored digest, so verification is unaffected.
+                 "schedule": [
+                     {"required": sc["schedule_id"] or 0,
+                      "qty": sc["quantity"],
+                      "date": str(sc["offered_date"])}
+                     for sc in l.get("schedule") or []
+                 ]}
                 for l in sorted(lines, key=lambda x: x["line_id"])
             ],
             "server_ts": server_ts.isoformat(),
@@ -535,6 +603,19 @@ class AuctionBid(models.Model):
                     "price_unit": None if sealed else l["price_unit"],
                     "qty_offered": l["qty_offered"],
                     "norm_value": None if sealed else l["norm_value"],
+                    # Dates are not commercially sensitive in the way price
+                    # is, and evaluation needs them to assess feasibility
+                    # before the commercial opening. They stay in clear.
+                    "max_deviation_days": l.get("max_deviation_days", 0),
+                    "schedule_ids": [
+                        (0, 0, {
+                            "schedule_id": sc["schedule_id"],
+                            "sequence": sc["sequence"],
+                            "quantity": sc["quantity"],
+                            "offered_date": sc["offered_date"],
+                            "deviation_days": sc["deviation_days"],
+                        }) for sc in l.get("schedule") or []
+                    ],
                 })
                 for l in lines
             ],
@@ -618,6 +699,15 @@ class AuctionBidLine(models.Model):
     landed_value = fields.Float(digits=(18, 6), readonly=True)
     norm_value = fields.Float(digits=(18, 6), readonly=True, index=True)
     composite_score = fields.Float(digits=(18, 6), readonly=True)
+
+    # Offered delivery schedule. Empty means the bidder accepted the
+    # required schedule as stated, or the line carries no schedule.
+    schedule_ids = fields.One2many(
+        "auction.bid.line.schedule", "bid_line_id", readonly=True)
+    max_deviation_days = fields.Integer(
+        readonly=True,
+        help="Worst slippage across the offered tranches, frozen at "
+             "submission. Stage 10 feeds this into landed cost.")
 
     _sql_constraints = [
         ("bid_line_qty_positive", "CHECK(qty_offered > 0)",

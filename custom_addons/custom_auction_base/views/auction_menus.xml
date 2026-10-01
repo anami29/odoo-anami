@@ -20,7 +20,39 @@
               parent="menu_auction_root" action="action_auction_bid"
               sequence="40"/>
 
+    <menuitem id="menu_auction_evaluation" name="Opened Bids"
+              parent="menu_auction_root" action="action_auction_evaluation_line"
+              sequence="32"/>
+
+    <menuitem id="menu_auction_awards" name="Awards"
+              parent="menu_auction_root" action="action_auction_award"
+              sequence="35"/>
+
+    <menuitem id="menu_auction_openings" name="Envelope Openings"
+              parent="menu_auction_root" action="action_auction_opening"
+              sequence="45"/>
+
     <menuitem id="menu_auction_audit" name="Audit Log"
               parent="menu_auction_root" action="action_auction_audit"
               sequence="50"/>
+    <menuitem id="menu_auction_config" name="Configuration"
+              parent="menu_auction_root" sequence="90"
+              groups="custom_auction_base.group_auction_manager"/>
+
+    <menuitem id="menu_auction_config_templates" name="Event Templates"
+              parent="menu_auction_config" action="action_auction_event_template"
+              sequence="5"/>
+
+    <menuitem id="menu_auction_config_categories" name="Sourcing Categories"
+              parent="menu_auction_config" action="action_auction_category"
+              sequence="10"/>
+
+    <menuitem id="menu_auction_config_mechanisms" name="Mechanisms"
+              parent="menu_auction_config" action="action_auction_mechanism"
+              sequence="30"/>
+
+    <menuitem id="menu_auction_config_rules" name="Rule Sets"
+              parent="menu_auction_config" action="action_auction_rule_set"
+              sequence="20"/>
+
 </odoo>

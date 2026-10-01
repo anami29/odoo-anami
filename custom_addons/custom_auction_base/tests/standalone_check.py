@@ -24,6 +24,69 @@ def check(name, condition):
         FAILED.append(name)
 
 
+def _payload_id(value):
+    """Mirror of ``models.auction_event._payload_id``.
+
+    Duplicated deliberately: this script must run without Odoo on the path.
+    The check below fails if the two ever diverge in behaviour.
+    """
+    if value is None:
+        return None
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _check_payload_decode():
+    """Guard the defect that opened envelopes and staged nothing.
+
+    ``canonical_payload`` quantizes EVERY numeric leaf to a fixed-precision
+    string so the tamper-evidence hash is reproducible. A record id
+    therefore comes back as "42.000000". Looking that up in a dict keyed by
+    integer id misses every time, so the opening reported success and wrote
+    no evaluation rows at all. A silent zero is worse than a crash.
+    """
+    import json
+    import re
+
+    payload = {
+        "event": 7, "lot": 3, "participant": 11, "round": 1, "currency": 20,
+        "validity_date": "2026-10-30",
+        "lines": [{"line": 42, "price_unit": 1234.5, "qty_offered": 10,
+                   "schedule": [{"required": 5, "qty": 10,
+                                 "date": "2026-11-01"}]}],
+        "server_ts": "2026-09-30T10:00:00",
+    }
+    decoded = json.loads(
+        chain_svc.canonical_payload(payload).decode("utf-8"))["payload"]
+    item = decoded["lines"][0]
+
+    check("ids survive canonicalisation as strings",
+          isinstance(item["line"], str) and item["line"] == "42.000000")
+    check("raw id lookup would miss", {42: "x"}.get(item["line"]) is None)
+    check("_payload_id recovers the integer id", _payload_id(item["line"]) == 42)
+    check("_payload_id passes an integer through", _payload_id(42) == 42)
+    check("_payload_id tolerates a missing key", _payload_id(None) is None)
+    check("_payload_id refuses a non-numeric leaf",
+          _payload_id("not-a-number") is None)
+    check("prices decode to the bid value",
+          abs(float(item["price_unit"]) - 1234.5) < 1e-9)
+
+    # The staging code must not go back to a bare lookup.
+    src = open(os.path.join(os.path.dirname(__file__), "..", "models",
+                            "auction_event.py"), encoding="utf-8").read()
+    body = src.split("def _stage_evaluation_values", 1)[-1] \
+              .split("\n    def ", 1)[0]
+    check("staging uses _payload_id, not a bare lookup",
+          "_payload_id(" in body
+          and not re.search(r"by_line\.get\(\s*item\[", body))
+    check("staging refuses to stage nothing silently",
+          "if items and not staged" in body)
+
+
 def main():
     print("\nHash chain")
     recs, prev = [], chain_svc.ZERO64
@@ -103,6 +166,9 @@ def main():
         check("no plaintext in error path", False)
     except crypto_svc.CryptoError as exc:
         check("no plaintext in error path", "429" not in str(exc))
+
+    print("\nOpening — payload decode")
+    _check_payload_decode()
 
     print("\n%d checks failed\n" % len(FAILED))
     return 1 if FAILED else 0

@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_auction_award_list" model="ir.ui.view">
+        <field name="name">auction.award.list</field>
+        <field name="model">auction.award</field>
+        <field name="arch" type="xml">
+            <list string="Awards">
+                <field name="name"/>
+                <field name="event_id"/>
+                <field name="direction"/>
+                <field name="vendor_count"/>
+                <field name="total_value" sum="Total"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'generated'"
+                       decoration-danger="state == 'error'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auction_award_form" model="ir.ui.view">
+        <field name="name">auction.award.form</field>
+        <field name="model">auction.award</field>
+        <field name="arch" type="xml">
+            <form string="Award">
+                <header>
+                    <button name="action_approve" type="object" string="Approve"
+                            class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_generate_documents" type="object"
+                            string="Generate Documents" class="oe_highlight"
+                            invisible="state not in ('approved', 'error')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,approved,generated"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_documents" type="object"
+                                class="oe_stat_button" icon="fa-file-text-o"
+                                invisible="document_count == 0">
+                            <field name="document_count" widget="statinfo"
+                                   string="Documents"/>
+                        </button>
+                    </div>
+                    <div class="alert alert-danger" role="alert"
+                         invisible="state != 'error'">
+                        Document generation failed. The award itself is
+                        unaffected and this can be retried.
+                        <field name="generation_error" readonly="1" nolabel="1"/>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="event_id"/>
+                            <field name="direction"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="total_value"/>
+                            <field name="vendor_count"/>
+                            <field name="approved_by" readonly="1"
+                                   invisible="state == 'draft'"/>
+                            <field name="approved_on" readonly="1"
+                                   invisible="state == 'draft'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Allocation">
+                            <div class="text-muted mb-2">
+                                One row per line item. Pick the winning bidder
+                                and the bid line that set the price. Tick
+                                'Not the best bid' where you are not awarding
+                                to the best offer; a written justification is
+                                then required.
+                            </div>
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="event_id" column_invisible="1"/>
+                                    <field name="lot_id" readonly="evaluation_line_id"/>
+                                    <field name="line_id"/>
+                                    <!-- Pick the opened bid, not the price.
+                                         Everything else on the row comes
+                                         from the opening. -->
+                                    <field name="evaluation_line_id"
+                                           string="Opened bid"
+                                           options="{'no_create': True, 'no_open': True}"/>
+                                    <field name="evaluation_rank" string="Rank"
+                                           decoration-success="evaluation_rank == 1"
+                                           decoration-warning="evaluation_rank &gt; 1"/>
+                                    <field name="participant_id"
+                                           readonly="evaluation_line_id"/>
+                                    <field name="bid_line_id" optional="hide"
+                                           readonly="evaluation_line_id"/>
+                                    <field name="qty_awarded"/>
+                                    <field name="price_unit"
+                                           readonly="evaluation_line_id"/>
+                                    <field name="awarded_value" sum="Total"/>
+                                    <field name="is_override"/>
+                                    <field name="justification"
+                                           optional="show"
+                                           required="is_override"/>
+                                    <field name="order_id" optional="hide"
+                                           readonly="1"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Recommendation">
+                            <field name="recommendation"
+                                   placeholder="Internal reasoning. Never shown to a bidder."
+                                   readonly="state != 'draft'"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_auction_award" model="ir.actions.act_window">
+        <field name="name">Awards</field>
+        <field name="res_model">auction.award</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ========== linkage back from the transactional documents ========= -->
+    <record id="view_purchase_order_form_auction" model="ir.ui.view">
+        <field name="name">purchase.order.form.auction</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_view_auction_event" type="object"
+                        class="oe_stat_button" icon="fa-gavel"
+                        invisible="not auction_event_id">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Auction</span>
+                    </div>
+                </button>
+            </div>
+            <field name="partner_ref" position="after">
+                <field name="auction_event_id" readonly="1"
+                       invisible="not auction_event_id"/>
+                <field name="auction_award_id" readonly="1"
+                       invisible="not auction_award_id"/>
+                <field name="auction_lot_id" readonly="1"
+                       invisible="not auction_lot_id"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_sale_order_form_auction" model="ir.ui.view">
+        <field name="name">sale.order.form.auction</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_view_auction_event" type="object"
+                        class="oe_stat_button" icon="fa-gavel"
+                        invisible="not auction_event_id">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Auction</span>
+                    </div>
+                </button>
+            </div>
+            <field name="client_order_ref" position="after">
+                <field name="auction_event_id" readonly="1"
+                       invisible="not auction_event_id"/>
+                <field name="auction_award_id" readonly="1"
+                       invisible="not auction_award_id"/>
+                <field name="auction_lot_id" readonly="1"
+                       invisible="not auction_lot_id"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>

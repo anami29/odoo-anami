@@ -22,5 +22,12 @@
             <field name="padding">7</field>
             <field name="company_id" eval="False"/>
         </record>
+        <record id="seq_auction_award" model="ir.sequence">
+            <field name="name">Auction Award</field>
+            <field name="code">auction.award</field>
+            <field name="prefix">AWD/%(year)s/</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
     </data>
 </odoo>

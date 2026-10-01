@@ -89,4 +89,9 @@
          ================================================================== -->
     <function model="res.users" name="_auction_grant_initial_access"/>
 
+    <!-- Mechanisms mirror the strategy registry. Syncing here rather than in
+         a data file means registering a new strategy makes it selectable
+         without anyone editing XML. -->
+    <function model="auction.mechanism" name="_sync_from_registry"/>
+
 </odoo>

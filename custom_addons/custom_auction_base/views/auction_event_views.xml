@@ -8,7 +8,7 @@
                 <field name="name"/>
                 <field name="title"/>
                 <field name="direction"/>
-                <field name="mechanism"/>
+                <field name="mechanism_id" options="{'no_create': True}"/>
                 <field name="category_id"/>
                 <field name="bid_close_datetime"/>
                 <field name="owner_id"/>
@@ -28,11 +28,56 @@
                     <button name="action_open_bidding" type="object"
                             string="Open Bidding"
                             invisible="state != 'published'"/>
+                    <button name="action_close_bidding" type="object"
+                            string="Close Bidding"
+                            confirm="Close bidding now? No further bid can be
+                                     accepted on this event."
+                            invisible="state != 'live'"/>
+
+                    <!-- Dual control. Two DIFFERENT people must click, and
+                         the second button only appears once the first has
+                         been used, by somebody else. -->
+                    <button name="action_request_opening" type="object"
+                            string="Request Opening" icon="fa-unlock-alt"
+                            class="oe_highlight"
+                            invisible="state != 'bidding_closed' or opening_requested_by"
+                            groups="custom_auction_base.group_auction_opener"/>
+                    <button name="action_confirm_opening" type="object"
+                            string="Confirm Opening" icon="fa-unlock"
+                            class="oe_highlight"
+                            confirm="Confirm the opening? Envelopes are
+                                     decrypted once and the act is recorded
+                                     permanently against both openers."
+                            invisible="state != 'bidding_closed' or not opening_requested_by"
+                            groups="custom_auction_base.group_auction_opener"/>
+
+                    <button name="action_view_evaluation" type="object"
+                            string="Opened Bids" icon="fa-list-ol"
+                            invisible="evaluation_count == 0"/>
+                    <field name="evaluation_count" invisible="1"/>
+                    <button name="action_create_award" type="object"
+                            string="Create Award" class="oe_highlight"
+                            icon="fa-gavel"
+                            invisible="state not in ('bidding_closed','under_evaluation')"/>
+                    <button name="action_view_awards" type="object"
+                            string="Awards" icon="fa-list"
+                            invisible="award_count == 0"/>
+                    <field name="award_count" invisible="1"/>
+                    <button name="action_save_as_template" type="object"
+                            string="Save as Template" icon="fa-clone"/>
                     <button name="action_cancel" type="object" string="Cancel"
                             invisible="state in ('awarded','cancelled')"/>
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet>
+                    <div class="alert alert-warning" role="status"
+                         invisible="state != 'bidding_closed' or not opening_requested_by">
+                        <field name="opening_requested_by" readonly="1"
+                               class="oe_inline" nolabel="1"/>
+                        has requested the envelope opening. A second,
+                        different authorised opener must now confirm it.
+                        The same person cannot do both.
+                    </div>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                         <h2><field name="title" placeholder="Event title"/></h2>
@@ -40,7 +85,7 @@
                     <group>
                         <group string="Definition">
                             <field name="direction"/>
-                            <field name="mechanism"/>
+                            <field name="mechanism_id" options="{'no_create': True}"/>
                             <field name="structure"/>
                             <field name="category_id"/>
                             <field name="rule_set_id"/>
@@ -78,8 +123,8 @@
                     </group>
                     <notebook>
                         <page string="Lots">
-                            <field name="lot_ids">
-                                <list editable="bottom">
+                            <field name="lot_ids" context="{'form_view_ref': 'custom_auction_base.view_auction_lot_form'}">
+                                <list>
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="award_basis"/>
@@ -102,6 +147,38 @@
                                     <field name="classification"/>
                                     <field name="state"/>
                                     <field name="technically_qualified"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Opening"
+                              groups="custom_auction_base.group_auction_event_owner">
+                            <group>
+                                <group string="Nominated openers">
+                                    <field name="opener_a_id"
+                                           readonly="state not in ('draft','under_approval','approved','published','live')"/>
+                                    <field name="opener_b_id"
+                                           readonly="state not in ('draft','under_approval','approved','published','live')"/>
+                                    <div class="text-muted" colspan="2">
+                                        Optional. Leave both empty and any two
+                                        distinct authorised openers may act.
+                                        Name them and only those two may.
+                                    </div>
+                                </group>
+                                <group string="Status">
+                                    <field name="opening_requested_by" readonly="1"/>
+                                    <field name="opening_requested_on" readonly="1"/>
+                                    <field name="evaluation_count" readonly="1"/>
+                                </group>
+                            </group>
+                            <field name="opening_ids" readonly="1">
+                                <list string="Openings">
+                                    <field name="opened_at"/>
+                                    <field name="envelope_type"/>
+                                    <field name="opener_a_id"/>
+                                    <field name="opener_b_id"/>
+                                    <field name="envelopes_opened"/>
+                                    <field name="envelopes_withheld"/>
+                                    <field name="key_fingerprint"/>
                                 </list>
                             </field>
                         </page>
