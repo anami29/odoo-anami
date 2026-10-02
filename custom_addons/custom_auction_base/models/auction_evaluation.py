@@ -37,26 +37,43 @@ class AuctionEvaluationLine(models.Model):
                               index=True)
     currency_id = fields.Many2one(related="event_id.currency_id")
 
-    price_unit = fields.Float(digits=(18, 6), readonly=True)
-    qty_offered = fields.Float(digits=(18, 6), readonly=True)
-    line_value = fields.Monetary(compute="_compute_value", store=True)
+    # aggregator=None throughout. Odoo sums a Float column by default in a
+    # grouped list, and the default grouping here is BY LINE -- so the
+    # column headed "Unit price" showed the five bidders' unit prices added
+    # together, and the footer showed every bid on the event summed into one
+    # total. Both are numbers that mean nothing and read as if they mean
+    # something. You buy one of these offers, never their sum. FIX-015.
+    price_unit = fields.Float(digits=(18, 6), readonly=True, aggregator=None)
+    qty_offered = fields.Float(digits=(18, 6), readonly=True, aggregator=None)
+    # line_value KEEPS its aggregator, unlike the columns above. The pivot
+    # declares it as its measure, and a measure with no aggregator leaves
+    # the pivot with nothing to compute -- it fell over client side with a
+    # bare "Something went wrong". In the pivot each cell is a single bid,
+    # and a column total is that bidder's total quote, which is exactly the
+    # number an evaluator wants. In the grouped list the group total is the
+    # sum of the bids received on that line; it is labelled "Bid value" so
+    # it does not read as the cost of the line.
+    line_value = fields.Monetary(string="Bid value",
+                                 compute="_compute_value", store=True)
     norm_value = fields.Float(digits=(18, 6), readonly=True, index=True,
+                              aggregator=None,
                               help="What ranking reads. Stage 10 replaces "
                                    "this with landed cost.")
-    max_deviation_days = fields.Integer(readonly=True)
+    max_deviation_days = fields.Integer(readonly=True, aggregator=None)
 
-    rank = fields.Integer(compute="_compute_rank",
+    rank = fields.Integer(compute="_compute_rank", aggregator=None,
                           help="Position on this line. Computed on read, "
                                "never stored: a stored rank goes stale the "
                                "moment anything around it changes.")
-    display_name_computed = fields.Char(compute="_compute_display")
+    # Stored for the same reason as auction.participant. FIX-017.
+    display_name_computed = fields.Char(compute="_compute_display", store=True)
 
     @api.depends("price_unit", "qty_offered")
     def _compute_value(self):
         for rec in self:
             rec.line_value = rec.price_unit * rec.qty_offered
 
-    @api.depends("participant_id", "line_id")
+    @api.depends("participant_id.display_name_computed", "line_id.name")
     def _compute_display(self):
         for rec in self:
             rec.display_name_computed = "%s - %s" % (

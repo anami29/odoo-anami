@@ -16,19 +16,20 @@ Scope of this module
 * Bid acceptance critical path: row lock, clock_timestamp(), idempotency
 * Rules engine and mechanism strategy registry
 * Three sealed mechanisms: sealed_rev, sealed_rev_nr, sealed_fwd
-* Offline bid security workflow (NEFT/RTGS/cheque/DD/BG/FDR)
+* Offline bid security workflow (NEFT/RTGS/cheque/DD/BG/FDR), including
+  statutory exemptions for MSE and DPIIT-recognised bidders
 * Immutable audit log
 * Event templates with locked, immutable field sets
 * Phased delivery schedules, required and offered
-* Minimal award: read the opened prices, pick the winner, generate the
-  purchase or sale order with three-level linkage back to the bid
+* Minimal award: opened prices, manual winner selection, purchase or sale
+  order generation with three-level linkage back to the bid
 
 NOT in this module: live and clock mechanisms, OWL consoles, websocket
 transport, landed-cost scoring and the formal comparative statement,
 spreadsheet round-trip. Ranking here is on bid price alone; normalisation
 for duty, freight and payment terms is the next stage. See SCP-AUC-001.
 """,
-    "version": "18.0.1.0.8",
+    "version": "18.0.1.0.9",
     "category": "Purchases",
     "author": "Riamona Luxury and Fashion Brands",
     "website": "https://www.riamona.com",

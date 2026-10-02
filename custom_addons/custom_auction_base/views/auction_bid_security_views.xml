@@ -31,14 +31,28 @@
                     <button name="action_declare" type="object" string="Declare"
                             class="oe_highlight"
                             invisible="state not in ('draft','rejected')"/>
+                    <!-- Non-monetary modes terminate at Exemption granted and
+                         never pass through Received or Verified. There is no
+                         money to receive. FIX-010. -->
+                    <button name="action_grant_exemption" type="object"
+                            string="Grant Exemption" class="oe_highlight"
+                            groups="custom_auction_base.group_auction_finance"
+                            confirm="Confirm the registration evidence has been
+                                     sighted and is current at the bid date.
+                                     An exemption qualifies the bidder for
+                                     award as fully as a cleared instrument."
+                            invisible="mode not in ('exempt','declaration') or
+                                       state not in ('draft','declared','rejected')"/>
                     <button name="action_mark_received" type="object"
                             string="Mark Received"
                             groups="custom_auction_base.group_auction_finance"
-                            invisible="state != 'declared'"/>
+                            invisible="state != 'declared' or
+                                       mode in ('exempt','declaration')"/>
                     <button name="action_verify" type="object" string="Verify"
                             class="oe_highlight"
                             groups="custom_auction_base.group_auction_finance"
-                            invisible="state not in ('received','in_clearing')"/>
+                            invisible="state not in ('received','in_clearing') or
+                                       mode in ('exempt','declaration')"/>
                     <button name="action_reject" type="object" string="Reject"
                             groups="custom_auction_base.group_auction_finance"
                             invisible="state not in ('declared','received','in_clearing')"/>
@@ -56,7 +70,7 @@
                             groups="custom_auction_base.group_auction_finance"
                             invisible="state != 'verified'"/>
                     <field name="state" widget="statusbar"
-                           statusbar_visible="draft,declared,received,verified"/>
+                           statusbar_visible="draft,declared,received,verified,exempted"/>
                 </header>
                 <sheet>
                     <group>

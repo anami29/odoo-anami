@@ -86,8 +86,20 @@ class AuctionAward(models.Model):
                 award.line_ids.mapped("participant_id.partner_id"))
 
     def _compute_documents(self):
+        """sudo on the COUNT.
+
+        order_ids and sale_order_ids point at purchase.order and sale.order.
+        An auction event owner or award approver need not hold a purchase or
+        sales licence, and without one, reading those One2many fields raised
+        AccessError -- so the award form could not be OPENED at all by the
+        very people who approve awards. A count of generated documents is
+        not sensitive; the smart button that navigates to them stays
+        group-guarded, so nobody is dropped into a view they cannot read.
+        FIX-016.
+        """
         for award in self:
-            award.document_count = len(award.order_ids) + len(award.sale_order_ids)
+            a = award.sudo()
+            award.document_count = len(a.order_ids) + len(a.sale_order_ids)
 
     # ------------------------------------------------------------------
     def action_approve(self):
@@ -152,7 +164,10 @@ class AuctionAward(models.Model):
     def _generate_purchase_orders(self):
         """One draft purchase order per vendor per lot. BR-INT-001."""
         self.ensure_one()
-        Order = self.env["purchase.order"]
+        # The authority for this document is the APPROVED AWARD, not the
+        # approver's purchase licence. An SME approver is frequently a
+        # director who holds no purchase rights at all. FIX-016.
+        Order = self.env["purchase.order"].sudo()
 
         grouped = {}
         for line in self.line_ids:
@@ -232,7 +247,10 @@ class AuctionAward(models.Model):
         Overlapping entries are end-dated, never deleted: a price that
         applied last quarter is a fact about last quarter.
         """
-        Supplier = self.env["product.supplierinfo"]
+        # sudo, for the same reason as the orders above: product.supplierinfo
+        # requires Purchase Administrator, and an award approver is not one.
+        # The authority is the approved award. FIX-016.
+        Supplier = self.env["product.supplierinfo"].sudo()
         today = fields.Date.today()
         for line in lines:
             product = line.line_id.product_id
@@ -258,7 +276,7 @@ class AuctionAward(models.Model):
     def _generate_sale_orders(self):
         """One draft sale order per buyer per lot. BR-INT-006."""
         self.ensure_one()
-        Order = self.env["sale.order"]
+        Order = self.env["sale.order"].sudo()   # see FIX-016 above
         by_key = {}
         for line in self.line_ids:
             by_key.setdefault(

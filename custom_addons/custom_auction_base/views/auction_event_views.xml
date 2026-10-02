@@ -130,9 +130,9 @@
                                     <field name="award_basis"/>
                                     <field name="all_or_nothing"/>
                                     <field name="reserve_price"
-                                           column_invisible="parent.direction == 'reverse'"/>
+                                           column_invisible="parent.direction == 'reverse'" digits="[18, 2]"/>
                                     <field name="ceiling_price"
-                                           column_invisible="parent.direction == 'forward'"/>
+                                           column_invisible="parent.direction == 'forward'" digits="[18, 2]"/>
                                     <field name="disclose_limit"/>
                                     <field name="close_datetime"/>
                                     <field name="state"/>

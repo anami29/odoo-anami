@@ -23,7 +23,14 @@ class AuctionParticipant(models.Model):
     commercial_partner_id = fields.Many2one(
         related="partner_id.commercial_partner_id", store=True, index=True)
     alias = fields.Char(help="Bidder A, Bidder B. Lifted at award.")
-    display_name_computed = fields.Char(compute="_compute_display")
+    # STORED. This is _rec_name, so every name_search on a participant goes
+    # through it -- and a non-stored field cannot be searched, so typing a
+    # bidder's name into any search box raised "Non-stored field
+    # auction.participant.display_name_computed cannot be searched" and the
+    # view fell over. Every dependency is stored, so storing this is safe,
+    # and lifting anonymity at award recomputes it for that event. FIX-017.
+    display_name_computed = fields.Char(
+        compute="_compute_display", store=True, index=True)
 
     state = fields.Selection(
         [("invited", "Invited"), ("viewed", "Viewed"),

@@ -81,11 +81,24 @@ class AuctionBidSecurity(models.Model):
     exemption_reg_no = fields.Char()
     exemption_valid_to = fields.Date()
 
-    display_reference = fields.Char(compute="_compute_display_reference")
+    # Stored: this is _rec_name, and a non-stored _rec_name cannot be
+    # searched, so looking a security up by its UTR or cheque number failed.
+    # FIX-017.
+    display_reference = fields.Char(
+        compute="_compute_display_reference", store=True, index=True)
 
     state = fields.Selection(
         [("draft", "Draft"),
          ("declared", "Declared"),
+         # Non-monetary modes terminate HERE and never pass through
+         # received or verified. Without this state an MSE or DPIIT
+         # bidder could not bid and could not be awarded: permits_bidding
+         # wanted 'declared' and permits_opening wanted 'verified', and
+         # nothing moved an exemption to either. The only way through was
+         # for finance to record receipt and verification of money that was
+         # never required, which is a false entry in the audit trail.
+         # FIX-010.
+         ("exempted", "Exemption granted"),
          ("received", "Received"),
          ("in_clearing", "In clearing"),
          ("verified", "Verified"),
@@ -197,13 +210,53 @@ class AuctionBidSecurity(models.Model):
     def permits_bidding(self):
         """Gating for content access and submission. SCP-AUC-001 #4.3."""
         self.ensure_one()
-        return self.state in ("declared", "received", "in_clearing",
-                              "verified", "converted")
+        return self.state in ("declared", "exempted", "received",
+                              "in_clearing", "verified", "converted")
 
     def permits_opening(self):
-        """Gating for inclusion in the opening and for award."""
+        """Gating for inclusion in the opening and for award.
+
+        ``exempted`` qualifies here as fully as ``verified`` does. GFR 2017
+        Rule 170 exempts micro and small enterprises and DPIIT-recognised
+        startups from bid security as a legal obligation, so an exemption
+        cannot be a lesser standing at award than a cleared cheque.
+        """
         self.ensure_one()
-        return self.state in ("verified", "converted")
+        return self.state in ("exempted", "verified", "converted")
+
+    def action_grant_exemption(self):
+        """Finance records the exemption against evidence. FIX-010.
+
+        Deliberately a FINANCE action and not a bidder one. The field help
+        on exemption_basis says an exemption must be evidenced rather than
+        self-declared, and a bidder ticking a box is self-declaration. What
+        finance checks is the Udyam or DPIIT registration number, current at
+        the bid date.
+        """
+        for rec in self:
+            if rec.mode not in NON_MONETARY_MODES:
+                raise UserError(_(
+                    "%s is a monetary instrument. Use Mark Received and "
+                    "Verify rather than an exemption.")
+                    % dict(rec._fields["mode"].selection).get(rec.mode))
+            if rec.state not in ("draft", "declared", "rejected"):
+                raise UserError(_(
+                    "This record is %s and cannot be moved to an exemption.")
+                    % rec.state)
+            if rec.mode == "exempt" and not rec.exemption_basis:
+                raise UserError(_(
+                    "Record the exemption basis and its registration "
+                    "evidence first. GFR Rule 170 requires the claim to be "
+                    "evidenced, not self-declared."))
+            rec.write({
+                "state": "exempted",
+                "declared_date": rec.declared_date or fields.Datetime.now(),
+                "verified_date": fields.Datetime.now(),
+                "verified_by": self.env.user.id,
+                "amount_declared": 0.0,
+                "rejection_reason": False,
+            })
+            rec._audit("bid_security_exemption_granted")
 
     # ------------------------------------------------------------------
     # Finance actions

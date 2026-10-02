@@ -22,8 +22,44 @@ NUMERIC_COLUMNS = [
 ]
 
 
+CRON_XMLIDS = [
+    "custom_auction_base.cron_close_due_lots",
+    "custom_auction_base.cron_close_expired_bidding",
+    "custom_auction_base.cron_security_deadline",
+]
+
+
+def _fix_cron_repeat(env):
+    """Make the crons repeat for ever on every Odoo 18 build.
+
+    ``ir.cron.numbercall`` was removed from the 18.0 branch partway through
+    its life. Declaring it in XML breaks the install on a current checkout;
+    omitting it leaves a build that still HAS the column on that column's
+    default, which on some builds is 1 -- a cron that runs once and stops,
+    silently, which is worse than a failed install.
+
+    So the XML omits it and this puts it back where the column exists. One
+    package, both builds. FIX-008.
+    """
+    env.cr.execute(
+        "SELECT 1 FROM information_schema.columns "
+        " WHERE table_name = 'ir_cron' AND column_name = 'numbercall'")
+    if not env.cr.fetchone():
+        return
+    ids = []
+    for xmlid in CRON_XMLIDS:
+        rec = env.ref(xmlid, raise_if_not_found=False)
+        if rec:
+            ids.append(rec.id)
+    if ids:
+        env.cr.execute(
+            "UPDATE ir_cron SET numbercall = -1 WHERE id IN %s", (tuple(ids),))
+        _logger.info("Auction engine: numbercall set to -1 on %d crons", len(ids))
+
+
 def post_init_hook(env):
     """Verify numeric typing and required indexes after install."""
+    _fix_cron_repeat(env)
     failures = []
     for table, column in NUMERIC_COLUMNS:
         env.cr.execute(

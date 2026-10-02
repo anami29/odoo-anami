@@ -73,14 +73,22 @@ class AuctionEvent(models.Model):
         help="Internal only. Excluded from every portal serialiser by "
              "allowlist, not by view omission.")
 
-    publish_datetime = fields.Datetime(tracking=True)
-    bid_open_datetime = fields.Datetime(required=True, tracking=True)
-    bid_close_datetime = fields.Datetime(required=True, index=True, tracking=True)
+    # Explicit labels. Without them Odoo derives "Bid Open Datetime" and
+    # "Comm Open Datetime" from the field names, and the screen then
+    # disagrees with every document that calls them Bid Open and Commercial
+    # Opening. A trainee reading the manual beside the screen should not
+    # have to translate. FIX-012.
+    publish_datetime = fields.Datetime(string="Published", tracking=True)
+    bid_open_datetime = fields.Datetime(
+        string="Bid Open", required=True, tracking=True)
+    bid_close_datetime = fields.Datetime(
+        string="Bid Close", required=True, index=True, tracking=True)
     tech_close_datetime = fields.Datetime(
+        string="Technical Close",
         help="AMD-AUC-001 AMD-01: required where structure is two_envelope "
              "and the commercial stage is live.")
-    tech_open_datetime = fields.Datetime()
-    comm_open_datetime = fields.Datetime()
+    tech_open_datetime = fields.Datetime(string="Technical Opening")
+    comm_open_datetime = fields.Datetime(string="Commercial Opening")
 
     state = fields.Selection(
         [("draft", "Draft"), ("under_approval", "Under approval"),
@@ -398,11 +406,29 @@ class AuctionEvent(models.Model):
                         "early": early,
                         "minutes_early": shortfall})
             if early:
-                ev.message_post(body=_(
-                    "Bidding closed %(mins)d minutes before the published "
-                    "deadline of %(due)s, by %(user)s.",
-                    mins=shortfall, due=ev.bid_close_datetime,
-                    user=ev.env.user.name))
+                # _message_log, not message_post, and inside a savepoint.
+                #
+                # message_post sends a notification, which on an instance
+                # with no outgoing mail server configured -- which is most
+                # SME instances on day one -- raises "Unable to send
+                # message, please configure the sender's email address" and
+                # rolls back the entire close. The event then stayed live
+                # and the operator saw only a mail error.
+                #
+                # The audit entry above is the authoritative record. The
+                # chatter note is a convenience and must never be able to
+                # fail the operation it is describing. FIX-013.
+                try:
+                    with ev.env.cr.savepoint():
+                        ev._message_log(body=_(
+                            "Bidding closed %(mins)d minutes before the "
+                            "published deadline of %(due)s, by %(user)s.",
+                            mins=shortfall, due=ev.bid_close_datetime,
+                            user=ev.env.user.name))
+                except Exception:
+                    _logger.warning(
+                        "Chatter note failed on early close of event %s; the "
+                        "audit entry is unaffected.", ev.id, exc_info=True)
 
     @api.model
     def _cron_close_expired_bidding(self):
@@ -520,7 +546,10 @@ class AuctionEvent(models.Model):
             "name": _("Opened Bids"),
             "res_model": "auction.evaluation.line",
             "domain": [("event_id", "=", self.id)],
-            "view_mode": "list,form",
+            # pivot included: the menu action offers it and this one did
+            # not, so the side-by-side comparison was unreachable from the
+            # event itself -- which is where an evaluator starts.
+            "view_mode": "list,pivot,form",
             "context": {"search_default_group_line": 1},
         }
 

@@ -577,7 +577,16 @@ class AuctionBid(models.Model):
         """Create through super() -- write() is blocked but create() is not."""
         sealed = strategy.sealed
         bid = super(AuctionBid, self.sudo()).create({
-            "reference": self.env["ir.sequence"].next_by_code("auction.bid") or "/",
+            # sudo() on the SEQUENCE, not just on the create. A portal bidder
+            # has no ACL on ir.sequence, and this dict is evaluated in the
+            # caller's environment before the sudoed create ever runs, so
+            # without this every portal submission died with AccessError on
+            # 'Sequence'. It survived because no portal user had yet reached
+            # this line: the portal bid form is stage 13, and internal staff
+            # doing offline entry hold sequence access through
+            # base.group_user. FIX-011.
+            "reference": self.env["ir.sequence"].sudo().next_by_code(
+                "auction.bid") or "/",
             "event_id": lot.event_id.id,
             "lot_id": lot.id,
             "participant_id": participant.id,

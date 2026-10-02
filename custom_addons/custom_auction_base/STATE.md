@@ -1,6 +1,6 @@
 # STATE
 
-Last updated: 2026-09-30   Stage: 2, 4, 7, 11-minimal, 15   Version: 18.0.1.0.8
+Last updated: 2026-10-02   Stage: 2, 4, 6, 7, 10-minimal, 11-minimal, 15   Version: 18.0.1.0.9
 
 ## Install status
 
@@ -175,6 +175,108 @@ Defect found on first install, fixed in `security/auction_groups.xml`:
            via action_new_version. Save an existing event back as a template
            per BR-TPL-012, with bids and submissions excluded.
 
+## First RUNTIME install, 2026-10-02
+
+Everything before this date was verified statically. On 2026-10-02 the module
+was installed into a real Odoo 18.0 Community checkout (commit 32a1f1eb) with
+PostgreSQL 16, seeded with a full worked event, and driven through the entire
+flow in a browser. Ten defects surfaced that no amount of reading had found.
+Every one of them is listed below, because the pattern matters more than the
+individual fixes: NONE of them were logic errors. They were all places where
+the code met Odoo, or met a user who did not hold every permission.
+
+  FIX-008  `ir.cron.numbercall` was removed from the 18.0 branch partway
+           through its life. Declaring it broke the install outright on a
+           current checkout. It is omitted from the XML now, and
+           `hooks.py` restores it where the column still exists -- a build
+           that HAS the column defaults it to 1 on some versions, which is
+           a cron that runs once and then stops, silently. One package,
+           both builds.
+
+  FIX-009  `parent_path` was declared with `unaccent=False`, which is not a
+           valid parameter there. Three warnings on every boot.
+
+  FIX-010  An MSE or DPIIT-exempt bidder COULD NOT BID AND COULD NOT BE
+           AWARDED. `permits_bidding` wanted `declared` and
+           `permits_opening` wanted `verified`, and nothing moved an
+           exemption to either, so the only route through was for finance
+           to record receipt and verification of money that was never
+           required -- a false entry in the audit trail. Added an
+           `exempted` state and `action_grant_exemption`, a finance action
+           because GFR Rule 170 requires the claim to be evidenced rather
+           than self-declared. This is a legal obligation for Indian
+           deployments, not a preference.
+
+  FIX-011  NO PORTAL BIDDER COULD EVER SUBMIT A BID. `_insert_ledger` read
+           the sequence through `self.env`, outside the sudo on the create,
+           and a portal user has no ACL on `ir.sequence`. Every submission
+           died with AccessError on 'Sequence'. It survived because no
+           portal user had reached that line: the portal bid form is stage
+           13, and internal staff doing offline entry hold sequence access
+           through `base.group_user`.
+
+  FIX-012  Odoo derived "Bid Open Datetime" and "Comm Open Datetime" from
+           the field names, so the screen disagreed with every document
+           that calls them Bid Open and Commercial Opening. Explicit labels.
+
+  FIX-013  Closing an event early called `message_post`, which sends a
+           notification, which on an instance with no outgoing mail server
+           -- most SME instances on day one -- raised a mail error and
+           ROLLED BACK THE CLOSE. The event stayed live and the operator
+           saw only "please configure the sender's email address". Now
+           `_message_log` inside a savepoint; the audit entry is the
+           authoritative record and the chatter note can never fail the
+           operation it describes.
+
+  FIX-014  EVERY OBSERVER-DERIVED ROLE WAS LOCKED OUT OF THE EVENT FORM.
+           `auction.lot`, `auction.line`, `auction.section`,
+           `auction.participant` and three others had ACL rows for event
+           owners and bidders and none for observers -- and Envelope
+           Opener, Bid Security Finance, Award Approver and Evaluator all
+           imply Observer and nothing more. The event form shows the Lots
+           tab, so it raised AccessError for all four. The dual-control
+           opening was unreachable by the only people allowed to perform
+           it. Ten read-only rows added.
+
+  FIX-015  The Opened Bids list summed `price_unit` across bidders in its
+           group headers, because Odoo aggregates a Float column by default
+           and the default grouping is by line. The column headed "Unit
+           price" showed five bidders' unit prices added together.
+           `aggregator=None` on the columns where a sum means nothing;
+           `line_value` keeps its aggregator because the pivot needs a
+           measure and each pivot cell is a single bid.
+
+  FIX-016  An award approver who held no purchase licence could not OPEN
+           the award form, because `_compute_documents` read a One2many to
+           `purchase.order`. Generation then failed on
+           `product.supplierinfo`, which needs Purchase Administrator. The
+           authority for these documents is the approved award, not the
+           approver's purchase rights: counts and creation are sudo, and
+           the smart button that navigates to the orders is group-guarded
+           so nobody is dropped into a view they cannot read.
+
+  FIX-017  `_rec_name` pointed at a NON-STORED computed field on
+           `auction.participant`, `auction.evaluation.line` and
+           `auction.bid.security`. A non-stored field cannot be searched,
+           so typing a bidder's name or a UTR into any search box raised
+           "Non-stored field ... cannot be searched" and the view fell
+           over. All three are stored now; every dependency was already
+           stored, and lifting anonymity at award recomputes correctly.
+
+  FEAT-006 Display precision. Prices and quantities are stored
+           `numeric(18,6)` per TSD #3.3 and were being RENDERED at six
+           decimals, so a ceiling price read "2,400.000000". Storage is
+           unchanged; the views now ask for two.
+
+### What this says about the method
+
+Sixty-four gaps were found before build by walking journeys and worked
+cases. Three defects were found by static analysis. These ten were found by
+installing it and pressing the buttons, and nine of the ten are permission
+or framework-integration faults that no amount of reading the code would
+have surfaced, because the code is correct in isolation. A module that has
+never been run as a NON-ADMINISTRATOR has not been tested.
+
 ## Completed
 
 | Stage | Name | Status |
@@ -184,10 +286,10 @@ Defect found on first install, fixed in `security/auction_groups.xml`:
 | 4 | Bid acceptance critical path | Complete — lock, clock_timestamp, boundary retry, idempotency |
 | 5 | Rules engine and strategy registry | Partial — registry and 3 sealed strategies; hooks frozen |
 | 7 | Sealed envelope and opening | Complete — AES-GCM with AAD, dual control, minutes, staging to the evaluation set |
-| 6 | Closure | Complete for sealed — manual close plus a 2-minute cron that waits for every lot |
+| 6 | Closure | Complete for sealed — manual close plus a 2-minute cron that waits for every lot. Verified at runtime |
 | 10 | Evaluation | MINIMAL — opened values land in auction.evaluation.line, ranked on bid price. Landed cost NOT built |
 | 11 | Award and downstream | MINIMAL — manual winner selection, PO/SO generation, three-level linkage |
-| 15 | Bid security offline workflow | Complete |
+| 15 | Bid security offline workflow | Complete, including statutory exemption (FIX-010) |
 
 ## NOT started
 
@@ -256,6 +358,12 @@ reasoning about the code instead of reading it shipped FIX-003 and FIX-004.
     python3 tests/standalone_check.py    # chain + crypto + payload decode
     python3 tests/static_validate.py     # model/field/method/action coherence
     python3 tests/static_trace.py        # every hop of the award loop exists
+
+All three pass. They are necessary and, as the ten defects above show, NOT
+sufficient. Before any release, install into a real Odoo and walk the flow
+as each role -- in particular as a user who is ONLY an Envelope Opener and
+as a user who is ONLY an approver. Six of the ten were invisible to an
+administrator.
 
 ## Deviations from spec
 

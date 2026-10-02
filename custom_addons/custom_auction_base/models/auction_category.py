@@ -12,7 +12,10 @@ class AuctionCategory(models.Model):
     complete_name = fields.Char(compute="_compute_complete_name",
                                 recursive=True, store=True)
     parent_id = fields.Many2one("auction.category", ondelete="restrict", index=True)
-    parent_path = fields.Char(index=True, unaccent=False)
+    # Core declares this as fields.Char(index=True) and nothing else;
+    # unaccent= is not a valid parameter here and logs a warning on every
+    # boot. FIX-009.
+    parent_path = fields.Char(index=True)
     child_ids = fields.One2many("auction.category", "parent_id")
     product_category_id = fields.Many2one("product.category")
 

@@ -35,8 +35,11 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
+                        <!-- Navigating to the orders needs the licence that
+                             reads them; counting them does not. FIX-016. -->
                         <button name="action_view_documents" type="object"
                                 class="oe_stat_button" icon="fa-file-text-o"
+                                groups="purchase.group_purchase_user,sales_team.group_sale_salesman"
                                 invisible="document_count == 0">
                             <field name="document_count" widget="statinfo"
                                    string="Documents"/>
@@ -94,7 +97,7 @@
                                            readonly="evaluation_line_id"/>
                                     <field name="bid_line_id" optional="hide"
                                            readonly="evaluation_line_id"/>
-                                    <field name="qty_awarded"/>
+                                    <field name="qty_awarded" digits="[18, 2]"/>
                                     <field name="price_unit"
                                            readonly="evaluation_line_id"/>
                                     <field name="awarded_value" sum="Total"/>

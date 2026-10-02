@@ -53,7 +53,7 @@
                     <field name="line_ids">
                         <list create="false" edit="false" delete="false">
                             <field name="line_id"/>
-                            <field name="qty_offered"/>
+                            <field name="qty_offered" digits="[18, 2]"/>
                             <field name="price_unit"/>
                             <field name="norm_value"/>
                         </list>
