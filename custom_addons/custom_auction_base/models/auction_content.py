@@ -82,11 +82,21 @@ class AuctionLot(models.Model):
         record is never consulted for a running event.
         """
         self.ensure_one()
-        if self.rule_set_id:
-            return self.rule_set_id
-        if self.event_id.rule_snapshot_id:
-            return self.event_id.rule_snapshot_id
-        return self.event_id.rule_set_id
+        # sudo throughout. A rule set is the TERMS of the tender, which a
+        # bidder is entitled to be bound by, but a portal user holds no ACL
+        # on auction.rule.set -- so every portal submission died with
+        # "You are not allowed to access 'Auction Rule Set'" at the point
+        # the engine read its own configuration. The engine must not depend
+        # on the caller's permissions to read the rules it is enforcing.
+        # Granting bidders blanket read on rule sets would be wider: a rule
+        # set is shared across events, and snapshots of other events sit in
+        # the same table. FIX-018.
+        lot = self.sudo()
+        if lot.rule_set_id:
+            return lot.rule_set_id
+        if lot.event_id.rule_snapshot_id:
+            return lot.event_id.rule_snapshot_id
+        return lot.event_id.rule_set_id
 
     def _close(self, reason=None):
         """Idempotent closure. Safe to call from cron, from lazy evaluation

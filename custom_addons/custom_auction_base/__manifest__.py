@@ -23,13 +23,17 @@ Scope of this module
 * Phased delivery schedules, required and offered
 * Minimal award: opened prices, manual winner selection, purchase or sale
   order generation with three-level linkage back to the bid
+* Bidder portal: invitations, tender documents with upload, clarifications
+  published to all bidders without naming the asker, corrigenda, bidder
+  self-declared bid security, the sealed bid form with phased delivery
+  dates, submission receipts and withdrawal
 
 NOT in this module: live and clock mechanisms, OWL consoles, websocket
 transport, landed-cost scoring and the formal comparative statement,
 spreadsheet round-trip. Ranking here is on bid price alone; normalisation
 for duty, freight and payment terms is the next stage. See SCP-AUC-001.
 """,
-    "version": "18.0.1.0.9",
+    "version": "18.0.1.1.0",
     "category": "Purchases",
     "author": "Riamona Luxury and Fashion Brands",
     "website": "https://www.riamona.com",
@@ -40,6 +44,7 @@ for duty, freight and payment terms is the next stage. See SCP-AUC-001.
         "sale_management",
         "stock",
         "mail",
+        "portal",
         "product",
         "uom",
         "account",
@@ -61,7 +66,9 @@ for duty, freight and payment terms is the next stage. See SCP-AUC-001.
         "views/auction_bid_views.xml",
         "views/auction_bid_security_views.xml",
         "views/auction_participant_views.xml",
+        "views/auction_portal_backend_views.xml",
         "views/auction_menus.xml",
+        "views/portal_templates.xml",
     ],
     "installable": True,
     "application": True,

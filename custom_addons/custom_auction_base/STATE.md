@@ -1,6 +1,6 @@
 # STATE
 
-Last updated: 2026-10-02   Stage: 2, 4, 6, 7, 10-minimal, 11-minimal, 15   Version: 18.0.1.0.9
+Last updated: 2026-10-02   Stage: 2, 4, 6, 7, 10-min, 11-min, 12, 13, 15   Version: 18.0.1.1.0
 
 ## Install status
 
@@ -277,6 +277,78 @@ or framework-integration faults that no amount of reading the code would
 have surfaced, because the code is correct in isolation. A module that has
 never been run as a NON-ADMINISTRATOR has not been tested.
 
+## Bidder portal, 2026-10-02 (stages 12 and 13)
+
+Built and exercised against the live instance by a real portal user. Three
+models, one controller, one template file, one disclosure boundary.
+
+  FEAT-007 Stage 12. `/my/auctions` and `/my/auction/<id>`: invitations,
+           tender terms, lots, line items with their required delivery
+           phases, published documents with an upload form, clarifications,
+           corrigenda, and the bidder's own submission history.
+
+  FEAT-008 Stage 13. The sealed bid form: a price and quantity per line and
+           a date per delivery tranche, pre-filled with the required dates
+           so a bidder changes only what they cannot meet. Every validation
+           failure is reported at once and against the row that caused it,
+           per BR-BID-010. A receipt carrying the server timestamp, the
+           ledger position and the record fingerprint. Withdrawal before
+           close, which is a ledger state change and never a deletion.
+
+  FEAT-009 Bidder-declared bid security. The bidder enters their own UTR or
+           cheque number and it lands in finance's queue at Declared, which
+           already permits bidding. Nothing in the portal decides whether
+           the money arrived.
+
+  FEAT-010 Clarifications. A bidder asks; the buyer answers; the answer is
+           published to EVERY bidder and never names who asked. Verified
+           from a second bidder's session. A question may be withheld, and
+           the reason is recorded, because a question that simply vanishes
+           is what bidders complain about.
+
+  FEAT-011 Corrigenda. A material corrigendum voids the bids already
+           received, because they were made against different information,
+           and records how many. It may extend the deadline and can never
+           bring it forward -- a constraint, not a warning. Where a material
+           corrigendum extends by fewer than ten days, the CVC expectation
+           is noted on the record rather than enforced, since an SME event
+           under no statutory obligation may legitimately correct a typo.
+
+### The disclosure boundary
+
+`models/auction_portal_payload.py` is the only place that decides what a
+bidder may see. Controllers and templates receive PLAIN DICTS, never engine
+recordsets, because field omission in a template is not a security control:
+the next person to add a column has no way of knowing the field they reach
+for was deliberately left out.
+
+`tests/portal_disclosure_check.py` asserts it against a running instance.
+Seventeen checks pass today: eight denylist keys absent, the internal
+estimate and the undisclosed ceiling absent, identifier probing returns 404
+rather than another bidder's tender, and nothing crosses between two
+bidders' sessions.
+
+### Two more runtime defects
+
+  FIX-018  NO PORTAL BIDDER COULD SUBMIT. `lot._resolve_rules()` read
+           `auction.rule.set` in the caller's environment and a portal user
+           holds no ACL on it, so every submission died with "You are not
+           allowed to access 'Auction Rule Set'". Same class as FIX-011 and
+           FIX-016: the engine must not depend on the caller's permissions
+           to read its own configuration. Granting bidders blanket read
+           would have been wider -- a rule set is shared across events and
+           snapshots of other events sit in the same table -- so the read is
+           sudo. `auction.mechanism` had the same problem on the same path.
+
+  FIX-019  The receipt page 404'd for every bid. The route took the bid
+           REFERENCE, which looks like BID/2026/0000012, and a <string:...>
+           URL converter does not match a slash. Routed by id instead, with
+           the bid re-checked against the session's participant.
+
+Both were found by driving the browser, and both were invisible to every
+static check: the first because the code is correct in isolation, the
+second because the route is correct until a real reference reaches it.
+
 ## Completed
 
 | Stage | Name | Status |
@@ -293,9 +365,14 @@ never been run as a NON-ADMINISTRATOR has not been tested.
 
 ## NOT started
 
-Stages 0 (harness scripts), 3 (walking skeleton test), 12 (portal foundation
-beyond two routes), 13 (portal bid forms), 14 (spreadsheet round-trip),
-16 (notifications, audit pack, hardening).
+Stages 0 (harness scripts), 3 (walking skeleton test), 14 (spreadsheet
+round-trip), 16 (notifications, audit pack, hardening).
+
+Stages 12 and 13 are now built. What is still missing from the portal:
+registration and onboarding of a NEW bidder (the buyer creates the portal
+user today), two-envelope technical submission as a separate upload step,
+and email notification of an invitation, a corrigendum or a published
+answer -- a bidder has to visit to find out, which is stage 16.
 
 Stages 10 and 11 are MINIMAL, not complete. What is missing from them:
 
@@ -358,6 +435,12 @@ reasoning about the code instead of reading it shipped FIX-003 and FIX-004.
     python3 tests/standalone_check.py    # chain + crypto + payload decode
     python3 tests/static_validate.py     # model/field/method/action coherence
     python3 tests/static_trace.py        # every hop of the award loop exists
+
+And against a RUNNING instance, which is the only way to test the portal:
+
+    python3 tests/portal_disclosure_check.py --base http://localhost:8069 \
+        --event <id> --bidder login:pw --other login:pw \
+        --secret <internal estimate> --secret <undisclosed ceiling>
 
 All three pass. They are necessary and, as the ten defects above show, NOT
 sufficient. Before any release, install into a real Odoo and walk the flow

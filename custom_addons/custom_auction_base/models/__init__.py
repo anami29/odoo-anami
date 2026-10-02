@@ -14,4 +14,6 @@ from . import auction_opening
 from . import auction_evaluation
 from . import auction_award
 from . import downstream
+from . import auction_portal
+from . import auction_portal_payload
 from . import auction_audit

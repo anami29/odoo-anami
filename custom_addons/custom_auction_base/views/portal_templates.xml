@@ -1,0 +1,701 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ==================================================================
+         Bidder portal. Stages 12 and 13.
+
+         Every template here renders PLAIN DICTS produced by
+         participant.portal_payload(). None of them touches an engine
+         recordset, which is what keeps the disclosure denylist in one
+         testable place instead of spread across the markup.
+         ================================================================== -->
+
+    <template id="portal_my_home_auction" name="Portal: my auctions entry"
+              inherit_id="portal.portal_my_home" priority="30">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="title">Tenders and Auctions</t>
+                <t t-set="url" t-value="'/my/auctions'"/>
+                <t t-set="text">Events you have been invited to bid on</t>
+                <t t-set="placeholder_count" t-value="'auction_count'"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_auction_breadcrumbs" name="Portal: auction breadcrumbs"
+              inherit_id="portal.portal_breadcrumbs" priority="30">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name in ('auction','auction_bid','auction_receipt')"
+                t-attf-class="breadcrumb-item #{'active' if page_name == 'auction' and not event else ''}">
+                <a t-if="event" href="/my/auctions">Tenders</a>
+                <t t-else="">Tenders</t>
+            </li>
+            <li t-if="event and page_name == 'auction'" class="breadcrumb-item active">
+                <t t-out="event['name']"/>
+            </li>
+            <li t-if="event and page_name != 'auction'" class="breadcrumb-item">
+                <a t-attf-href="/my/auction/#{event['id']}"><t t-out="event['name']"/></a>
+            </li>
+            <li t-if="page_name == 'auction_bid'" class="breadcrumb-item active">Submit a bid</li>
+            <li t-if="page_name == 'auction_receipt'" class="breadcrumb-item active">Receipt</li>
+        </xpath>
+    </template>
+
+    <!-- ============================================ list of invitations -->
+    <template id="portal_my_auctions" name="My Tenders">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Tenders and Auctions</t>
+            </t>
+
+            <div t-if="not auctions" class="alert alert-info" role="alert">
+                You have not been invited to any tender yet. Invitations
+                appear here as soon as a buyer publishes one to you.
+            </div>
+
+            <t t-if="auctions" t-call="portal.portal_table">
+                <thead>
+                    <tr class="active">
+                        <th>Reference</th>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th class="text-end">Closes</th>
+                        <th class="text-center">Bid security</th>
+                        <th class="text-center">Your bid</th>
+                        <th class="text-end">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="auctions" t-as="a">
+                        <td>
+                            <a t-attf-href="/my/auction/#{a['event_id']}">
+                                <t t-out="a['name']"/>
+                            </a>
+                        </td>
+                        <td><t t-out="a['title']"/></td>
+                        <td>
+                            <span t-if="a['direction'] == 'reverse'">Purchase</span>
+                            <span t-else="">Disposal</span>
+                        </td>
+                        <td class="text-end">
+                            <span t-out="a['bid_close']"/>
+                        </td>
+                        <td class="text-center">
+                            <span t-if="a['security_state'] == 'none'"
+                                  class="badge rounded-pill text-bg-secondary">Not declared</span>
+                            <span t-elif="a['security_state'] in ('verified','exempted','converted')"
+                                  class="badge rounded-pill text-bg-success">
+                                <t t-out="a['security_state']"/>
+                            </span>
+                            <span t-else="" class="badge rounded-pill text-bg-warning">
+                                <t t-out="a['security_state']"/>
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span t-if="a['has_bid']"
+                                  class="badge rounded-pill text-bg-success">Submitted</span>
+                            <span t-else=""
+                                  class="badge rounded-pill text-bg-secondary">None</span>
+                        </td>
+                        <td class="text-end">
+                            <span class="badge rounded-pill text-bg-info"
+                                  t-out="a['state']"/>
+                        </td>
+                    </tr>
+                </tbody>
+            </t>
+        </t>
+    </template>
+
+    <!-- ===================================================== event page -->
+    <template id="portal_auction_detail" name="Tender detail">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <div t-if="ok" class="alert alert-success" role="status">
+                <t t-out="ok"/>
+            </div>
+            <div t-if="error" class="alert alert-danger" role="alert">
+                <t t-out="error"/>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h3 class="mb-0"><t t-out="event['title']"/></h3>
+                    <div class="text-muted">
+                        <t t-out="event['name']"/> ·
+                        <t t-out="event['mechanism']"/> ·
+                        revision <t t-out="event['content_version']"/>
+                    </div>
+                </div>
+            </div>
+
+            <!-- corrigenda first: an amendment nobody reads is the whole
+                 problem a corrigendum exists to solve -->
+            <div t-if="corrigenda" class="alert alert-warning" role="alert">
+                <h5 class="alert-heading">This tender has been amended</h5>
+                <div t-foreach="corrigenda" t-as="c" class="mb-2">
+                    <strong><t t-out="c['name']"/></strong>
+                    <span t-if="c['is_material']"
+                          class="badge text-bg-danger ms-1">Material</span>
+                    <span class="text-muted ms-1" t-out="c['issued_on']"/>
+                    <div t-out="c['description']"/>
+                    <div t-if="c['is_material'] and c['bids_voided']"
+                         class="small">
+                        Bids already received were voided by this amendment
+                        (<t t-out="c['bids_voided']"/>). If you had bid, you
+                        must bid again.
+                    </div>
+                    <div t-if="c['new_close_datetime']" class="small">
+                        Bid close moved to
+                        <span t-out="c['new_close_datetime']"/>.
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-7">
+                    <table class="table table-sm">
+                        <tr><td class="w-50 text-muted">Bidding opens</td>
+                            <td><span t-out="event['bid_open']"/></td></tr>
+                        <tr><td class="text-muted">Bidding closes</td>
+                            <td><strong><span t-out="event['bid_close']"/></strong></td></tr>
+                        <tr t-if="event['two_envelope']">
+                            <td class="text-muted">Technical opening</td>
+                            <td><span t-out="event['tech_open']"/></td></tr>
+                        <tr><td class="text-muted">Commercial opening</td>
+                            <td><span t-out="event['comm_open']"/></td></tr>
+                        <tr><td class="text-muted">Your reference</td>
+                            <td><t t-out="d['participant']['alias'] or d['participant']['partner_name']"/></td></tr>
+                    </table>
+                </div>
+                <div class="col-lg-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">Bid security</h6>
+                            <div t-if="not security['required']" class="text-muted">
+                                Not required on this tender.
+                            </div>
+                            <div t-elif="security['exists']">
+                                <div><t t-out="security['mode_label']"/>
+                                     <t t-if="security['instrument_ref']">
+                                        · <t t-out="security['instrument_ref']"/>
+                                     </t></div>
+                                <span t-attf-class="badge #{'text-bg-success' if security['permits_award'] else ('text-bg-warning' if security['permits_bidding'] else 'text-bg-secondary')}"
+                                      t-out="security['state_label']"/>
+                                <div class="small text-muted mt-2">
+                                    Amount required
+                                    <t t-out="event['currency_symbol']"/>
+                                    <t t-out="security['amount_required']"/>
+                                </div>
+                            </div>
+                            <div t-else="">
+                                <p class="small">
+                                    You must declare your bid security before
+                                    you can bid.
+                                    Amount: <strong><t t-out="event['currency_symbol']"/>
+                                    <t t-out="security['amount_required']"/></strong>
+                                </p>
+                                <a class="btn btn-sm btn-primary"
+                                   data-bs-toggle="collapse"
+                                   href="#declareSecurity">Declare bid security</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="collapse mt-2" id="declareSecurity">
+                        <form t-attf-action="/my/auction/#{event['id']}/security"
+                              method="post" class="card card-body">
+                            <input type="hidden" name="csrf_token"
+                                   t-att-value="request.csrf_token()"/>
+                            <div class="mb-2">
+                                <label class="form-label small">How you paid</label>
+                                <select name="mode" class="form-select form-select-sm">
+                                    <option value="neft">NEFT</option>
+                                    <option value="rtgs">RTGS</option>
+                                    <option value="imps">IMPS</option>
+                                    <option value="cheque">Cheque</option>
+                                    <option value="dd">Demand draft</option>
+                                    <option value="bg">Bank guarantee</option>
+                                    <option value="fdr">Fixed deposit receipt</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small">
+                                    UTR or instrument number</label>
+                                <input type="text" name="instrument_ref"
+                                       class="form-control form-control-sm"
+                                       required="required"/>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small">Instrument date</label>
+                                <input type="date" name="instrument_date"
+                                       class="form-control form-control-sm"/>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small">Bank</label>
+                                <input type="text" name="bank_name"
+                                       class="form-control form-control-sm"/>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small">Amount paid</label>
+                                <input type="text" name="amount_declared"
+                                       class="form-control form-control-sm"
+                                       t-att-value="security['amount_required']"/>
+                            </div>
+                            <button class="btn btn-sm btn-primary" type="submit">
+                                Declare
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================ lots -->
+            <h5 class="mt-4">What is being tendered</h5>
+            <div t-foreach="lots" t-as="lot" class="card mb-3">
+                <div class="card-header d-flex justify-content-between">
+                    <span><strong t-out="lot['name']"/></span>
+                    <span>
+                        <span t-if="lot['all_or_nothing']"
+                              class="badge text-bg-dark me-1">All or nothing</span>
+                        <span t-attf-class="badge #{'text-bg-success' if lot['is_open'] else 'text-bg-secondary'}"
+                              t-out="lot['state']"/>
+                    </span>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th class="text-end">Quantity</th>
+                                <th>Unit</th>
+                                <th>Delivery required</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="lot['lines']" t-as="line">
+                                <tr>
+                                    <td>
+                                        <strong t-out="line['name']"/>
+                                        <div t-if="line['product_code']"
+                                             class="small text-muted"
+                                             t-out="line['product_code']"/>
+                                        <div t-if="line['specification']"
+                                             class="small" t-out="line['specification']"/>
+                                    </td>
+                                    <td class="text-end" t-out="line['product_qty']"/>
+                                    <td t-out="line['uom']"/>
+                                    <td>
+                                        <t t-if="line['schedule']">
+                                            <div t-foreach="line['schedule']" t-as="s"
+                                                 class="small">
+                                                <t t-out="s['name'] or 'Tranche'"/>:
+                                                <t t-out="s['quantity']"/> by
+                                                <span t-out="s['required_by']"/>
+                                            </div>
+                                        </t>
+                                        <t t-elif="line['required_by']">
+                                            <span t-out="line['required_by']"/>
+                                        </t>
+                                        <t t-else="">As agreed</t>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+                <div t-if="lot['has_limit']" class="card-footer small text-muted">
+                    <t t-if="lot['limit_disclosed'] and lot['ceiling_price']">
+                        A price above
+                        <t t-out="event['currency_symbol']"/><t t-out="lot['ceiling_price']"/>
+                        will be refused.
+                    </t>
+                    <t t-elif="lot['limit_disclosed'] and lot['reserve_price']">
+                        The reserve is
+                        <t t-out="event['currency_symbol']"/><t t-out="lot['reserve_price']"/>.
+                    </t>
+                    <t t-else="">
+                        This lot carries an undisclosed price limit. A bid
+                        outside it will be refused at submission and you will
+                        be told so, without being told the figure.
+                    </t>
+                </div>
+            </div>
+
+            <!-- ============================================= documents -->
+            <h5 class="mt-4">Documents</h5>
+            <div t-if="not documents" class="text-muted mb-3">
+                No documents have been published for this tender.
+            </div>
+            <table t-if="documents" class="table table-sm">
+                <thead>
+                    <tr><th>Document</th><th>Type</th><th>From</th>
+                        <th class="text-end">Digest</th><th/></tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="documents" t-as="doc">
+                        <td><t t-out="doc['name']"/>
+                            <div class="small text-muted" t-out="doc['file_name']"/></td>
+                        <td t-out="doc['doc_type_label']"/>
+                        <td>
+                            <span t-if="doc['from_bidder']"
+                                  class="badge text-bg-secondary">You</span>
+                            <span t-else="" class="badge text-bg-info">Buyer</span>
+                        </td>
+                        <td class="text-end small font-monospace"
+                            t-out="doc['sha256'][:16]"/>
+                        <td class="text-end">
+                            <a t-attf-href="/my/auction/#{event['id']}/download/#{doc['id']}"
+                               class="btn btn-sm btn-light">Download</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <form t-attf-action="/my/auction/#{event['id']}/document"
+                  method="post" enctype="multipart/form-data"
+                  class="row g-2 align-items-end mb-4">
+                <input type="hidden" name="csrf_token"
+                       t-att-value="request.csrf_token()"/>
+                <div class="col-md-4">
+                    <label class="form-label small">Upload a document</label>
+                    <input type="file" name="file" class="form-control form-control-sm"/>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Type</label>
+                    <select name="doc_type" class="form-select form-select-sm">
+                        <option value="technical">Technical submission</option>
+                        <option value="credential">Credential or registration</option>
+                        <option value="security_proof">Bid security proof</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Label</label>
+                    <input type="text" name="name" class="form-control form-control-sm"
+                           placeholder="Optional"/>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-sm btn-secondary w-100" type="submit">Upload</button>
+                </div>
+            </form>
+
+            <!-- ========================================= clarifications -->
+            <h5 class="mt-4">Questions and answers</h5>
+            <div class="alert alert-light small">
+                Every answer is published to all bidders and never names who
+                asked. If your question would reveal your approach, consider
+                whether you want it answered in public.
+            </div>
+
+            <div t-if="clarifications['published']" class="mb-3">
+                <div t-foreach="clarifications['published']" t-as="c"
+                     class="border-start border-3 ps-3 mb-3">
+                    <div class="small text-muted">
+                        <t t-out="c['name']"/>
+                        <t t-if="c['reference_clause']"> · <t t-out="c['reference_clause']"/></t>
+                        · <span t-out="c['published_on_display']"/>
+                    </div>
+                    <div><strong>Q.</strong> <t t-out="c['question']"/></div>
+                    <div><strong>A.</strong> <t t-out="c['answer']"/></div>
+                </div>
+            </div>
+
+            <div t-if="clarifications['own']" class="mb-3">
+                <h6 class="text-muted">Your questions</h6>
+                <table class="table table-sm">
+                    <tbody>
+                        <tr t-foreach="clarifications['own']" t-as="c">
+                            <td><t t-out="c['question']"/></td>
+                            <td class="text-end">
+                                <span class="badge text-bg-secondary"
+                                      t-out="c['state_label']"/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <form t-attf-action="/my/auction/#{event['id']}/clarification"
+                  method="post" class="mb-4">
+                <input type="hidden" name="csrf_token"
+                       t-att-value="request.csrf_token()"/>
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <input type="text" name="reference_clause"
+                               class="form-control form-control-sm"
+                               placeholder="Clause or drawing"/>
+                    </div>
+                    <div class="col-md-7">
+                        <input type="text" name="question"
+                               class="form-control form-control-sm"
+                               placeholder="Your question"/>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-sm btn-secondary w-100"
+                                type="submit">Ask</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- =========================================== your bidding -->
+            <h5 class="mt-4">Your bid</h5>
+            <div t-if="own_bid" class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong t-out="own_bid['reference']"/>
+                            <span class="badge text-bg-success ms-2">Live</span>
+                            <div class="small text-muted">
+                                Accepted
+                                <span t-out="own_bid['server_ts']"/> (server time)
+                            </div>
+                            <div t-if="own_bid['sealed'] and not own_bid['opened']"
+                                 class="small text-muted mt-1">
+                                Sealed. Your prices are encrypted and are not
+                                readable by anybody, including the buyer,
+                                until the commercial opening.
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <a t-attf-href="/my/auction/#{event['id']}/receipt/#{own_bid['id']}"
+                               class="btn btn-sm btn-light">Receipt</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div t-if="can_bid['ok']" class="mb-4">
+                <a t-attf-href="/my/auction/#{event['id']}/bid"
+                   class="btn btn-primary">
+                    <t t-if="own_bid">Revise your bid</t>
+                    <t t-else="">Submit a bid</t>
+                </a>
+                <form t-if="own_bid"
+                      t-attf-action="/my/auction/#{event['id']}/withdraw"
+                      method="post" class="d-inline">
+                    <input type="hidden" name="csrf_token"
+                           t-att-value="request.csrf_token()"/>
+                    <button class="btn btn-outline-danger ms-2" type="submit"
+                            onclick="return confirm('Withdraw your bid? It stays in the record, marked withdrawn.');">
+                        Withdraw
+                    </button>
+                </form>
+            </div>
+            <div t-else="" class="alert alert-secondary" role="status">
+                <t t-out="can_bid['reason']"/>
+            </div>
+
+            <div t-if="bid_history" class="mt-3">
+                <h6 class="text-muted">Your submission history</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>Reference</th><th>Accepted at</th>
+                            <th class="text-end">Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="bid_history" t-as="b">
+                            <td class="font-monospace small" t-out="b['reference']"/>
+                            <td><span t-out="b['server_ts']"/></td>
+                            <td class="text-end">
+                                <span class="badge text-bg-light"
+                                      t-out="b['state_label']"/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </t>
+    </template>
+
+    <!-- ====================================================== bid form -->
+    <template id="portal_bid_form" name="Submit a bid">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <h4><t t-out="event['title']"/></h4>
+            <div class="text-muted mb-3">
+                <t t-out="event['name']"/> · closes
+                <span t-out="event['bid_close']"/>
+            </div>
+
+            <div t-if="errors and errors.get('_general')"
+                 class="alert alert-danger">
+                <div t-foreach="errors['_general']" t-as="msg" t-out="msg"/>
+            </div>
+
+            <div t-if="not can_bid['ok']" class="alert alert-secondary">
+                <t t-out="can_bid['reason']"/>
+            </div>
+
+            <t t-if="can_bid['ok']">
+            <div class="alert alert-info small">
+                Your prices are encrypted the moment they are accepted and
+                cannot be read by anybody, including the buyer, until the
+                commercial opening. You may revise this bid as many times as
+                you like before the deadline; only the last one counts, and
+                every earlier one stays in the record.
+            </div>
+
+            <t t-foreach="lots" t-as="lot">
+            <form t-if="lot['is_open']"
+                  t-attf-action="/my/auction/#{event['id']}/bid/submit"
+                  method="post" class="mb-4">
+                <input type="hidden" name="csrf_token"
+                       t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="lot_id" t-att-value="lot['id']"/>
+
+                <div class="card">
+                    <div class="card-header">
+                        <strong t-out="lot['name']"/>
+                        <span t-if="lot['all_or_nothing']"
+                              class="badge text-bg-dark ms-2">
+                            Every line must be priced
+                        </span>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="width:34%">Item</th>
+                                    <th class="text-end">Required</th>
+                                    <th style="width:14%">Your quantity</th>
+                                    <th style="width:16%">
+                                        Unit price
+                                        (<t t-out="event['currency_symbol']"/>)
+                                    </th>
+                                    <th>Your delivery dates</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="lot['lines']" t-as="line">
+                                <tr t-att-class="'table-danger' if errors.get('line_%d' % line['id']) else ''">
+                                    <td>
+                                        <strong t-out="line['name']"/>
+                                        <div t-if="line['product_code']"
+                                             class="small text-muted"
+                                             t-out="line['product_code']"/>
+                                        <div t-if="errors.get('line_%d' % line['id'])"
+                                             class="small text-danger"
+                                             t-out="errors.get('line_%d' % line['id'])"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <t t-out="line['product_qty']"/>
+                                        <div class="small text-muted"
+                                             t-out="line['uom']"/>
+                                    </td>
+                                    <td>
+                                        <input type="text"
+                                               t-attf-name="qty_#{line['id']}"
+                                               class="form-control form-control-sm text-end"
+                                               t-att-value="submitted.get('qty_%d' % line['id']) or line['product_qty']"/>
+                                    </td>
+                                    <td>
+                                        <input type="text"
+                                               t-attf-name="price_#{line['id']}"
+                                               class="form-control form-control-sm text-end"
+                                               t-att-value="submitted.get('price_%d' % line['id']) or ''"
+                                               placeholder="0.00"/>
+                                    </td>
+                                    <td>
+                                        <t t-if="line['schedule']">
+                                            <div t-foreach="line['schedule']" t-as="s"
+                                                 class="d-flex align-items-center mb-1">
+                                                <span class="small text-muted me-2"
+                                                      style="min-width:7rem">
+                                                    <t t-out="s['name'] or 'Tranche'"/>
+                                                    (<t t-out="s['quantity']"/>)
+                                                </span>
+                                                <input type="date"
+                                                       t-attf-name="sched_#{line['id']}_#{s['id']}"
+                                                       class="form-control form-control-sm"
+                                                       t-att-value="submitted.get('sched_%d_%d' % (line['id'], s['id'])) or s['required_by_iso']"/>
+                                            </div>
+                                            <div class="small text-muted">
+                                                Required dates are pre-filled.
+                                                Change one only if you cannot meet it.
+                                            </div>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="small text-muted">
+                                                Single delivery
+                                                <t t-if="line['required_by']">
+                                                    by <span t-out="line['required_by']"/>
+                                                </t>
+                                            </span>
+                                        </t>
+                                    </td>
+                                </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <div class="small text-muted">
+                            Closes
+                            <span t-out="lot['close_datetime']"/>.
+                            The time that counts is when our server accepts
+                            your bid, not when you press the button.
+                        </div>
+                        <button class="btn btn-primary" type="submit">
+                            Submit sealed bid
+                        </button>
+                    </div>
+                </div>
+            </form>
+            </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ======================================================= receipt -->
+    <template id="portal_receipt" name="Bid receipt">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <div class="alert alert-success">
+                <h4 class="alert-heading">Your bid has been accepted</h4>
+                Keep this page. It is the evidence that your bid reached us,
+                when it reached us, and that it has not been altered since.
+            </div>
+
+            <table class="table">
+                <tr><td class="w-25 text-muted">Reference</td>
+                    <td class="font-monospace"><t t-out="receipt['reference']"/></td></tr>
+                <tr><td class="text-muted">Accepted at (server time)</td>
+                    <td class="font-monospace"><t t-out="receipt['server_ts']"/>
+                        <t t-out="receipt['timezone']"/></td></tr>
+                <tr><td class="text-muted">Ledger position</td>
+                    <td class="font-monospace"><t t-out="receipt['chain_seq']"/></td></tr>
+                <tr><td class="text-muted">Record fingerprint</td>
+                    <td class="font-monospace small" style="word-break:break-all"
+                        t-out="receipt['record_hash']"/></tr>
+                <tr><td class="text-muted">Sealed</td>
+                    <td>
+                        <span t-if="receipt['sealed']">
+                            Yes. Your prices are encrypted until the
+                            commercial opening.
+                        </span>
+                        <span t-else="">No. This event is not a sealed one.</span>
+                    </td></tr>
+                <tr><td class="text-muted">Lines priced</td>
+                    <td><t t-out="receipt['lines']"/></td></tr>
+            </table>
+
+            <div class="alert alert-light small">
+                The fingerprint above is computed from your bid and from the
+                fingerprint of the bid before it in the ledger. If anybody
+                alters, deletes or inserts a bid, that chain breaks and the
+                break can be demonstrated. You do not have to take our word
+                for the integrity of the record, and neither do we.
+            </div>
+
+            <a t-attf-href="/my/auction/#{event['id']}" class="btn btn-light">
+                Back to the tender
+            </a>
+        </t>
+    </template>
+
+</odoo>

@@ -68,5 +68,41 @@
             <field name="domain_force">[('participant_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
         </record>
 
+        <!-- ==============================================================
+             Portal content. These three rules are the disclosure boundary
+             for everything a bidder reads, and they are deliberately
+             expressed as record rules rather than as template logic: a
+             field left out of a QWeb template is not a security control,
+             and the next person to edit the template will not know that it
+             was one.
+             ============================================================== -->
+
+        <!-- A bidder sees buyer documents only once PUBLISHED, plus their
+             own uploads, and never another bidder's. -->
+        <record id="rule_document_portal" model="ir.rule">
+            <field name="name">Auction document: published, or own upload</field>
+            <field name="model_id" ref="model_auction_document"/>
+            <field name="groups" eval="[(4, ref('group_auction_bidder'))]"/>
+            <field name="domain_force">['|','&amp;',('participant_id','=',False),('is_published','=',True),('participant_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
+        </record>
+
+        <!-- A bidder sees their OWN question in any state, and anybody's
+             question once the answer is published. The template strips the
+             asker; this rule is what stops an unpublished competitor
+             question being readable at all. -->
+        <record id="rule_clarification_portal" model="ir.rule">
+            <field name="name">Clarification: own question, or published answer</field>
+            <field name="model_id" ref="model_auction_clarification"/>
+            <field name="groups" eval="[(4, ref('group_auction_bidder'))]"/>
+            <field name="domain_force">['|',('state','=','published'),('participant_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
+        </record>
+
+        <record id="rule_corrigendum_portal" model="ir.rule">
+            <field name="name">Corrigendum: issued only</field>
+            <field name="model_id" ref="model_auction_corrigendum"/>
+            <field name="groups" eval="[(4, ref('group_auction_bidder'))]"/>
+            <field name="domain_force">[('state','=','issued')]</field>
+        </record>
+
     </data>
 </odoo>

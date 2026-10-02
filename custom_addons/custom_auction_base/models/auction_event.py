@@ -159,6 +159,17 @@ class AuctionEvent(models.Model):
     opening_requested_by = fields.Many2one("res.users", readonly=True, copy=False)
     opening_requested_on = fields.Datetime(readonly=True, copy=False)
     opening_ids = fields.One2many("auction.opening", "event_id", readonly=True)
+
+    # Bidder-facing content. Stage 12.
+    document_ids = fields.One2many("auction.document", "event_id")
+    clarification_ids = fields.One2many("auction.clarification", "event_id")
+    corrigendum_ids = fields.One2many("auction.corrigendum", "event_id")
+    open_question_count = fields.Integer(compute="_compute_portal_counts")
+
+    def _compute_portal_counts(self):
+        for ev in self:
+            ev.open_question_count = len(ev.clarification_ids.filtered(
+                lambda c: c.state == "asked"))
     evaluation_line_ids = fields.One2many(
         "auction.evaluation.line", "event_id", readonly=True)
     evaluation_count = fields.Integer(compute="_compute_evaluation_count")
@@ -295,6 +306,16 @@ class AuctionEvent(models.Model):
         if self.structure == "two_envelope" and not self.tech_open_datetime:
             out.append(_("A two-envelope event needs a technical opening time."))
         return out
+
+    def _bump_content_version(self):
+        """Record that what bidders can read has changed.
+
+        Documents, clarifications and corrigenda all move this. A bidder
+        who submitted against content_version 2 and an event now at 4 is a
+        fact somebody will want afterwards.
+        """
+        for ev in self:
+            ev.sudo().write({"content_version": ev.content_version + 1})
 
     def _generate_dek(self):
         """Per-event data key, wrapped by a KEK held outside the database."""

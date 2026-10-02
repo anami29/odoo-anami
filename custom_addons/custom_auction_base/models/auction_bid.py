@@ -388,7 +388,10 @@ class AuctionBid(models.Model):
 
         lot = self.env["auction.lot"].browse(lot_row["id"])
         rules = lot._resolve_rules()
-        strategy = mech_registry.get(lot.event_id.mechanism)
+        # .sudo() on the mechanism read for the same reason: auction.mechanism
+        # carries no bidder ACL, and the engine is reading its own strategy
+        # registry key, not disclosing anything. FIX-018.
+        strategy = mech_registry.get(lot.sudo().event_id.mechanism)
 
         prior = self._prior_active(participant, lot)
         vals = dict(vals, _has_prior_submission=bool(prior))
@@ -656,10 +659,42 @@ class AuctionBid(models.Model):
         """Post-commit hook. Never called inside the lock."""
         _logger.info("auction.bid: receipt notification queued for %s", bid_id)
 
+    def action_withdraw(self, reason=None):
+        """A bidder withdraws their own live bid, before close.
+
+        Withdrawal is a state change on the ledger, never a deletion: the
+        bid stays, marked withdrawn, with the reason and the time. After
+        close it is refused, because withdrawal after close is one of the
+        five enumerated bid security forfeiture conditions and is a
+        decision for the buyer, not a button for the bidder.
+        """
+        self.ensure_one()
+        participant = self.participant_id
+        link = participant.user_ids.filtered(
+            lambda u: u.user_id == self.env.user)
+        if not link or link[0].role != "authorised_bidder":
+            raise AccessError(_(
+                "Only the authorised bidder for this event may withdraw "
+                "its bid."))
+        if self.state != "active":
+            raise UserError(_(
+                "Only a live bid can be withdrawn. This one is %s.")
+                % self.state)
+        if self.lot_id.state != "open":
+            raise UserError(_(
+                "Bidding on this lot has closed. A withdrawal after close "
+                "is not something you can do here: contact the buyer, and "
+                "be aware it is a bid security forfeiture condition."))
+        self._set_state("withdrawn", reason=reason or "withdrawn by bidder")
+        return True
+
     def _receipt(self):
         """What the bidder gets back and screenshots. BR-BID-011."""
         self.ensure_one()
         return {
+            # id included so a caller can link to this bid: the reference
+            # contains slashes and cannot go in a URL path. FIX-019.
+            "id": self.id,
             "reference": self.reference,
             "server_ts": fields.Datetime.to_string(self.server_ts),
             "timezone": "UTC",

@@ -20,6 +20,18 @@
               parent="menu_auction_root" action="action_auction_bid"
               sequence="40"/>
 
+    <menuitem id="menu_auction_clarifications" name="Clarifications"
+              parent="menu_auction_root" action="action_auction_clarification"
+              sequence="22"/>
+
+    <menuitem id="menu_auction_documents" name="Documents"
+              parent="menu_auction_root" action="action_auction_document"
+              sequence="24"/>
+
+    <menuitem id="menu_auction_corrigenda" name="Corrigenda"
+              parent="menu_auction_root" action="action_auction_corrigendum"
+              sequence="26"/>
+
     <menuitem id="menu_auction_evaluation" name="Opened Bids"
               parent="menu_auction_root" action="action_auction_evaluation_line"
               sequence="32"/>

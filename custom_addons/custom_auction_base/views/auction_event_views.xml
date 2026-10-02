@@ -122,7 +122,7 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Lots">
+                        <page name="lots" string="Lots">
                             <field name="lot_ids" context="{'form_view_ref': 'custom_auction_base.view_auction_lot_form'}">
                                 <list>
                                     <field name="sequence" widget="handle"/>
@@ -139,7 +139,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Participants">
+                        <page name="participants" string="Participants">
                             <field name="participant_ids">
                                 <list>
                                     <field name="partner_id"/>
@@ -150,7 +150,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Opening"
+                        <page name="opening" string="Opening"
                               groups="custom_auction_base.group_auction_event_owner">
                             <group>
                                 <group string="Nominated openers">
@@ -182,7 +182,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Internal" groups="custom_auction_base.group_auction_event_owner">
+                        <page name="internal" string="Internal" groups="custom_auction_base.group_auction_event_owner">
                             <group>
                                 <field name="estimated_value"/>
                                 <field name="version" readonly="1"/>

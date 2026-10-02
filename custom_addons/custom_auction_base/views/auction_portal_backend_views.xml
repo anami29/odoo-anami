@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================= documents -->
+    <record id="view_auction_document_list" model="ir.ui.view">
+        <field name="name">auction.document.list</field>
+        <field name="model">auction.document</field>
+        <field name="arch" type="xml">
+            <list string="Documents">
+                <field name="sequence" widget="handle"/>
+                <field name="event_id"/>
+                <field name="name"/>
+                <field name="doc_type"/>
+                <field name="participant_id" string="From bidder"
+                       optional="show"/>
+                <field name="file_name" optional="show"/>
+                <field name="uploaded_on"/>
+                <field name="is_published" widget="boolean_toggle"
+                       readonly="is_from_bidder"/>
+                <field name="is_from_bidder" column_invisible="1"/>
+                <button name="action_publish" type="object" icon="fa-globe"
+                        string="Publish" class="btn-link"
+                        invisible="is_published or is_from_bidder"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auction_document_form" model="ir.ui.view">
+        <field name="name">auction.document.form</field>
+        <field name="model">auction.document</field>
+        <field name="arch" type="xml">
+            <form string="Document">
+                <header>
+                    <button name="action_publish" type="object"
+                            string="Publish to bidders" class="oe_highlight"
+                            invisible="is_published or is_from_bidder"/>
+                    <field name="is_published" widget="statusbar"
+                           invisible="is_from_bidder"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-info" role="status"
+                         invisible="not is_from_bidder">
+                        Uploaded by the bidder. It is visible to your team and
+                        to them, and to no other bidder. It is not published.
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Document title"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="event_id"/>
+                            <field name="doc_type"/>
+                            <field name="participant_id" readonly="1"
+                                   invisible="not is_from_bidder"/>
+                            <field name="is_from_bidder" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="attachment_id"/>
+                            <field name="file_name" readonly="1"/>
+                            <field name="sha256" readonly="1"
+                                   string="Digest at upload"/>
+                            <field name="uploaded_by" readonly="1"/>
+                            <field name="uploaded_on" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="notes" placeholder="Internal notes"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_auction_document" model="ir.actions.act_window">
+        <field name="name">Documents</field>
+        <field name="res_model">auction.document</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ============================================= clarifications -->
+    <record id="view_auction_clarification_list" model="ir.ui.view">
+        <field name="name">auction.clarification.list</field>
+        <field name="model">auction.clarification</field>
+        <field name="arch" type="xml">
+            <list string="Clarifications"
+                  decoration-warning="state == 'asked'">
+                <field name="name"/>
+                <field name="event_id"/>
+                <field name="participant_id" string="Asked by"/>
+                <field name="reference_clause" optional="show"/>
+                <field name="question"/>
+                <field name="asked_on"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'published'"
+                       decoration-warning="state == 'asked'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auction_clarification_form" model="ir.ui.view">
+        <field name="name">auction.clarification.form</field>
+        <field name="model">auction.clarification</field>
+        <field name="arch" type="xml">
+            <form string="Clarification">
+                <header>
+                    <button name="action_publish" type="object"
+                            string="Publish to all bidders"
+                            class="oe_highlight"
+                            confirm="The answer goes to every bidder on this
+                                     event. Who asked it is never disclosed."
+                            invisible="state in ('published','withheld')"/>
+                    <button name="action_withhold" type="object"
+                            string="Withhold"
+                            invisible="state in ('published','withheld')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="asked,answered,published"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-warning" role="status"
+                         invisible="state != 'asked'">
+                        Answering one bidder privately is how a tender gets
+                        challenged: the others can argue they bid against
+                        different information. Publish the answer, or
+                        withhold it and record why.
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="event_id" readonly="1"/>
+                            <field name="participant_id" readonly="1"/>
+                            <field name="reference_clause"/>
+                        </group>
+                        <group>
+                            <field name="asked_on" readonly="1"/>
+                            <field name="answered_by" readonly="1"
+                                   invisible="not answered_by"/>
+                            <field name="published_on" readonly="1"
+                                   invisible="not published_on"/>
+                        </group>
+                    </group>
+                    <group string="The question">
+                        <field name="question" nolabel="1" readonly="1"/>
+                    </group>
+                    <group string="Your answer">
+                        <field name="answer" nolabel="1"
+                               placeholder="This is published verbatim to every bidder."
+                               readonly="state == 'published'"/>
+                    </group>
+                    <group string="Reason for withholding"
+                           invisible="state != 'withheld' and not withheld_reason">
+                        <field name="withheld_reason" nolabel="1"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_auction_clarification" model="ir.actions.act_window">
+        <field name="name">Clarifications</field>
+        <field name="res_model">auction.clarification</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_pending': 1}</field>
+    </record>
+
+    <record id="view_auction_clarification_search" model="ir.ui.view">
+        <field name="name">auction.clarification.search</field>
+        <field name="model">auction.clarification</field>
+        <field name="arch" type="xml">
+            <search string="Clarifications">
+                <field name="question"/>
+                <field name="event_id"/>
+                <field name="participant_id"/>
+                <filter name="pending" string="Awaiting answer"
+                        domain="[('state','=','asked')]"/>
+                <filter name="published" string="Published"
+                        domain="[('state','=','published')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="g_event" string="Event"
+                            context="{'group_by': 'event_id'}"/>
+                    <filter name="g_state" string="Status"
+                            context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================ corrigenda -->
+    <record id="view_auction_corrigendum_list" model="ir.ui.view">
+        <field name="name">auction.corrigendum.list</field>
+        <field name="model">auction.corrigendum</field>
+        <field name="arch" type="xml">
+            <list string="Corrigenda">
+                <field name="name"/>
+                <field name="event_id"/>
+                <field name="is_material"/>
+                <field name="previous_close" optional="show"/>
+                <field name="new_close_datetime"/>
+                <field name="bids_voided"/>
+                <field name="issued_on"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'issued'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auction_corrigendum_form" model="ir.ui.view">
+        <field name="name">auction.corrigendum.form</field>
+        <field name="model">auction.corrigendum</field>
+        <field name="arch" type="xml">
+            <form string="Corrigendum">
+                <header>
+                    <button name="action_issue" type="object"
+                            string="Issue to all bidders" class="oe_highlight"
+                            confirm="This publishes the amendment to every
+                                     bidder. If it is marked material, every
+                                     bid already received is voided and those
+                                     bidders must bid again."
+                            invisible="state == 'issued'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-warning" role="status"
+                         invisible="not is_material">
+                        A material corrigendum VOIDS every bid already
+                        received, because those bids were made against
+                        different information. Practice under the CVC
+                        e-procurement guidelines expects at least ten days of
+                        extension for a material change.
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="event_id"
+                                   readonly="state == 'issued'"/>
+                            <field name="is_material"
+                                   readonly="state == 'issued'"/>
+                        </group>
+                        <group>
+                            <field name="previous_close" readonly="1"
+                                   invisible="not previous_close"/>
+                            <field name="new_close_datetime"
+                                   readonly="state == 'issued'"/>
+                            <field name="bids_voided" readonly="1"
+                                   invisible="state != 'issued'"/>
+                            <field name="issued_by" readonly="1"
+                                   invisible="state != 'issued'"/>
+                            <field name="issued_on" readonly="1"
+                                   invisible="state != 'issued'"/>
+                        </group>
+                    </group>
+                    <group string="What changed">
+                        <field name="description" nolabel="1"
+                               readonly="state == 'issued'"
+                               placeholder="Published verbatim to every bidder."/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_auction_corrigendum" model="ir.actions.act_window">
+        <field name="name">Corrigenda</field>
+        <field name="res_model">auction.corrigendum</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ============== event form: the bidder-facing tab ============== -->
+    <record id="view_auction_event_form_portal" model="ir.ui.view">
+        <field name="name">auction.event.form.portal</field>
+        <field name="model">auction.event</field>
+        <field name="inherit_id" ref="custom_auction_base.view_auction_event_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='participants']" position="after">
+                <page string="Bidder-facing"
+                      groups="custom_auction_base.group_auction_event_owner">
+                    <div class="text-muted mb-2">
+                        What invited bidders can read. A buyer document is
+                        invisible to them until it is published.
+                    </div>
+                    <field name="document_ids" context="{'default_event_id': id}">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                            <field name="doc_type"/>
+                            <field name="attachment_id"/>
+                            <field name="participant_id" string="From bidder"
+                                   readonly="1" optional="show"/>
+                            <field name="sha256" string="Digest"
+                                   readonly="1" optional="hide"/>
+                            <field name="is_published" widget="boolean_toggle"
+                                   readonly="is_from_bidder"/>
+                            <field name="is_from_bidder" column_invisible="1"/>
+                        </list>
+                    </field>
+
+                    <separator string="Questions from bidders"/>
+                    <field name="clarification_ids" readonly="1">
+                        <list decoration-warning="state == 'asked'">
+                            <field name="name"/>
+                            <field name="participant_id"/>
+                            <field name="question"/>
+                            <field name="asked_on"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+
+                    <separator string="Corrigenda"/>
+                    <field name="corrigendum_ids" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="is_material"/>
+                            <field name="new_close_datetime"/>
+                            <field name="bids_voided"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
