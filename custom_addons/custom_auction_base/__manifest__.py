@@ -47,7 +47,7 @@ spreadsheet round-trip, email notification of any kind.
 Ranking here is on bid price alone; normalisation for duty, freight and
 payment terms is the next stage. See SCP-AUC-001.
 """,
-    "version": "18.0.1.2.0",
+    "version": "18.0.1.2.1",
     "category": "Purchases",
     "author": "Riamona Luxury and Fashion Brands",
     "website": "https://www.riamona.com",

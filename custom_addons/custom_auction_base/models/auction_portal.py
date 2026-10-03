@@ -63,8 +63,36 @@ class AuctionDocument(models.Model):
          ("other", "Other")],
         required=True, default="tender")
 
-    attachment_id = fields.Many2one("ir.attachment", required=True,
-                                    ondelete="cascade")
+    # A document is UPLOADED, never picked. FIX-024.
+    #
+    # This was a bare Many2one to ir.attachment rendered as a picker, which
+    # offered a name_search over every attachment row in the database. Two
+    # things come out of that, and neither is cosmetic:
+    #
+    #   Odoo stores compiled asset bundles as ir.attachment, so the list
+    #   filled up with web.assets_web.min.js and its siblings. Those are
+    #   DELETED AND RECREATED on every asset rebuild, and this field
+    #   cascades, so a tender document pointing at one would silently
+    #   vanish from the event along with its audit trail.
+    #
+    #   Worse, it also offered every unrelated business file in the
+    #   database -- an executed agreement, an invoice, an HR document --
+    #   on the bidder-facing tab, with Is Published in the same row. One
+    #   wrong click in a dropdown is not an acceptable distance between
+    #   another client's contract and a room full of competing bidders.
+    #
+    # The domain is defence in depth behind a field the backend views now
+    # render read-only: even reached directly, the picker can only see
+    # attachments this module owns.
+    upload_file = fields.Binary(
+        string="Upload", attachment=False,
+        help="Choose a file from your computer. It is copied into this "
+             "event and hashed on save.")
+    upload_name = fields.Char(string="Upload Filename")
+    attachment_id = fields.Many2one(
+        "ir.attachment", required=True, ondelete="cascade", readonly=True,
+        domain="[('res_model', 'in', ['auction.document',"
+               " 'auction.participant'])]")
     file_name = fields.Char(string="File", related="attachment_id.name",
                             readonly=True)
     file_size = fields.Integer(related="attachment_id.file_size",
@@ -98,10 +126,39 @@ class AuctionDocument(models.Model):
         for doc in self:
             doc.is_from_bidder = bool(doc.participant_id)
 
+    def _attachment_from_upload(self, vals):
+        """Turn an uploaded file into an attachment this module owns.
+
+        Resolved BEFORE super().create(), because attachment_id is
+        required and the NOT NULL constraint fires before any post-create
+        hook could fill it. The attachment is created unowned and adopted
+        by the document immediately afterwards, since the document has no
+        id yet at this point.
+        """
+        data = vals.pop("upload_file", None)
+        name = (vals.pop("upload_name", None) or "").strip()
+        if not data or vals.get("attachment_id"):
+            return None
+        attachment = self.env["ir.attachment"].sudo().create({
+            "name": name or vals.get("name") or _("Document"),
+            "datas": data,
+            "public": False,
+        })
+        vals["attachment_id"] = attachment.id
+        return attachment
+
     @api.model_create_multi
     def create(self, vals_list):
+        adopted = []
+        for vals in vals_list:
+            adopted.append(self._attachment_from_upload(vals))
         docs = super().create(vals_list)
-        for doc in docs:
+        for doc, attachment in zip(docs, adopted):
+            if attachment:
+                # Owned by this document, so it is reachable through the
+                # module's own access rules and nothing else's.
+                attachment.sudo().write({"res_model": self._name,
+                                         "res_id": doc.id})
             doc._compute_digest()
             doc.event_id and self.env["auction.audit"].log(
                 action="document_uploaded", model=self._name, res_id=doc.id,
@@ -110,6 +167,22 @@ class AuctionDocument(models.Model):
                         "from_bidder": doc.is_from_bidder,
                         "sha256": doc.sha256})
         return docs
+
+    def write(self, vals):
+        """Replacing the file re-points the attachment and re-hashes."""
+        if vals.get("upload_file"):
+            for doc in self:
+                single = dict(vals)
+                attachment = doc._attachment_from_upload(single)
+                if attachment:
+                    attachment.sudo().write({"res_model": self._name,
+                                             "res_id": doc.id})
+                    super(AuctionDocument, doc).write(single)
+                    doc._compute_digest()
+            return True
+        vals.pop("upload_file", None)
+        vals.pop("upload_name", None)
+        return super().write(vals)
 
     def _compute_digest(self):
         for doc in self:

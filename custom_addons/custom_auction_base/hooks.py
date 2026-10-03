@@ -57,9 +57,47 @@ def _fix_cron_repeat(env):
         _logger.info("Auction engine: numbercall set to -1 on %d crons", len(ids))
 
 
+def _reown_borrowed_attachments(env):
+    """FIX-024 migration. Make every tender document own its own file.
+
+    Before the upload fix, the attachment field was a picker over the whole
+    ir.attachment table, so a document could end up pointing at a file some
+    other record owns -- including a compiled asset bundle, which Odoo
+    DELETES AND RECREATES on every asset rebuild. That field cascades, so
+    such a document disappears from the event, silently, together with its
+    place in the audit trail, and it does so at the least convenient
+    possible moment: when somebody goes looking for what was issued.
+
+    The borrowed file is COPIED rather than moved. The other record keeps
+    its attachment untouched; this module stops depending on it.
+    """
+    Document = env["auction.document"].sudo()
+    borrowed = Document.search([
+        ("attachment_id.res_model", "not in",
+         ("auction.document", "auction.participant")),
+    ])
+    # res_model NULL does not match a 'not in' domain, so ask separately.
+    borrowed |= Document.search([("attachment_id.res_model", "=", False)])
+    if not borrowed:
+        return
+    for doc in borrowed:
+        source = doc.attachment_id
+        copy = source.copy({
+            "res_model": "auction.document",
+            "res_id": doc.id,
+            "public": False,
+        })
+        doc.write({"attachment_id": copy.id})
+    _logger.warning(
+        "Auction engine: re-owned %d document attachment(s) that belonged "
+        "to other records; originals left untouched (FIX-024)",
+        len(borrowed))
+
+
 def post_init_hook(env):
     """Verify numeric typing and required indexes after install."""
     _fix_cron_repeat(env)
+    _reown_borrowed_attachments(env)
     failures = []
     for table, column in NUMERIC_COLUMNS:
         env.cr.execute(

@@ -55,8 +55,12 @@
                             <field name="is_from_bidder" invisible="1"/>
                         </group>
                         <group>
-                            <field name="attachment_id"/>
-                            <field name="file_name" readonly="1"/>
+                            <field name="upload_name" invisible="1"/>
+                            <field name="upload_file" widget="binary"
+                                   filename="upload_name"
+                                   string="Upload a file"/>
+                            <field name="file_name" readonly="1"
+                                   string="Stored as"/>
                             <field name="sha256" readonly="1"
                                    string="Digest at upload"/>
                             <field name="uploaded_by" readonly="1"/>
@@ -286,7 +290,11 @@
                             <field name="sequence" widget="handle"/>
                             <field name="name"/>
                             <field name="doc_type"/>
-                            <field name="attachment_id"/>
+                            <field name="upload_name" column_invisible="1"/>
+                            <field name="upload_file" widget="binary"
+                                   filename="upload_name" string="File"/>
+                            <field name="file_name" readonly="1"
+                                   string="Stored as" optional="show"/>
                             <field name="participant_id" string="From bidder"
                                    readonly="1" optional="show"/>
                             <field name="sha256" string="Digest"

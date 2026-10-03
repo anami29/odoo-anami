@@ -432,6 +432,43 @@ lifecycle of an event, and added the reporting layer the module had none of.
            AND the viewer lacks a purchase licence. Found while chasing
            something else entirely.
 
+  FIX-024  THE TENDER DOCUMENT FIELD WAS A PICKER OVER EVERY ATTACHMENT IN
+           THE DATABASE. `attachment_id` was a bare Many2one to
+           ir.attachment with no domain, rendered as an autocomplete, so
+           its name_search returned the whole table.
+
+           Visible symptom: compiled asset bundles -- web.assets_web.min.js
+           and siblings -- offered as tender documents, because Odoo stores
+           those as ir.attachment. Those rows are DELETED AND RECREATED on
+           every asset rebuild, and the field cascades, so a document
+           pointing at one would disappear from the event together with its
+           place in the audit trail, silently, and be missed only when
+           somebody went looking for what was issued.
+
+           The serious half is the other half. The same dropdown offered
+           every unrelated business file in the database -- an executed
+           agreement, an invoice, an HR document -- on the BIDDER-FACING
+           tab, with Is Published a few columns away. One mis-click in an
+           autocomplete was the whole distance between another client's
+           contract and a room full of competing bidders.
+
+           Documents are now UPLOADED, never picked: a binary field builds
+           a private attachment owned by the document itself, hashed on
+           save as before. attachment_id is read-only with a domain
+           confined to this module's own attachments, as defence behind
+           the view. Reachable rows went from 25, six of them asset
+           bundles, to zero.
+
+           The portal path was never affected -- bidders always uploaded,
+           and their attachment was always private. Only the backend form
+           exposed the picker.
+
+           Existing rows are repaired by a post-migration that COPIES a
+           borrowed file into a document-owned attachment and leaves the
+           original record's attachment untouched. Idempotent; digests
+           unchanged, so the integrity record still holds. post_init_hook
+           alone would not have done it, because that runs on install only.
+
 Two further things the browser corrected that the shell had no view of: the
 `COUNT(DISTINCT x) OVER (...)` in the first draft of the view is not
 implemented by PostgreSQL at all (moved to an aggregate CTE, which is also
@@ -466,7 +503,7 @@ keeps out of this module.
 | 15 | Bid security offline workflow | Complete, including statutory exemption (FIX-010) |
 | 12 | Bidder portal | Complete for sealed — invitations, documents, clarifications, corrigenda, bidder-declared security, bid form, receipts, withdrawal |
 | 13 | Portal content | Complete — disclosure boundary is the payload layer, verified from two bidder sessions |
-| -- | Menu, dashboard, reporting | Complete — six-section menu, landing dashboard, five report screens, two order lists (FIX-020/021/022/023) |
+| -- | Menu, dashboard, reporting | Complete — six-section menu, landing dashboard, five report screens, two order lists (FIX-020/021/022/023/024) |
 
 ## NOT started
 
