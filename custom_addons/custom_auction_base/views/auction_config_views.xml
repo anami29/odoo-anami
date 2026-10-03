@@ -274,7 +274,12 @@
                             <field name="hsn_sac"/>
                         </group>
                         <group string="Delivery">
-                            <field name="delivery_location"/>
+                            <field name="company_id" invisible="1"/>
+                            <field name="delivery_location_id"
+                                   options="{'no_create': True}"/>
+                            <field name="delivery_location"
+                                   placeholder="Only if it is not one of your locations"
+                                   invisible="delivery_location_id"/>
                             <field name="required_by"
                                    invisible="schedule_count &gt; 0"/>
                             <field name="delivery_summary" readonly="1"
@@ -307,7 +312,13 @@
                                     <field name="quantity" sum="Total" digits="[18, 2]"/>
                                     <field name="product_uom_id"/>
                                     <field name="required_by"/>
-                                    <field name="delivery_location"/>
+                                    <field name="company_id" column_invisible="1"/>
+                                    <field name="delivery_location_id"
+                                           options="{'no_create': True}"
+                                           optional="show"/>
+                                    <field name="delivery_location"
+                                           string="Other Address"
+                                           optional="hide"/>
                                     <field name="notes"/>
                                 </list>
                             </field>

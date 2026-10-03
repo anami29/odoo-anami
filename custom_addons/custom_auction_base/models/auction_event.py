@@ -115,11 +115,29 @@ class AuctionEvent(models.Model):
     order_count = fields.Integer(compute="_compute_award_count")
 
     def _compute_award_count(self):
+        """FIX-023. Counted with sudo; NAVIGATING to them is not.
+
+        Mapping into order_ids reads purchase.order and sale.order in the
+        CALLER's environment. An Event Owner who does not also hold the
+        purchase licence therefore raised AccessError on this compute, and
+        because the compute backs a field on the event form, the form died
+        with it: after the award was generated, the buyer who ran the
+        tender could no longer open their own event at all. The web client
+        fell back to the event list, which made it look like a search
+        filter rather than a permission fault.
+
+        This is the fourth appearance of one root cause (FIX-011, FIX-016,
+        FIX-018): the engine reads in the caller's environment. The rule
+        FIX-016 settled applies here unchanged -- counting documents
+        generated from your own event discloses nothing, while opening one
+        needs the licence that reads it, and the stat button already
+        carries that group.
+        """
         for ev in self:
             ev.award_count = len(ev.award_ids)
-            ev.order_count = (
-                len(ev.award_ids.mapped("order_ids"))
-                + len(ev.award_ids.mapped("sale_order_ids")))
+            awards = ev.award_ids.sudo()
+            ev.order_count = (len(awards.mapped("order_ids"))
+                              + len(awards.mapped("sale_order_ids")))
 
     require_bid_security = fields.Boolean(default=True)
     bid_security_amount = fields.Monetary()

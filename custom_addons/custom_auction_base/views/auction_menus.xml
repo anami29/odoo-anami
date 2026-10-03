@@ -1,52 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+
+    <!-- ===================================================================
+         Menu.
+
+         Ordered by the lifecycle of an event, because that is the order in
+         which an operator meets these screens: set the event up, publish a
+         tender pack and answer questions on it, take bids and open them,
+         award and raise the orders, then report on it. Configuration last,
+         since it is touched once a quarter and not once a day.
+
+         Almost nothing here carries a groups= attribute. An Odoo menu is
+         hidden automatically when the user cannot read the model behind it,
+         so the ACL table is the single place access is decided; a groups=
+         here as well would be a second, silent copy of that decision, and
+         the two would eventually disagree.
+
+         Three menus are exceptions and say so on the line itself: the two
+         order lists point at purchase and sale models this module does not
+         own, so it has to name their licence groups, and Bid Security is a
+         finance desk that a Manager must still be able to oversee.
+
+         A note for whoever edits this file next. A groups= left OFF a
+         menuitem does NOT clear a group the menu already has: Odoo writes
+         only the fields the tag actually carries, so an omitted one keeps
+         its stored value through every upgrade. Deleting the attribute
+         therefore changes the intent of this file and nothing in the
+         database. To genuinely clear one, write the groups_id explicitly.
+         This was found by counting the menus a buyer could see, not by
+         reading the XML, where it is invisible.
+         =================================================================== -->
+
     <menuitem id="menu_auction_root" name="Auctions"
               web_icon="custom_auction_base,static/description/icon.png"
               sequence="52"/>
 
-    <menuitem id="menu_auction_events" name="Events"
-              parent="menu_auction_root" action="action_auction_event"
+    <menuitem id="menu_auction_dashboard" name="Dashboard"
+              parent="menu_auction_root" action="action_auction_dashboard"
+              sequence="5"/>
+
+    <!-- ========== setting the event up ========== -->
+    <menuitem id="menu_auction_events_root" name="Events"
+              parent="menu_auction_root" sequence="10"/>
+
+    <menuitem id="menu_auction_events" name="Auction Events"
+              parent="menu_auction_events_root" action="action_auction_event"
               sequence="10"/>
 
     <menuitem id="menu_auction_participants" name="Participants"
-              parent="menu_auction_root" action="action_auction_participant"
-              sequence="20"/>
+              parent="menu_auction_events_root"
+              action="action_auction_participant" sequence="20"/>
 
-    <menuitem id="menu_auction_security" name="Bid Security"
-              parent="menu_auction_root" action="action_auction_bid_security"
-              sequence="30" groups="custom_auction_base.group_auction_finance"/>
+    <!-- ========== publishing it, and answering on it ========== -->
+    <menuitem id="menu_auction_tendering" name="Tendering"
+              parent="menu_auction_root" sequence="20"/>
 
-    <menuitem id="menu_auction_ledger" name="Bid Ledger"
-              parent="menu_auction_root" action="action_auction_bid"
-              sequence="40"/>
+    <menuitem id="menu_auction_documents" name="Tender Documents"
+              parent="menu_auction_tendering" action="action_auction_document"
+              sequence="10"/>
 
     <menuitem id="menu_auction_clarifications" name="Clarifications"
-              parent="menu_auction_root" action="action_auction_clarification"
-              sequence="22"/>
-
-    <menuitem id="menu_auction_documents" name="Documents"
-              parent="menu_auction_root" action="action_auction_document"
-              sequence="24"/>
+              parent="menu_auction_tendering"
+              action="action_auction_clarification" sequence="20"/>
 
     <menuitem id="menu_auction_corrigenda" name="Corrigenda"
-              parent="menu_auction_root" action="action_auction_corrigendum"
-              sequence="26"/>
+              parent="menu_auction_tendering"
+              action="action_auction_corrigendum" sequence="30"/>
 
-    <menuitem id="menu_auction_evaluation" name="Opened Bids"
-              parent="menu_auction_root" action="action_auction_evaluation_line"
-              sequence="32"/>
+    <!-- ========== taking the bids, and opening them ========== -->
+    <menuitem id="menu_auction_bidding" name="Bids" parent="menu_auction_root"
+              sequence="30"/>
 
-    <menuitem id="menu_auction_awards" name="Awards"
-              parent="menu_auction_root" action="action_auction_award"
-              sequence="35"/>
+    <!-- Finance does the verifying; a Manager has to be able to see the
+         queue they are accountable for. Named explicitly because the
+         record already carried the finance group alone. -->
+    <menuitem id="menu_auction_security" name="Bid Security"
+              parent="menu_auction_bidding"
+              action="action_auction_bid_security" sequence="10"
+              groups="custom_auction_base.group_auction_finance,custom_auction_base.group_auction_manager"/>
+
+    <menuitem id="menu_auction_ledger" name="Bid Ledger"
+              parent="menu_auction_bidding" action="action_auction_bid"
+              sequence="20"/>
 
     <menuitem id="menu_auction_openings" name="Envelope Openings"
-              parent="menu_auction_root" action="action_auction_opening"
-              sequence="45"/>
+              parent="menu_auction_bidding" action="action_auction_opening"
+              sequence="30"/>
+
+    <!-- ========== deciding, and raising the paper ========== -->
+    <menuitem id="menu_auction_award_root" name="Award"
+              parent="menu_auction_root" sequence="40"/>
+
+    <menuitem id="menu_auction_evaluation" name="Opened Bids"
+              parent="menu_auction_award_root"
+              action="action_auction_evaluation_line" sequence="10"/>
+
+    <menuitem id="menu_auction_awards" name="Awards"
+              parent="menu_auction_award_root" action="action_auction_award"
+              sequence="20"/>
+
+    <menuitem id="menu_auction_po" name="Purchase Orders Raised"
+              parent="menu_auction_award_root"
+              action="action_auction_purchase_order" sequence="30"
+              groups="purchase.group_purchase_user"/>
+
+    <menuitem id="menu_auction_so" name="Sale Orders Raised"
+              parent="menu_auction_award_root"
+              action="action_auction_sale_order" sequence="40"
+              groups="sales_team.group_sale_salesman"/>
+
+    <!-- ========== looking back at it ========== -->
+    <menuitem id="menu_auction_reporting" name="Reporting"
+              parent="menu_auction_root" sequence="50"/>
+
+    <menuitem id="menu_auction_report_pipeline" name="Event Pipeline"
+              parent="menu_auction_reporting"
+              action="action_auction_event_pipeline" sequence="10"/>
+
+    <menuitem id="menu_auction_report_bids" name="Bid Analysis"
+              parent="menu_auction_reporting" action="action_auction_analysis"
+              sequence="20"/>
+
+    <menuitem id="menu_auction_report_award" name="Award and Savings"
+              parent="menu_auction_reporting"
+              action="action_auction_analysis_award" sequence="30"/>
+
+    <menuitem id="menu_auction_report_bidders" name="Bidder Participation"
+              parent="menu_auction_reporting"
+              action="action_auction_analysis_bidder" sequence="40"/>
+
+    <menuitem id="menu_auction_report_security" name="Bid Security Ageing"
+              parent="menu_auction_reporting"
+              action="action_auction_security_ageing" sequence="50"/>
 
     <menuitem id="menu_auction_audit" name="Audit Log"
-              parent="menu_auction_root" action="action_auction_audit"
-              sequence="50"/>
+              parent="menu_auction_reporting" action="action_auction_audit"
+              sequence="90"/>
+
+    <!-- ========== set once, changed rarely ========== -->
     <menuitem id="menu_auction_config" name="Configuration"
               parent="menu_auction_root" sequence="90"
               groups="custom_auction_base.group_auction_manager"/>
@@ -59,12 +150,12 @@
               parent="menu_auction_config" action="action_auction_category"
               sequence="10"/>
 
-    <menuitem id="menu_auction_config_mechanisms" name="Mechanisms"
-              parent="menu_auction_config" action="action_auction_mechanism"
-              sequence="30"/>
-
     <menuitem id="menu_auction_config_rules" name="Rule Sets"
               parent="menu_auction_config" action="action_auction_rule_set"
               sequence="20"/>
+
+    <menuitem id="menu_auction_config_mechanisms" name="Mechanisms"
+              parent="menu_auction_config" action="action_auction_mechanism"
+              sequence="30"/>
 
 </odoo>

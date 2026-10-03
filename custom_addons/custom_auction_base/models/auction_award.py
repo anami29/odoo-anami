@@ -161,8 +161,85 @@ class AuctionAward(models.Model):
                     detail={"error": str(exc)})
         return self.action_view_documents()
 
+    # ------------------------------------------------------------------
+    # Deliveries
+    #
+    # A purchase order has ONE destination: its picking type. So the unit
+    # that decides how orders are split is not the award line, it is the
+    # individual delivery -- a line whose three tranches go to three plants
+    # has to become three orders, not one with a note in the description.
+    # Expanding to deliveries first makes that fall out rather than being
+    # special-cased.
+    # ------------------------------------------------------------------
+    def _deliveries(self, award_line):
+        """Expand an award line into (qty, date, location, note, label)."""
+        line = award_line.line_id
+        tranches = line.schedule_ids.sorted("required_by")
+        if not tranches:
+            return [{
+                "qty": award_line.qty_awarded,
+                "date": fields.Datetime.to_datetime(line.required_by)
+                        or fields.Datetime.now(),
+                "location": line.delivery_location_id,
+                "note": line.delivery_location or "",
+                "label": "",
+            }]
+        # Scale each tranche where a partial quantity was awarded.
+        ratio = (award_line.qty_awarded / line.product_qty
+                 if line.product_qty else 1.0)
+        return [{
+            "qty": t.quantity * ratio,
+            "date": fields.Datetime.to_datetime(t.required_by),
+            "location": t.effective_location_id,
+            "note": t.delivery_location or line.delivery_location or "",
+            "label": t.name or str(t.required_by),
+        } for t in tranches]
+
+    def _picking_type_for(self, location):
+        """The incoming operation type that lands goods in this location.
+
+        Prefer an operation type whose destination IS the location, then
+        one in the same warehouse, then the company default. Returning the
+        default rather than failing is deliberate: a tender destination
+        that has no matching operation type is a configuration gap, and an
+        award that refuses to generate because of it helps nobody. The
+        location is recorded on the order either way, so the gap is
+        visible rather than silent.
+        """
+        PickingType = self.env["stock.picking.type"].sudo()
+        company = self.company_id
+        base = [("code", "=", "incoming"),
+                ("company_id", "in", (company.id, False))]
+        if location:
+            exact = PickingType.search(
+                base + [("default_location_dest_id", "=", location.id)],
+                limit=1)
+            if exact:
+                return exact
+            # Then one whose destination CONTAINS the tendered location:
+            # WH/Stock receives for WH/Stock/Bhosari Gate, and the move
+            # override in downstream.py then narrows the receipt to the
+            # gate itself.
+            warehouse = location.warehouse_id if "warehouse_id" in \
+                location._fields else False
+            if warehouse:
+                for candidate in PickingType.search(
+                        base + [("warehouse_id", "=", warehouse.id)]):
+                    dest = candidate.default_location_dest_id
+                    if dest and location._child_of(dest):
+                        return candidate
+                in_wh = PickingType.search(
+                    base + [("warehouse_id", "=", warehouse.id)], limit=1)
+                if in_wh:
+                    return in_wh
+        return PickingType.search(base, limit=1)
+
     def _generate_purchase_orders(self):
-        """One draft purchase order per vendor per lot. BR-INT-001."""
+        """One draft purchase order per vendor, per lot, per DESTINATION.
+
+        BR-INT-001, extended: the destination is part of the grouping key
+        because it is part of the order header, not of the line.
+        """
         self.ensure_one()
         # The authority for this document is the APPROVED AWARD, not the
         # approver's purchase licence. An SME approver is frequently a
@@ -170,25 +247,34 @@ class AuctionAward(models.Model):
         Order = self.env["purchase.order"].sudo()
 
         grouped = {}
-        for line in self.line_ids:
-            key = (line.participant_id.partner_id.id, line.lot_id.id)
-            grouped.setdefault(key, []).append(line)
+        for award_line in self.line_ids:
+            for delivery in self._deliveries(award_line):
+                key = (award_line.participant_id.partner_id.id,
+                       award_line.lot_id.id,
+                       delivery["location"].id or 0,
+                       delivery["note"] if not delivery["location"] else "")
+                grouped.setdefault(key, []).append((award_line, delivery))
 
-        for (partner_id, lot_id), lines in grouped.items():
+        for key, items in grouped.items():
+            partner_id, lot_id, location_id, note = key
             existing = Order.search([
                 ("auction_award_id", "=", self.id),
                 ("partner_id", "=", partner_id),
                 ("auction_lot_id", "=", lot_id),
+                ("auction_delivery_location_id", "=", location_id or False),
             ], limit=1)
             if existing:
                 continue                      # idempotent: already generated
 
-            commands = []
-            for line in lines:
-                commands.extend(
-                    (0, 0, vals) for vals in self._purchase_line_values(line))
+            location = self.env["stock.location"].sudo().browse(location_id) \
+                if location_id else self.env["stock.location"].sudo()
+            picking_type = self._picking_type_for(location)
 
-            order = Order.create({
+            commands = [
+                (0, 0, self._purchase_line_values(award_line, delivery))
+                for award_line, delivery in items
+            ]
+            vals = {
                 "partner_id": partner_id,
                 "currency_id": self.currency_id.id,
                 "company_id": self.company_id.id,
@@ -196,50 +282,54 @@ class AuctionAward(models.Model):
                 "auction_event_id": self.event_id.id,
                 "auction_award_id": self.id,
                 "auction_lot_id": lot_id,
+                "auction_delivery_location_id": location_id or False,
+                "auction_delivery_note": note or False,
                 "order_line": commands,
-            })
-            for line in lines:
-                line.order_id = order.id
-            self._write_supplierinfo(lines, partner_id)
+            }
+            if picking_type:
+                vals["picking_type_id"] = picking_type.id
+            order = Order.create(vals)
 
-    def _purchase_line_values(self, award_line):
-        """One purchase order line per delivery tranche.
+            for award_line, _delivery in items:
+                if not award_line.order_id:
+                    award_line.order_id = order.id
+            self._write_supplierinfo(
+                [al for al, _d in items], partner_id)
 
-        A line with three tranches becomes three purchase order lines with
-        different planned dates, not one line with a note. Receipts,
-        follow-up and delivery reporting then work without anything custom.
+    def _purchase_line_values(self, award_line, delivery):
+        """One purchase order line per delivery.
+
+        The tendered HSN and the tendered destination travel with it. The
+        HSN is the figure that was TENDERED, which is not necessarily what
+        the product master says today: a line may be classified
+        differently from its product, and the order has to show what was
+        agreed, not what the master has since become.
         """
         line = award_line.line_id
-        base = {
+        name = line.name + (
+            "\n" + line.specification if line.specification else "")
+        if delivery["label"]:
+            name = "%s - %s" % (name, delivery["label"])
+        where = (delivery["location"].complete_name
+                 or delivery["note"] or "")
+        if where:
+            name = "%s\nDeliver to: %s" % (name, where)
+        if line.hsn_sac:
+            name = "%s\nHSN/SAC: %s" % (name, line.hsn_sac)
+        return {
             "product_id": line.product_id.id or False,
-            "name": line.name + (
-                "\n" + line.specification if line.specification else ""),
+            "name": name,
             "price_unit": award_line.price_unit,
+            "product_qty": delivery["qty"],
+            "date_planned": delivery["date"],
             "product_uom": (line.product_uom_id.id
                             or (line.product_id.uom_po_id.id
                                 if line.product_id else False)),
             "auction_award_line_id": award_line.id,
             "auction_bid_line_id": award_line.bid_line_id.id or False,
+            "auction_hsn_sac": line.hsn_sac or False,
+            "auction_delivery_location_id": delivery["location"].id or False,
         }
-        tranches = line.schedule_ids.sorted("required_by")
-        if not tranches:
-            return [dict(base,
-                         product_qty=award_line.qty_awarded,
-                         date_planned=fields.Datetime.to_datetime(
-                             line.required_by) or fields.Datetime.now())]
-
-        # Scale each tranche if a partial quantity was awarded.
-        ratio = (award_line.qty_awarded / line.product_qty
-                 if line.product_qty else 1.0)
-        out = []
-        for tranche in tranches:
-            out.append(dict(
-                base,
-                name="%s - %s" % (base["name"], tranche.name or tranche.required_by),
-                product_qty=tranche.quantity * ratio,
-                date_planned=fields.Datetime.to_datetime(tranche.required_by),
-            ))
-        return out
 
     def _write_supplierinfo(self, lines, partner_id):
         """Update the vendor pricelist. BR-INT-005.
@@ -304,14 +394,28 @@ class AuctionAward(models.Model):
             commands = []
             for line in lines:
                 src = line.line_id
+                # On a disposal the location is where the buyer LIFTS the
+                # material from, which is the single question every scrap
+                # buyer asks, so it goes on the line rather than in a
+                # covering email.
+                where = (src.delivery_location_id.complete_name
+                         or src.delivery_location or "")
+                name = src.name
+                if where:
+                    name = "%s\nCollect from: %s" % (name, where)
+                if src.hsn_sac:
+                    name = "%s\nHSN/SAC: %s" % (name, src.hsn_sac)
                 commands.append((0, 0, {
                     "product_id": src.product_id.id or False,
-                    "name": src.name,
+                    "name": name,
                     "product_uom_qty": line.qty_awarded,
                     "product_uom": src.product_uom_id.id or False,
                     "price_unit": line.price_unit,
                     "auction_award_line_id": line.id,
                     "auction_bid_line_id": line.bid_line_id.id or False,
+                    "auction_hsn_sac": src.hsn_sac or False,
+                    "auction_delivery_location_id":
+                        src.delivery_location_id.id or False,
                 }))
             order.write({"order_line": commands})
             for line in lines:

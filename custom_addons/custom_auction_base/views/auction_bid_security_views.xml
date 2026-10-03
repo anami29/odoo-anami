@@ -151,6 +151,24 @@
                         domain="[('mode','in',['neft','rtgs','imps'])]"/>
                 <filter name="instrument" string="Cheque / DD / BG / FDR"
                         domain="[('mode','in',['cheque','bankers_cheque','dd','bg','fdr'])]"/>
+                <separator/>
+                <!-- Ageing. Relative to the day the filter is applied, not
+                     to a stored column, which would be right only until the
+                     next midnight. -->
+                <filter name="age_3d" string="Declared over 3 days ago"
+                        domain="[('declared_date','&lt;',
+                                  (context_today() - relativedelta(days=3)).strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter name="age_7d" string="Declared over 7 days ago"
+                        domain="[('declared_date','&lt;',
+                                  (context_today() - relativedelta(days=7)).strftime('%Y-%m-%d 00:00:00'))]"/>
+                <separator/>
+                <!-- A guarantee or FDR that matures before the award is
+                     signed is worthless. This is the one ageing question
+                     that costs money if nobody asks it. -->
+                <filter name="expiring" string="Validity expiring in 30 days"
+                        domain="[('validity_date','!=',False),
+                                 ('validity_date','&lt;=',
+                                  (context_today() + relativedelta(days=30)).strftime('%Y-%m-%d'))]"/>
                 <group expand="0" string="Group By">
                     <filter name="g_event" string="Event" context="{'group_by':'event_id'}"/>
                     <filter name="g_state" string="Status" context="{'group_by':'state'}"/>

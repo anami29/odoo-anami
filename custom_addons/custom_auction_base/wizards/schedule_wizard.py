@@ -72,6 +72,7 @@ class AuctionScheduleWizard(models.TransientModel):
                 "quantity": qty,
                 "required_by": when,
                 "delivery_location": line.delivery_location,
+                "delivery_location_id": line.delivery_location_id.id,
             }))
             when = when + step
 

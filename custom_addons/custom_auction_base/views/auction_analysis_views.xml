@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================================
+         Reporting.
+
+         Three screens read auction.analysis, which exists only for opened
+         bids. Two more read their own models, because the questions they
+         answer are about events that have NOT been opened yet and the
+         analysis view has nothing to say about those by design.
+         =================================================================== -->
+
+    <record id="view_auction_analysis_list" model="ir.ui.view">
+        <field name="name">auction.analysis.list</field>
+        <field name="model">auction.analysis</field>
+        <field name="arch" type="xml">
+            <list string="Bid Analysis" create="false" edit="false"
+                  delete="false" default_order="close_date desc, line_id, rank">
+                <field name="event_id"/>
+                <field name="close_date" optional="show"/>
+                <field name="category_id" optional="hide"/>
+                <field name="lot_id" optional="hide"/>
+                <field name="line_id"/>
+                <field name="product_id" optional="hide"/>
+                <field name="participant_id"/>
+                <field name="classification" optional="hide"/>
+                <field name="rank" decoration-bf="rank == 1"
+                       decoration-success="rank == 1"/>
+                <field name="price_unit" digits="[18, 2]"
+                       decoration-bf="rank == 1"/>
+                <field name="qty_offered" digits="[18, 2]" optional="hide"/>
+                <field name="bid_value" sum="Bid value"/>
+                <field name="base_price" digits="[18, 2]" optional="hide"/>
+                <field name="slip_days" optional="hide"
+                       decoration-warning="slip_days &gt; 0"/>
+                <field name="bidders_on_line" optional="hide"/>
+                <field name="is_awarded" optional="show"/>
+                <field name="is_override" optional="hide"
+                       decoration-danger="is_override"/>
+                <field name="awarded_value" optional="hide" sum="Awarded"/>
+                <field name="saving_value" sum="Saving"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_auction_analysis_pivot" model="ir.ui.view">
+        <field name="name">auction.analysis.pivot</field>
+        <field name="model">auction.analysis</field>
+        <field name="arch" type="xml">
+            <pivot string="Bid Analysis" sample="0">
+                <field name="event_id" type="row"/>
+                <field name="participant_id" type="col"/>
+                <field name="bid_value" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_auction_analysis_graph" model="ir.ui.view">
+        <field name="name">auction.analysis.graph</field>
+        <field name="model">auction.analysis</field>
+        <field name="arch" type="xml">
+            <graph string="Bid Analysis" type="bar" sample="0">
+                <field name="event_id"/>
+                <field name="bid_count" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_auction_analysis_search" model="ir.ui.view">
+        <field name="name">auction.analysis.search</field>
+        <field name="model">auction.analysis</field>
+        <field name="arch" type="xml">
+            <search string="Bid Analysis">
+                <field name="event_id"/>
+                <field name="participant_id" string="Bidder"/>
+                <field name="partner_id"/>
+                <field name="line_id"/>
+                <field name="product_id"/>
+                <field name="category_id"/>
+                <separator/>
+                <filter name="purchase" string="Purchase"
+                        domain="[('direction', '=', 'reverse')]"/>
+                <filter name="disposal" string="Disposal"
+                        domain="[('direction', '=', 'forward')]"/>
+                <separator/>
+                <filter name="best" string="Best bid on the line"
+                        domain="[('is_best', '=', True)]"/>
+                <filter name="awarded" string="Awarded"
+                        domain="[('is_awarded', '=', True)]"/>
+                <filter name="override" string="Awarded off the best bid"
+                        domain="[('is_override', '=', True)]"/>
+                <!-- A winning price can still be above our own base price.
+                     Summed into a group that number nets against the lines
+                     that came in under, so the only way to see it is to ask
+                     for it. These are the lines where competition beat
+                     nobody except the estimate. -->
+                <filter name="above_base" string="Awarded above base price"
+                        domain="[('is_awarded', '=', True),
+                                 ('saving_value', '&lt;', 0)]"/>
+                <filter name="lost" string="Bid but not awarded"
+                        domain="[('is_awarded', '=', False)]"/>
+                <separator/>
+                <filter name="single_bidder" string="Single bidder on the line"
+                        domain="[('bidders_on_line', '=', 1)]"/>
+                <filter name="slipped" string="Delivery slip offered"
+                        domain="[('slip_days', '&gt;', 0)]"/>
+                <separator/>
+                <filter name="mse" string="MSE or DPIIT bidder"
+                        domain="[('classification', 'in', ('mse', 'dpiit'))]"/>
+                <separator/>
+                <filter name="this_year" string="Closed this year"
+                        domain="[('close_date', '&gt;=',
+                                  (context_today() + relativedelta(month=1, day=1)).strftime('%Y-%m-%d'))]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_event" string="Event"
+                            context="{'group_by': 'event_id'}"/>
+                    <filter name="group_category" string="Category"
+                            context="{'group_by': 'category_id'}"/>
+                    <filter name="group_lot" string="Lot"
+                            context="{'group_by': 'lot_id'}"/>
+                    <filter name="group_line" string="Line item"
+                            context="{'group_by': 'line_id'}"/>
+                    <filter name="group_product" string="Product"
+                            context="{'group_by': 'product_id'}"/>
+                    <filter name="group_bidder" string="Bidder"
+                            context="{'group_by': 'participant_id'}"/>
+                    <filter name="group_org" string="Bidder organisation"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_class" string="Bidder class"
+                            context="{'group_by': 'classification'}"/>
+                    <filter name="group_direction" string="Direction"
+                            context="{'group_by': 'direction'}"/>
+                    <filter name="group_close" string="Bid close"
+                            context="{'group_by': 'close_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ========== 1. every opened price, the raw grain ========== -->
+    <record id="action_auction_analysis" model="ir.actions.act_window">
+        <field name="name">Bid Analysis</field>
+        <field name="res_model">auction.analysis</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="context">{'search_default_group_event': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No opened bids yet</p>
+            <p>
+                This report reads opened bids. A sealed price does not exist
+                in the database until its envelope is opened, so an event
+                still accepting bids contributes nothing here. That is the
+                point of a sealed bid, not a gap in the report.
+            </p>
+        </field>
+    </record>
+
+    <!-- ========== 2. what the awards cost, and what they saved ========== -->
+    <record id="action_auction_analysis_award" model="ir.actions.act_window">
+        <field name="name">Award and Savings</field>
+        <field name="res_model">auction.analysis</field>
+        <field name="view_mode">pivot,list,graph</field>
+        <field name="domain">[('is_awarded', '=', True)]</field>
+        <!-- Columns collapsed to a single total. The shared pivot view
+             splits by bidder, which is right for a comparative and wrong
+             here: with a dozen bidders this report scrolls sideways for a
+             screen and a half before reaching a number anybody asked for. -->
+        <field name="context">{'search_default_group_category': 1,
+                               'pivot_column_groupby': [],
+                               'pivot_row_groupby': ['category_id',
+                                                     'event_id'],
+                               'pivot_measures': ['awarded_value',
+                                                  'saving_value',
+                                                  'override_count']}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nothing awarded yet</p>
+            <p>
+                Saving is measured against the base price recorded on the
+                line item. Where no base price was entered the saving reads
+                zero, which is honest: without a baseline there is nothing
+                to measure against.
+            </p>
+        </field>
+    </record>
+
+    <!-- ========== 3. who turns up, and who ever wins ========== -->
+    <record id="action_auction_analysis_bidder" model="ir.actions.act_window">
+        <field name="name">Bidder Participation</field>
+        <field name="res_model">auction.analysis</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="context">{'search_default_group_org': 1,
+                               'pivot_measures': ['bid_count',
+                                                  'award_count',
+                                                  'bid_value'],
+                               'pivot_column_groupby': ['is_awarded']}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No opened bids yet</p>
+            <p>
+                A bidder who appears here repeatedly with no awards is
+                either uncompetitive or being invited to the wrong events.
+                Both are worth knowing before the next tender goes out.
+            </p>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         4. Pipeline. Reads auction.event, NOT the analysis view: the
+         whole question is about events that have not been opened, and the
+         analysis view holds nothing for those.
+         =================================================================== -->
+    <record id="view_auction_event_graph" model="ir.ui.view">
+        <field name="name">auction.event.graph</field>
+        <field name="model">auction.event</field>
+        <field name="arch" type="xml">
+            <graph string="Pipeline" type="bar" sample="0">
+                <field name="state"/>
+                <field name="direction"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_auction_event_pivot" model="ir.ui.view">
+        <field name="name">auction.event.pivot</field>
+        <field name="model">auction.event</field>
+        <field name="arch" type="xml">
+            <pivot string="Pipeline" sample="0">
+                <field name="category_id" type="row"/>
+                <field name="state" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_auction_event_pipeline" model="ir.actions.act_window">
+        <field name="name">Event Pipeline</field>
+        <field name="res_model">auction.event</field>
+        <field name="view_mode">graph,pivot,list,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+    </record>
+
+    <!-- ===================================================================
+         5. Bid security ageing. Relative-date filters rather than a stored
+         "days pending" column: a stored one would be correct for exactly
+         as long as the cron that refreshed it, and wrong afterwards.
+         =================================================================== -->
+    <record id="action_auction_security_ageing" model="ir.actions.act_window">
+        <field name="name">Bid Security Ageing</field>
+        <field name="res_model">auction.bid.security</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_pending': 1,
+                               'search_default_g_state': 1}</field>
+        <field name="groups_id" eval="[(4, ref('group_auction_finance')),
+                                       (4, ref('group_auction_manager'))]"/>
+    </record>
+
+</odoo>

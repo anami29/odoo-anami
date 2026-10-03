@@ -104,5 +104,28 @@
             <field name="domain_force">[('state','=','issued')]</field>
         </record>
 
+        <!-- ==============================================================
+             Reporting. The analysis view carries opened prices, so it is
+             fenced exactly like the working set it reads from, not more
+             loosely because it is "only a report".
+             ============================================================== -->
+        <record id="rule_analysis_company" model="ir.rule">
+            <field name="name">Auction analysis: company</field>
+            <field name="model_id" ref="model_auction_analysis"/>
+            <field name="domain_force">[('company_id','in',company_ids)]</field>
+            <field name="global" eval="True"/>
+        </record>
+
+        <!-- Defence in depth, as for the evaluation working set: a bidder
+             has no ACL row on this model at all, so the rule grants nothing
+             today. It exists so that adding one later cannot expose a
+             competitor's price by omission. -->
+        <record id="rule_analysis_portal" model="ir.rule">
+            <field name="name">Auction analysis: own organisation only</field>
+            <field name="model_id" ref="model_auction_analysis"/>
+            <field name="groups" eval="[(4, ref('group_auction_bidder'))]"/>
+            <field name="domain_force">[('participant_id.commercial_partner_id','=',user.partner_id.commercial_partner_id.id)]</field>
+        </record>
+
     </data>
 </odoo>

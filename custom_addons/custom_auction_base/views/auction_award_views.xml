@@ -129,6 +129,42 @@
         <field name="view_mode">list,form</field>
     </record>
 
+    <!-- Every order that came out of a tender, in one list. The linkage
+         already exists on each order; without a list of them the only way
+         to answer "which of our POs were competitively tendered" is to open
+         orders one at a time and look. -->
+    <record id="action_auction_purchase_order" model="ir.actions.act_window">
+        <field name="name">Purchase Orders Raised from Auctions</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('auction_event_id', '!=', False)]</field>
+        <field name="context">{'search_default_group_auction_event': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No orders raised yet</p>
+            <p>
+                Orders appear here once an approved award has generated its
+                documents. Each one carries the event, the award and the lot
+                it came from, so an auditor can walk from the order back to
+                the sealed bid that set its price.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_auction_sale_order" model="ir.actions.act_window">
+        <field name="name">Sale Orders Raised from Auctions</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('auction_event_id', '!=', False)]</field>
+        <field name="context">{'search_default_group_auction_event': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No orders raised yet</p>
+            <p>
+                Disposal sale orders appear here once an approved award has
+                generated its documents.
+            </p>
+        </field>
+    </record>
+
     <!-- ========== linkage back from the transactional documents ========= -->
     <record id="view_purchase_order_form_auction" model="ir.ui.view">
         <field name="name">purchase.order.form.auction</field>
@@ -144,6 +180,13 @@
                     </div>
                 </button>
             </div>
+            <xpath expr="//field[@name='order_line']/list/field[@name='name']"
+                   position="after">
+                <field name="auction_hsn_sac" string="HSN/SAC"
+                       optional="show" readonly="1"/>
+                <field name="auction_delivery_location_id"
+                       string="Deliver to" optional="hide" readonly="1"/>
+            </xpath>
             <field name="partner_ref" position="after">
                 <field name="auction_event_id" readonly="1"
                        invisible="not auction_event_id"/>
@@ -151,7 +194,40 @@
                        invisible="not auction_award_id"/>
                 <field name="auction_lot_id" readonly="1"
                        invisible="not auction_lot_id"/>
+                <field name="auction_delivery_location_id"
+                       readonly="1"
+                       invisible="not auction_delivery_location_id"/>
+                <field name="auction_delivery_note" readonly="1"
+                       invisible="not auction_delivery_note"/>
             </field>
+        </field>
+    </record>
+
+    <!-- The group-by the two order actions above default to. Declared as an
+         inherited filter rather than passed as a raw context group_by, so
+         the control panel shows it as a removable facet the operator can
+         see and switch off. -->
+    <record id="view_purchase_order_filter_auction" model="ir.ui.view">
+        <field name="name">purchase.order.search.auction</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_filter"/>
+        <field name="arch" type="xml">
+            <group position="inside">
+                <filter name="group_auction_event" string="Auction Event"
+                        context="{'group_by': 'auction_event_id'}"/>
+            </group>
+        </field>
+    </record>
+
+    <record id="view_sales_order_filter_auction" model="ir.ui.view">
+        <field name="name">sale.order.search.auction</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sales_order_filter"/>
+        <field name="arch" type="xml">
+            <group position="inside">
+                <filter name="group_auction_event" string="Auction Event"
+                        context="{'group_by': 'auction_event_id'}"/>
+            </group>
         </field>
     </record>
 
@@ -169,6 +245,11 @@
                     </div>
                 </button>
             </div>
+            <xpath expr="//field[@name='order_line']/list/field[@name='name']"
+                   position="after">
+                <field name="auction_hsn_sac" string="HSN/SAC"
+                       optional="show" readonly="1"/>
+            </xpath>
             <field name="client_order_ref" position="after">
                 <field name="auction_event_id" readonly="1"
                        invisible="not auction_event_id"/>

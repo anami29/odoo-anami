@@ -166,7 +166,16 @@ for dirpath, _dirs, files in os.walk(ROOT):
             rid = rec.get("id")
             if rid:
                 xml_ids.add(rid)
-                if rec.get("model") == "ir.actions.act_window":
+                # A menuitem may legitimately point at a SERVER action, not
+                # only a window action: the dashboard does, because an
+                # act_window on a transient model opens an unsaved record
+                # and the form never receives its computed values. Checking
+                # only act_window reported that menu as broken when it was
+                # the checker that was incomplete.
+                if rec.get("model") in ("ir.actions.act_window",
+                                        "ir.actions.server",
+                                        "ir.actions.report",
+                                        "ir.actions.client"):
                     actions.add(rid)
             if rec.get("model") == "ir.ui.view":
                 mnode = rec.find("field[@name='model']")

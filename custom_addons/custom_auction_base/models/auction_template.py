@@ -303,6 +303,7 @@ class AuctionEventTemplate(models.Model):
                     "hsn_sac": tline.hsn_sac,
                     "line_type": tline.line_type,
                     "delivery_location": tline.delivery_location,
+                    "delivery_location_id": tline.delivery_location_id.id,
                     "required_by": (
                         bid_close.date()
                         + relativedelta(days=tline.delivery_offset_days)),
@@ -408,12 +409,33 @@ class AuctionEventTemplateLine(models.Model):
     product_qty = fields.Float(digits=(18, 6), required=True, default=1.0)
     product_uom_id = fields.Many2one("uom.uom")
     specification = fields.Text()
-    hsn_sac = fields.Char()
+    # Templates carry the HSN the same way lines do: from the product, and
+    # overridable. A locked template that disagreed with the product master
+    # would quietly propagate a stale code into every event made from it.
+    hsn_sac = fields.Char(
+        string="HSN/SAC", compute="_compute_template_hsn", store=True,
+        readonly=False)
     line_type = fields.Selection(
         [("firm", "Firm"), ("remeasurable", "Re-measurable"),
          ("provisional", "Provisional sum")],
         required=True, default="firm")
-    delivery_location = fields.Char()
+    delivery_location_id = fields.Many2one(
+        "stock.location", string="Delivery Location",
+        domain="['&', ('usage', '=', 'internal'),"
+               " '|', ('company_id', '=', False),"
+               " ('company_id', 'parent_of', company_id)]")
+    company_id = fields.Many2one(
+        related="template_lot_id.template_id.company_id", store=True)
+    delivery_location = fields.Char(string="Other Address")
+
+    @api.depends("product_id")
+    def _compute_template_hsn(self):
+        for line in self:
+            product = line.product_id
+            code = False
+            if product and "l10n_in_hsn_code" in product._fields:
+                code = product.l10n_in_hsn_code or False
+            line.hsn_sac = code or line.hsn_sac or False
 
     delivery_offset_days = fields.Integer(
         default=30,
@@ -497,6 +519,7 @@ class AuctionEventTemplateLine(models.Model):
                 "quantity": qty,
                 "required_by": when,
                 "delivery_location": line.delivery_location,
+                "delivery_location_id": line.delivery_location_id.id,
             }))
             when = when + step
         line.write({"schedule_ids": rows})

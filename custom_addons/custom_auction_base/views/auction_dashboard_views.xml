@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================================
+         The landing screen.
+
+         A form on a transient record, rendered inline so there is no save
+         bar on something nobody saves. Each tile's number and the list it
+         opens come from one domain declared in TILES, so they cannot drift
+         apart.
+
+         A tile whose model the operator cannot read is hidden, not shown
+         as zero. Zero reads as "nothing to do"; the truth is "not your
+         desk", and those are not the same statement.
+         =================================================================== -->
+
+    <record id="view_auction_dashboard_form" model="ir.ui.view">
+        <field name="name">auction.dashboard.form</field>
+        <field name="model">auction.dashboard</field>
+        <field name="arch" type="xml">
+            <form string="Auctions" create="false" edit="false">
+                <sheet>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="show_awards" invisible="1"/>
+                    <field name="show_security" invisible="1"/>
+                    <field name="show_questions" invisible="1"/>
+
+                    <h2 class="mt-0">On your desk</h2>
+                    <div class="row g-3">
+                        <div class="col-6 col-lg-3">
+                            <button name="action_open_live" type="object"
+                                    class="btn btn-light w-100 h-100 border
+                                           rounded text-center py-3">
+                                <div class="fs-1 lh-1 fw-bold">
+                                    <field name="count_live" nolabel="1"/>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="fa fa-bullhorn me-1"/>Live
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <button name="action_open_closing_soon" type="object"
+                                    class="btn btn-light w-100 h-100 border
+                                           rounded text-center py-3">
+                                <div class="fs-1 lh-1 fw-bold text-warning">
+                                    <field name="count_closing_soon" nolabel="1"/>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="fa fa-hourglass-end me-1"/>Closing in 48h
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <button name="action_open_awaiting_opening" type="object"
+                                    class="btn btn-light w-100 h-100 border
+                                           rounded text-center py-3">
+                                <div class="fs-1 lh-1 fw-bold">
+                                    <field name="count_awaiting_opening" nolabel="1"/>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="fa fa-envelope me-1"/>To open
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <button name="action_open_under_evaluation" type="object"
+                                    class="btn btn-light w-100 h-100 border
+                                           rounded text-center py-3">
+                                <div class="fs-1 lh-1 fw-bold">
+                                    <field name="count_under_evaluation" nolabel="1"/>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="fa fa-balance-scale me-1"/>Evaluating
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-6 col-lg-3" invisible="not show_awards">
+                            <button name="action_open_awards_to_approve" type="object"
+                                    class="btn btn-light w-100 h-100 border
+                                           rounded text-center py-3">
+                                <div class="fs-1 lh-1 fw-bold">
+                                    <field name="count_awards_to_approve" nolabel="1"/>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="fa fa-gavel me-1"/>Awards to approve
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-6 col-lg-3" invisible="not show_awards">
+                            <button name="action_open_awards_to_generate" type="object"
+                                    class="btn btn-light w-100 h-100 border
+                                           rounded text-center py-3">
+                                <div class="fs-1 lh-1 fw-bold">
+                                    <field name="count_awards_to_generate" nolabel="1"/>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="fa fa-file-text-o me-1"/>Orders to raise
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-6 col-lg-3" invisible="not show_security">
+                            <button name="action_open_security_pending" type="object"
+                                    class="btn btn-light w-100 h-100 border
+                                           rounded text-center py-3">
+                                <div class="fs-1 lh-1 fw-bold">
+                                    <field name="count_security_pending" nolabel="1"/>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="fa fa-university me-1"/>Security to verify
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-6 col-lg-3" invisible="not show_questions">
+                            <button name="action_open_questions_open" type="object"
+                                    class="btn btn-light w-100 h-100 border
+                                           rounded text-center py-3">
+                                <div class="fs-1 lh-1 fw-bold">
+                                    <field name="count_questions_open" nolabel="1"/>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="fa fa-question-circle me-1"/>Questions open
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <group string="This year, from opened bids"
+                           class="mt-4">
+                        <group>
+                            <field name="events_awarded_ytd"/>
+                            <field name="awarded_value_ytd"/>
+                            <field name="saving_value_ytd"/>
+                        </group>
+                        <group>
+                            <field name="bids_opened_ytd"/>
+                            <field name="avg_bidders"/>
+                            <field name="company_id"
+                                   groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <div class="text-muted small">
+                        Counted from the envelope openings only. An event
+                        still accepting bids contributes nothing above,
+                        because until its opening the prices do not exist.
+                        Saving is measured against the base price recorded
+                        on the line item; lines with no base price
+                        contribute nothing to it.
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- A server action, because an act_window on a transient model opens
+         an UNSAVED record and the form never receives these values.
+
+         The model computes them perfectly well on an unsaved record — the
+         shell proves that — so the fault is not in the compute, and adding
+         a field dependency to it changes nothing. It is the web onchange
+         round trip for a new record that does not carry them back, and the
+         only thing visible to the operator is eight tiles reading zero
+         while the database says three, nine and one.
+
+         Both wrong versions passed every shell check, because create({})
+         in a shell produces the one thing the form never makes: a record
+         that exists. This was found by opening the screenshot. -->
+    <record id="action_auction_dashboard" model="ir.actions.server">
+        <field name="name">Dashboard</field>
+        <field name="model_id" ref="model_auction_dashboard"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open()</field>
+    </record>
+
+</odoo>

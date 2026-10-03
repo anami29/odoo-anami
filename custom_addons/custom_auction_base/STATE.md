@@ -349,6 +349,108 @@ Both were found by driving the browser, and both were invisible to every
 static check: the first because the code is correct in isolation, the
 second because the route is correct until a real reference reaches it.
 
+## Menu, dashboard and reporting, 2026-10-03
+
+Restructured the flat eleven-item menu bar into six sections following the
+lifecycle of an event, and added the reporting layer the module had none of.
+
+### What was built
+
+  `auction.analysis`   a PostgreSQL view, `_auto = False`, grain ONE ROW PER
+                       OPENED BID LINE. Ranks each line with window
+                       functions, LEFT JOINs the award outcome, and carries
+                       savings against the line's base price. Read-only to
+                       every internal role; NO ACL row for bidders, plus a
+                       defence-in-depth record rule in case one is ever
+                       added.
+  `auction.dashboard`  a transient model behind the landing screen. Every
+                       tile's domain is declared ONCE in `TILES`, and both
+                       the number and the list the tile opens read it from
+                       there, so they cannot drift apart.
+  Five report screens  Event Pipeline (reads `auction.event`, because the
+                       question is about events not yet opened), Bid
+                       Analysis, Award and Savings, Bidder Participation,
+                       Bid Security Ageing.
+  Two order lists      every purchase and sale order traceable to a tender.
+  Event search view    the module shipped without one, so an operator with
+                       forty events could neither filter nor group them.
+
+### Defects found, all three by looking rather than by testing
+
+  FIX-020  THE DASHBOARD SHOWED EIGHT ZEROS while the database said three,
+           nine and one. An `act_window` on a transient model opens an
+           UNSAVED record and the web onchange round trip does not carry
+           these computed values back to the client. Not for the obvious
+           reason: the compute runs correctly on an unsaved record --
+           `.new({})` in a shell returns the right figures -- and adding a
+           field dependency changes nothing. Both were tried and both still
+           rendered zero. Fixed by making the menu run a server action that
+           creates the record first.
+
+           Worth recording precisely: EVERY SHELL CHECK PASSED AGAINST BOTH
+           BROKEN VERSIONS, because `create({})` in a shell produces the one
+           thing the form never makes -- a record that exists. Fifty-seven
+           checks, zero failures, and the screen was blank. It was found by
+           opening the screenshot and counting the tiles.
+
+  FIX-021  BID SECURITY VANISHED FROM THE MENU and a Manager could not see
+           the queue they are accountable for. A `groups=` left OFF a
+           `menuitem` does not clear a group the menu already has: Odoo
+           writes only the fields the tag carries, so an omitted one keeps
+           its stored value through every upgrade. The rewritten file
+           therefore said one thing and the database another. Found by
+           counting the menus a buyer could see (27 of 28), not by reading
+           the XML, where it is invisible.
+
+  FIX-022  The year-to-date totals summed `awarded_value` across every
+           event and printed the result in COMPANY currency, while the
+           analysis view carries each EVENT's currency. One rupee event and
+           one dollar event would have been added together under a single
+           symbol. Scoped to the company currency. Multi-currency tendering
+           is out of scope for v1.0; multi-currency arithmetic going
+           unnoticed is not.
+
+  FIX-023  AFTER AWARDING, THE BUYER WHO RAN THE TENDER COULD NO LONGER
+           OPEN THEIR OWN EVENT. `_compute_award_count` maps into
+           `award_ids.order_ids` and `sale_order_ids`, which reads
+           purchase.order and sale.order in the CALLER's environment. An
+           Event Owner without the purchase licence raised AccessError, and
+           because that compute backs a field on the event form, the form
+           died with it. The web client then fell back to the event list,
+           which made it look like a search filter rather than a permission
+           fault; the Access Error dialog behind the list was the only
+           thing that said otherwise.
+
+           The FOURTH appearance of one root cause (FIX-011, FIX-016,
+           FIX-018): the engine reads in the caller's environment. Counted
+           with sudo now. The rule FIX-016 settled is unchanged — counting
+           documents generated from your own event discloses nothing,
+           opening one needs the licence that reads it, and the stat button
+           already carries that group.
+
+           Predates this session; reachable only once an event is awarded
+           AND the viewer lacks a purchase licence. Found while chasing
+           something else entirely.
+
+Two further things the browser corrected that the shell had no view of: the
+`COUNT(DISTINCT x) OVER (...)` in the first draft of the view is not
+implemented by PostgreSQL at all (moved to an aggregate CTE, which is also
+exact rather than relying on one-row-per-bidder being true), and a direct
+action URL gives the web client no menu to anchor the app to, so the first
+capture run photographed a navbar belonging to Discuss.
+
+### Still true after this change
+
+No seeded auction operator holds `purchase.group_purchase_user`, so the two
+order menus are correctly hidden from all of them. That is a DEPLOYMENT
+NOTE, not a defect: an Event Owner who will raise orders has to be granted
+the purchase licence as well, or they will generate documents they cannot
+then open.
+
+The dashboard shows a disabled `1 / 1` pager, an unavoidable consequence of
+opening a real record. Removing it needs an OWL class, which SCP-AUC-001
+keeps out of this module.
+
 ## Completed
 
 | Stage | Name | Status |
@@ -362,6 +464,9 @@ second because the route is correct until a real reference reaches it.
 | 10 | Evaluation | MINIMAL — opened values land in auction.evaluation.line, ranked on bid price. Landed cost NOT built |
 | 11 | Award and downstream | MINIMAL — manual winner selection, PO/SO generation, three-level linkage |
 | 15 | Bid security offline workflow | Complete, including statutory exemption (FIX-010) |
+| 12 | Bidder portal | Complete for sealed — invitations, documents, clarifications, corrigenda, bidder-declared security, bid form, receipts, withdrawal |
+| 13 | Portal content | Complete — disclosure boundary is the payload layer, verified from two bidder sessions |
+| -- | Menu, dashboard, reporting | Complete — six-section menu, landing dashboard, five report screens, two order lists (FIX-020/021/022/023) |
 
 ## NOT started
 
@@ -442,8 +547,19 @@ And against a RUNNING instance, which is the only way to test the portal:
         --event <id> --bidder login:pw --other login:pw \
         --secret <internal estimate> --secret <undisclosed ceiling>
 
-All three pass. They are necessary and, as the ten defects above show, NOT
-sufficient. Before any release, install into a real Odoo and walk the flow
+And against a running instance, as a REAL OPERATOR rather than as the
+administrator:
+
+    odoo-bin shell -d <db> < tests/runtime_reports_check.py   # 57 checks: analysis view,
+                                               # read_group, tile/list
+                                               # agreement, menu resolution
+
+All pass. They are necessary and, as the defects above show, NOT
+sufficient. FIX-020 in particular passed all fifty-seven of them while the
+screen it tested showed nothing but zeros. A check that exercises the ORM
+does not exercise the form; if a screen matters, OPEN IT AND LOOK AT IT.
+
+Before any release, install into a real Odoo and walk the flow
 as each role -- in particular as a user who is ONLY an Envelope Opener and
 as a user who is ONLY an approver. Six of the ten were invisible to an
 administrator.

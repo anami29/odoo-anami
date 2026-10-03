@@ -72,3 +72,11 @@ access_auction_clarification_portal,auction.clarification.portal,model_auction_c
 access_auction_corrigendum_observer,auction.corrigendum.observer,model_auction_corrigendum,group_auction_observer,1,0,0,0
 access_auction_corrigendum_owner,auction.corrigendum.owner,model_auction_corrigendum,group_auction_event_owner,1,1,1,0
 access_auction_corrigendum_portal,auction.corrigendum.portal,model_auction_corrigendum,group_auction_bidder,1,0,0,0
+access_auction_analysis_observer,auction.analysis.observer,model_auction_analysis,group_auction_observer,1,0,0,0
+access_auction_analysis_owner,auction.analysis.owner,model_auction_analysis,group_auction_event_owner,1,0,0,0
+access_auction_analysis_evaluator,auction.analysis.evaluator,model_auction_analysis,group_auction_evaluator,1,0,0,0
+access_auction_analysis_approver,auction.analysis.approver,model_auction_analysis,group_auction_approver,1,0,0,0
+access_auction_analysis_manager,auction.analysis.manager,model_auction_analysis,group_auction_manager,1,0,0,0
+access_auction_analysis_admin,auction.analysis.admin,model_auction_analysis,group_auction_admin,1,0,0,0
+access_auction_dashboard_observer,auction.dashboard.observer,model_auction_dashboard,group_auction_observer,1,1,1,0
+access_auction_dashboard_manager,auction.dashboard.manager,model_auction_dashboard,group_auction_manager,1,1,1,0

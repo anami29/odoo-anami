@@ -27,13 +27,27 @@ Scope of this module
   published to all bidders without naming the asker, corrigenda, bidder
   self-declared bid security, the sealed bid form with phased delivery
   dates, submission receipts and withdrawal
+* HSN/SAC carried from the product master and a delivery location chosen
+  from the company's own stock locations, both of which travel to the
+  generated order and narrow the receipt to the location the tender named
+* A six-section menu following the lifecycle of an event, a landing
+  dashboard whose tile counts and tile destinations share one declared
+  domain, and five reports: event pipeline, bid analysis, award and
+  savings, bidder participation and bid security ageing
+
+Reporting reads opened bids only. An event still accepting bids
+contributes nothing to it, because until its envelopes are opened the
+prices do not exist anywhere in the database. The pipeline and bid
+security screens read their own models for that reason.
 
 NOT in this module: live and clock mechanisms, OWL consoles, websocket
 transport, landed-cost scoring and the formal comparative statement,
-spreadsheet round-trip. Ranking here is on bid price alone; normalisation
-for duty, freight and payment terms is the next stage. See SCP-AUC-001.
+spreadsheet round-trip, email notification of any kind.
+
+Ranking here is on bid price alone; normalisation for duty, freight and
+payment terms is the next stage. See SCP-AUC-001.
 """,
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.2.0",
     "category": "Purchases",
     "author": "Riamona Luxury and Fashion Brands",
     "website": "https://www.riamona.com",
@@ -67,6 +81,8 @@ for duty, freight and payment terms is the next stage. See SCP-AUC-001.
         "views/auction_bid_security_views.xml",
         "views/auction_participant_views.xml",
         "views/auction_portal_backend_views.xml",
+        "views/auction_analysis_views.xml",
+        "views/auction_dashboard_views.xml",
         "views/auction_menus.xml",
         "views/portal_templates.xml",
     ],

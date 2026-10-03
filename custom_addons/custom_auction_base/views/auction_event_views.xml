@@ -197,9 +197,67 @@
         </field>
     </record>
 
+    <!-- The module shipped without one of these, so until now an operator
+         with forty events could neither filter nor group them. -->
+    <record id="view_auction_event_search" model="ir.ui.view">
+        <field name="name">auction.event.search</field>
+        <field name="model">auction.event</field>
+        <field name="arch" type="xml">
+            <search string="Auction Events">
+                <field name="name" string="Reference or title"
+                       filter_domain="['|', ('name', 'ilike', self),
+                                            ('title', 'ilike', self)]"/>
+                <field name="category_id"/>
+                <field name="owner_id"/>
+                <field name="mechanism_id"/>
+                <separator/>
+                <filter name="open" string="In progress"
+                        domain="[('state', 'not in',
+                                  ['awarded', 'unsuccessful', 'cancelled'])]"/>
+                <filter name="live" string="Live"
+                        domain="[('state', '=', 'live')]"/>
+                <filter name="to_open" string="Awaiting opening"
+                        domain="[('state', '=', 'bidding_closed')]"/>
+                <filter name="evaluating" string="Under evaluation"
+                        domain="[('state', '=', 'under_evaluation')]"/>
+                <filter name="closed" string="Closed out"
+                        domain="[('state', 'in',
+                                  ['awarded', 'unsuccessful', 'cancelled'])]"/>
+                <separator/>
+                <filter name="purchase" string="Purchase"
+                        domain="[('direction', '=', 'reverse')]"/>
+                <filter name="disposal" string="Disposal"
+                        domain="[('direction', '=', 'forward')]"/>
+                <separator/>
+                <filter name="mine" string="Mine"
+                        domain="['|', ('owner_id', '=', uid),
+                                      ('deputy_id', '=', uid)]"/>
+                <filter name="closing_soon" string="Closing within 48 hours"
+                        domain="[('state', '=', 'live'),
+                                 ('bid_close_datetime', '&lt;=',
+                                  (context_today() + relativedelta(days=2)).strftime('%Y-%m-%d 23:59:59'))]"/>
+                <group expand="0" string="Group By">
+                    <filter name="g_state" string="Status"
+                            context="{'group_by': 'state'}"/>
+                    <filter name="g_direction" string="Direction"
+                            context="{'group_by': 'direction'}"/>
+                    <filter name="g_category" string="Category"
+                            context="{'group_by': 'category_id'}"/>
+                    <filter name="g_mechanism" string="Mechanism"
+                            context="{'group_by': 'mechanism_id'}"/>
+                    <filter name="g_owner" string="Owner"
+                            context="{'group_by': 'owner_id'}"/>
+                    <filter name="g_close" string="Bid close"
+                            context="{'group_by': 'bid_close_datetime:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
     <record id="action_auction_event" model="ir.actions.act_window">
         <field name="name">Auction Events</field>
         <field name="res_model">auction.event</field>
         <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_open': 1}</field>
     </record>
 </odoo>

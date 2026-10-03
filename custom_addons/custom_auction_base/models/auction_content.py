@@ -149,13 +149,46 @@ class AuctionLine(models.Model):
     specification = fields.Text()
     product_qty = fields.Float(digits=(18, 6), required=True, default=1.0)
     product_uom_id = fields.Many2one("uom.uom")
-    delivery_location = fields.Char()
+    # Where it is to be delivered. A system location, picked from the ones
+    # configured for this company and its parents, so that the award can
+    # carry it through to the purchase order and the receipt lands in the
+    # right place. Free text could not do that.
+    delivery_location_id = fields.Many2one(
+        "stock.location", string="Delivery Location",
+        domain="['&', ('usage', '=', 'internal'),"
+               " '|', ('company_id', '=', False),"
+               " ('company_id', 'parent_of', company_id)]",
+        help="A location configured in Inventory. Leave it empty and use "
+             "Other Address for a site that is not one of yours.")
+    company_id = fields.Many2one(related="lot_id.event_id.company_id",
+                                 store=True)
+    # Kept for a destination that is NOT a system location: a customer site,
+    # a project address, "to be advised at award". Deleting it would have
+    # lost exactly the cases a location picker cannot express.
+    delivery_location = fields.Char(
+        string="Other Address",
+        help="Free text, for a destination that is not a configured "
+             "location.")
+    delivery_location_display = fields.Char(
+        compute="_compute_delivery_display", store=True)
     required_by = fields.Date()
 
     base_price = fields.Float(digits=(18, 6),
                               help="Denominator for savings computation.")
     start_price = fields.Float(digits=(18, 6))
-    hsn_sac = fields.Char()
+
+    # Computed and STORED, with readonly=False so it can still be overridden.
+    #
+    # It was an onchange, which fires only when a human changes the product
+    # in a form. Lines arriving from a template, an import or the API got no
+    # HSN at all, and those are the common paths on a real tender. A stored
+    # compute fills on create as well, and keeps following the product until
+    # somebody deliberately types over it.
+    hsn_sac = fields.Char(
+        string="HSN/SAC", compute="_compute_hsn_sac", store=True,
+        readonly=False,
+        help="Taken from the product master. Override it only where this "
+             "line is classified differently from the product.")
 
     # GAP-044: works quantities are tendered as estimates and re-measured on
     # completion. A firm line is fixed; a re-measurable line is ranked on
@@ -204,6 +237,45 @@ class AuctionLine(models.Model):
          "Quantity must be positive."),
     ]
 
+    # ------------------------------------------------------------------
+    # HSN/SAC
+    # ------------------------------------------------------------------
+    HSN_SOURCE_FIELDS = ("l10n_in_hsn_code",)
+
+    @api.depends("product_id")
+    def _compute_hsn_sac(self):
+        """Take the code from the product master.
+
+        The field only exists where the Indian localisation is installed,
+        so it is looked up rather than assumed: on an instance without
+        l10n_in this leaves the value alone and the field stays a plain
+        manual entry.
+
+        readonly=False means an override survives. Once somebody has typed
+        a code onto a line, changing the product will overwrite it, which
+        is the behaviour you want: the override belonged to the old
+        product.
+        """
+        for line in self:
+            product = line.product_id
+            if not product:
+                line.hsn_sac = line.hsn_sac or False
+                continue
+            code = False
+            for field in self.HSN_SOURCE_FIELDS:
+                if field in product._fields:
+                    code = product[field] or False
+                    break
+            line.hsn_sac = code or line.hsn_sac or False
+
+    @api.depends("delivery_location_id", "delivery_location")
+    def _compute_delivery_display(self):
+        """One string for reports, the portal and the PO description."""
+        for line in self:
+            line.delivery_location_display = (
+                line.delivery_location_id.complete_name
+                or line.delivery_location or "")
+
     @api.onchange("product_id")
     def _onchange_product_id(self):
         """Populate the line from the product.
@@ -223,13 +295,6 @@ class AuctionLine(models.Model):
             if not line.specification:
                 line.specification = (
                     product.description_purchase or product.description or "")
-
-            # HSN only exists where the Indian localisation is installed.
-            if not line.hsn_sac:
-                for field in ("l10n_in_hsn_code",):
-                    if field in product._fields:
-                        line.hsn_sac = product[field] or ""
-                        break
 
             # Base price is the denominator for savings reporting. Cost is a
             # sensible default when buying; on a disposal event the book cost

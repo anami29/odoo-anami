@@ -43,9 +43,45 @@ class AuctionLineSchedule(models.Model):
 
     quantity = fields.Float(digits=(18, 6), required=True)
     required_by = fields.Date(required=True)
-    delivery_location = fields.Char(
+    # Per-tranche destination. Phase 1 to the Pune plant and phase 2 to
+    # Ranjangaon is an ordinary requirement, and it is the reason the award
+    # splits a vendor's order by location rather than by lot alone.
+    delivery_location_id = fields.Many2one(
+        "stock.location", string="Delivery Location",
+        domain="['&', ('usage', '=', 'internal'),"
+               " '|', ('company_id', '=', False),"
+               " ('company_id', 'parent_of', company_id)]",
         help="Leave empty to use the delivery location on the line.")
+    company_id = fields.Many2one(
+        related="line_id.lot_id.event_id.company_id", store=True)
+    delivery_location = fields.Char(
+        string="Other Address",
+        help="Free text, for a destination that is not a configured "
+             "location. Leave empty to use the line's.")
+    effective_location_id = fields.Many2one(
+        "stock.location", compute="_compute_effective_location", store=True,
+        help="This tranche's location, falling back to the line's.")
+    delivery_location_display = fields.Char(
+        compute="_compute_effective_location", store=True)
     notes = fields.Text()
+
+    @api.depends("delivery_location_id", "delivery_location",
+                 "line_id.delivery_location_id", "line_id.delivery_location")
+    def _compute_effective_location(self):
+        """Resolve the tranche destination once, here.
+
+        Every consumer -- the portal, the award, the purchase order -- needs
+        the same answer to "where does THIS tranche go", and three of them
+        computing it separately is three chances to disagree.
+        """
+        for rec in self:
+            line = rec.line_id
+            rec.effective_location_id = (
+                rec.delivery_location_id or line.delivery_location_id)
+            rec.delivery_location_display = (
+                rec.effective_location_id.complete_name
+                or rec.delivery_location
+                or line.delivery_location or "")
 
     product_uom_id = fields.Many2one(related="line_id.product_uom_id")
     currency_id = fields.Many2one(related="line_id.lot_id.event_id.currency_id")

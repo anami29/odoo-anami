@@ -161,7 +161,10 @@ class AuctionParticipant(models.Model):
             "uom": line.product_uom_id.display_name or "",
             "line_type": line.line_type,
             "hsn_sac": line.hsn_sac or "",
-            "delivery_location": line.delivery_location or "",
+            # The bidder is told WHERE, as one resolved string. They have no
+            # business knowing your internal location hierarchy, so the
+            # display name goes across and the record id does not.
+            "delivery_location": line.delivery_location_display or "",
             "required_by": self._d(line.required_by),
             "required_by_iso": self._iso(line.required_by),
             "delivery_summary": line.delivery_summary or "",
@@ -172,7 +175,7 @@ class AuctionParticipant(models.Model):
                 "quantity": s.quantity,
                 "required_by": self._d(s.required_by),
                 "required_by_iso": self._iso(s.required_by),
-                "delivery_location": s.delivery_location or "",
+                "delivery_location": s.delivery_location_display or "",
             } for s in line.schedule_ids.sorted("sequence")],
         }
 

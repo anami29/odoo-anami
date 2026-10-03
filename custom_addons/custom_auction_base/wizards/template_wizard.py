@@ -134,6 +134,10 @@ class AuctionTemplateSaveWizard(models.TransientModel):
                         "product_uom_id": line.product_uom_id.id or False,
                         "specification": line.specification,
                         "hsn_sac": line.hsn_sac,
+                        "delivery_location_id":
+                            line.delivery_location_id.id,
+                        "delivery_location":
+                            line.delivery_location,
                         "line_type": line.line_type,
                         "delivery_location": line.delivery_location,
                         "delivery_offset_days": offset,

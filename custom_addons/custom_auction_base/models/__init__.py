@@ -13,6 +13,8 @@ from . import auction_bid_security
 from . import auction_opening
 from . import auction_evaluation
 from . import auction_award
+from . import auction_analysis
+from . import auction_dashboard
 from . import downstream
 from . import auction_portal
 from . import auction_portal_payload
