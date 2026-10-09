@@ -546,9 +546,15 @@ class AgreementDocumentMixin(models.AbstractModel):
                 'image': base64.b64encode(image),
                 'signature_id': signature.id,
             })
+        # The fingerprint covers the signature configuration, and this step is part of
+        # the workflow that legitimately extends it — exactly as confirmation does after
+        # creating the template's own areas. Without this the document fails its own
+        # integrity check before Party B can sign a single page.
+        self.invalidate_recordset(['signature_ids'])
+        self._wf().write({'document_fingerprint': self._document_fingerprint()})
         self.message_post(body=_(
             "Document fixed at %(total)s pages for page-wise signing; Party B has a "
-            "signature area on each.", total=total))
+            "signature area on each. Fingerprint updated to cover them.", total=total))
 
     # ------------------------------------------------------- per-page footer
     def _page_footer_parties(self):

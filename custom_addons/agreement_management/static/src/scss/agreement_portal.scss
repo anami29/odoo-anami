@@ -34,3 +34,24 @@
         background: #fff;
     }
 }
+
+// Page-by-page viewer: keep the signing panel in view while paging through a long
+// document, and never render a page wider than the paper it represents.
+.o_agreement_pager {
+    .o_agreement_page_img {
+        max-width: 210mm;
+        aspect-ratio: 210 / 297;
+        object-fit: contain;
+        background: #fff;
+    }
+
+    .o_agreement_pager_label {
+        min-width: 7rem;
+        text-align: center;
+    }
+
+    .o_agreement_sign_panel {
+        position: sticky;
+        top: 1rem;
+    }
+}

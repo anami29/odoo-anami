@@ -108,45 +108,71 @@
                         when it is your turn.
                     </div>
 
-                    <!-- Page-wise view. Each page is the rendered A4 page the
-                         signature attests to, not a browser approximation of it. -->
+                    <!-- Page-wise view: one page at a time on the left, signing on the
+                         right. Each page is the rendered A4 page the signature attests
+                         to, not a browser approximation of it. -->
                     <t t-if="pages">
-                        <div t-if="signing_party == 'b'" class="card mb-3">
-                            <div class="card-body">
-                                <h5 class="card-title">Sign every page</h5>
-                                <p class="mb-2">
-                                    <span t-out="len(pages.filtered('signed'))"/> of
-                                    <span t-out="len(pages)"/> pages signed.
-                                </p>
-                                <p class="alert alert-light border mb-2" role="note">
-                                    By signing below you confirm that you have read and accept the
-                                    terms of this agreement, and your signature is applied to every
-                                    page of it. Each page is recorded separately.
-                                </p>
-                                <t t-call="portal.signature_form">
-                                    <t t-set="call_url" t-value="agreement.get_portal_url(suffix='/sign/all')"/>
-                                    <t t-set="default_name" t-value="agreement.signatory_b_id.name"/>
-                                    <t t-set="send_label">Sign all pages</t>
-                                </t>
-                            </div>
-                        </div>
+                        <div class="row g-3 o_agreement_pager">
+                            <div class="col-lg-8">
+                                <div t-foreach="pages" t-as="page"
+                                     t-attf-class="o_agreement_page#{'' if page_first else ' d-none'}"
+                                     t-att-data-page="page.number">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <strong>Page <t t-out="page.number"/> of <t t-out="page.total"/></strong>
+                                        <span t-if="page.signed" class="badge text-bg-success">Signed</span>
+                                        <span t-else="" class="badge text-bg-secondary">Awaiting signature</span>
+                                    </div>
+                                    <img class="o_agreement_page_img border rounded w-100"
+                                         t-att-src="image_data_uri(page.image)"
+                                         t-att-alt="'Page %s' % page.number"/>
+                                    <div t-if="signing_party == 'b' and not page.signed" class="mt-2">
+                                        <t t-call="portal.signature_form">
+                                            <t t-set="call_url"
+                                               t-value="agreement.get_portal_url(suffix='/sign/page/%s' % page.number)"/>
+                                            <t t-set="default_name" t-value="agreement.signatory_b_id.name"/>
+                                            <t t-set="send_label">Sign this page</t>
+                                        </t>
+                                    </div>
+                                </div>
 
-                        <div t-foreach="pages" t-as="page" class="o_agreement_page mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <strong>Page <t t-out="page.number"/> of <t t-out="page.total"/></strong>
-                                <span t-if="page.signed" class="badge text-bg-success">Signed</span>
-                                <span t-else="" class="badge text-bg-secondary">Awaiting signature</span>
+                                <div class="d-flex align-items-center justify-content-center gap-3 mt-3">
+                                    <button type="button" class="btn btn-light o_agreement_prev"
+                                            aria-label="Previous page">&#8249;</button>
+                                    <span class="o_agreement_pager_label text-muted"/>
+                                    <button type="button" class="btn btn-light o_agreement_next"
+                                            aria-label="Next page">&#8250;</button>
+                                </div>
                             </div>
-                            <img class="o_agreement_page_img border rounded w-100"
-                                 t-att-src="image_data_uri(page.image)"
-                                 t-att-alt="'Page %s' % page.number"/>
-                            <div t-if="signing_party == 'b' and not page.signed" class="mt-2">
-                                <t t-call="portal.signature_form">
-                                    <t t-set="call_url"
-                                       t-value="agreement.get_portal_url(suffix='/sign/page/%s' % page.number)"/>
-                                    <t t-set="default_name" t-value="agreement.signatory_b_id.name"/>
-                                    <t t-set="send_label">Sign this page</t>
-                                </t>
+
+                            <div class="col-lg-4">
+                                <div class="card o_agreement_sign_panel">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Sign agreement</h5>
+                                        <p class="mb-2">
+                                            <span t-out="len(pages.filtered('signed'))"/> of
+                                            <span t-out="len(pages)"/> pages signed.
+                                        </p>
+                                        <div class="progress mb-3" style="height: 6px;">
+                                            <div class="progress-bar bg-success"
+                                                 t-attf-style="width: #{len(pages.filtered('signed')) * 100 // max(len(pages), 1)}%"/>
+                                        </div>
+                                        <t t-if="signing_party == 'b'">
+                                            <p class="small text-muted">
+                                                By signing below you confirm that you have read and accept
+                                                the terms of this agreement, and your signature is applied
+                                                to every page of it. Each page is recorded separately.
+                                            </p>
+                                            <t t-call="portal.signature_form">
+                                                <t t-set="call_url" t-value="agreement.get_portal_url(suffix='/sign/all')"/>
+                                                <t t-set="default_name" t-value="agreement.signatory_b_id.name"/>
+                                                <t t-set="send_label">Sign all pages</t>
+                                            </t>
+                                        </t>
+                                        <p t-elif="agreement.state == 'pending_a'" class="small text-muted mb-0">
+                                            Waiting for <b t-out="agreement.partner_a_id.display_name"/> to sign.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </t>
