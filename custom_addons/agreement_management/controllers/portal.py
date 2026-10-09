@@ -58,6 +58,7 @@ class AgreementCustomerPortal(CustomerPortal):
             return request.redirect('/my')
         return request.render('agreement_management.portal_agreement_page', {
             'agreement': agreement,
+            'pages': agreement.page_ids,
             'document_html': agreement._render_document_html(
                 'signed' if agreement.state == 'executed' else 'preview'),
             'signing_party': self._portal_signing_party(agreement),
@@ -76,6 +77,60 @@ class AgreementCustomerPortal(CustomerPortal):
         if not party:
             return None
         return party if agreement.sudo()._user_can_sign(party) else None
+
+    @http.route(['/my/agreements/<int:agreement_id>/sign/page/<int:page>'],
+                type='json', auth='public', website=True)
+    def portal_agreement_sign_page(self, agreement_id, page, access_token=None,
+                                   name=None, signature=None, **kw):
+        """Sign one page. Each page is its own area, so the table records which."""
+        return self._portal_sign(agreement_id, access_token, signature, pages=[page])
+
+    @http.route(['/my/agreements/<int:agreement_id>/sign/all'],
+                type='json', auth='public', website=True)
+    def portal_agreement_sign_all(self, agreement_id, access_token=None, name=None,
+                                  signature=None, **kw):
+        """Apply one signature to every unsigned page.
+
+        The acceptance of terms is the act of signing here rather than a separate
+        checkbox: portal.signature_form posts only the name and the signature, so a
+        checkbox could not reach the server and would be a control that did nothing.
+        The statement sits immediately above the pad and the acceptance is written to
+        the chatter.
+        """
+        return self._portal_sign(agreement_id, access_token, signature, pages='all',
+                                 accepted_terms=True)
+
+    def _portal_sign(self, agreement_id, access_token, signature, pages, accepted_terms=False):
+        access_token = access_token or request.httprequest.args.get('access_token')
+        try:
+            agreement = self._document_check_access('agreement.agreement', agreement_id, access_token)
+        except (AccessError, MissingError):
+            return {'error': _("This agreement is no longer available.")}
+        party = self._portal_signing_party(agreement)
+        if party != 'b':
+            return {'error': _("This agreement is not awaiting your signature.")}
+        if not signature:
+            return {'error': _("Please draw or type your signature before signing.")}
+
+        areas = agreement.page_ids.mapped('signature_id')
+        if pages != 'all':
+            areas = areas.filtered(lambda a: a.page in pages)
+            if not areas:
+                return {'error': _("That page could not be found on this agreement.")}
+        areas = areas.filtered(lambda a: not a.signature)
+        if not areas:
+            return {'error': _("Those pages are signed already.")}
+
+        try:
+            agreement._register_page_signatures(
+                {area.id: signature for area in areas},
+                signer_ip=request.httprequest.remote_addr,
+                accepted_terms=accepted_terms)
+        except (TypeError, binascii.Error):
+            return {'error': _("That signature could not be read. Please try again.")}
+        except UserError as error:
+            return {'error': error.args[0] if error.args else _("The signature could not be recorded.")}
+        return {'force_refresh': True, 'redirect_url': agreement.get_portal_url()}
 
     # -------------------------------------------------------------- download
     @http.route(['/my/agreements/<int:agreement_id>/download'], type='http', auth='public', website=True)

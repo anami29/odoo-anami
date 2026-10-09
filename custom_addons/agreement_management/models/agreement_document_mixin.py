@@ -1,15 +1,21 @@
 # -*- coding: utf-8 -*-
+import base64
 import hashlib
+import io
 import json
 import logging
 import re
 import secrets
 
 from markupsafe import Markup, escape
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools.misc import format_date, format_datetime, formatLang
+from odoo.tools.pdf import PdfFileReader, PdfFileWriter
 
 _logger = logging.getLogger(__name__)
 
@@ -160,6 +166,8 @@ class AgreementDocumentMixin(models.AbstractModel):
                                        help="SHA-256 of the confirmed document (content and values, without signatures). "
                                             "Re-checked at every signing step and at execution.")
     integrity_ok = fields.Boolean(compute='_compute_integrity_ok', string='Integrity Verified')
+    page_ids = fields.One2many('agreement.page', compute='_compute_page_ids', string='Pages')
+    page_count = fields.Integer(compute='_compute_page_ids', string='Page Count')
     executed_pdf_attachment_id = fields.Many2one('ir.attachment', string='Executed PDF', readonly=True, copy=False,
                                                  ondelete='restrict')
     executed_pdf = fields.Binary(related='executed_pdf_attachment_id.datas', string='Executed PDF File')
@@ -478,6 +486,70 @@ class AgreementDocumentMixin(models.AbstractModel):
         content = self.locked_content or self._get_content_source() or ''
         return render_document_html(content, self._get_render_context(), self._get_signature_slots(), mode)
 
+    def _compute_page_ids(self):
+        for doc in self:
+            pages = self.env['agreement.page'].search(doc._page_domain()) if doc.id else self.env['agreement.page']
+            doc.page_ids = pages
+            doc.page_count = len(pages)
+
+    def _page_domain(self):
+        self.ensure_one()
+        field = 'agreement_id' if self._name == 'agreement.agreement' else 'annexure_id'
+        return [(field, '=', self.id)]
+
+    def _prepare_page_signing(self):
+        """Fix the document into pages and give Party B a signature area on each.
+
+        Called once, when Party A completes: the document Party B signs is then
+        settled, so a page they sign cannot later become a different page.
+        """
+        self.ensure_one()
+        version = self._get_template_version()
+        if not version or not version.sign_every_page:
+            return
+        Page = self.env['agreement.page'].sudo()
+        if Page.search_count(self._page_domain()):
+            return                                    # already prepared
+
+        report = self.env.ref(self._get_report_ref(), raise_if_not_found=False)
+        if not report:
+            return
+        try:
+            pdf, _ext = self.env['ir.actions.report'].with_context(
+                agreement_signed_mode=True)._render_qweb_pdf(report.id, res_ids=self.ids)
+        except Exception:
+            _logger.warning("Could not render %s for page-wise signing", self.number, exc_info=True)
+            return
+        images = Page._pdf_to_page_images(pdf)
+        if not images:
+            return
+
+        field = 'agreement_id' if self._name == 'agreement.agreement' else 'annexure_id'
+        total = len(images)
+        sig_field = self._get_signature_document_field()
+        for index, image in enumerate(images, start=1):
+            signature = self.env['agreement.signature'].sudo()._wf().create({
+                sig_field: self.id,
+                'sequence': 1000 + index,             # after the template's own areas
+                'code': 'P%s' % index,
+                'name': _('Page %(n)s of %(t)s', n=index, t=total),
+                'page': index,
+                'position': _('Foot of page %s', index),
+                'party': 'b',
+                'kind': 'signature',
+                'required': True,
+            })
+            Page.create({
+                field: self.id,
+                'number': index,
+                'total': total,
+                'image': base64.b64encode(image),
+                'signature_id': signature.id,
+            })
+        self.message_post(body=_(
+            "Document fixed at %(total)s pages for page-wise signing; Party B has a "
+            "signature area on each.", total=total))
+
     # ------------------------------------------------------- per-page footer
     def _page_footer_parties(self):
         """Signature and name printed in each page footer, per party.
@@ -748,6 +820,110 @@ class AgreementDocumentMixin(models.AbstractModel):
         self._after_party_signed(party)
         return True
 
+    def _stamp_page_signatures(self, pdf_content):
+        """Draw each page's signature onto that page of the executed PDF.
+
+        wkhtmltopdf gives every page the same footer, so a per-page signature cannot
+        be produced during rendering; it is composited afterwards. Page numbering comes
+        from the pages fixed when Party A completed, so a signature always lands on the
+        page it attests to.
+        """
+        self.ensure_one()
+        pages = self.env['agreement.page'].sudo().search(self._page_domain(), order='number')
+        signed = {p.number: p.signature_id for p in pages if p.signature_id.signature}
+        if not signed:
+            return pdf_content
+        try:
+            reader = PdfFileReader(io.BytesIO(pdf_content), strict=False)
+            writer = PdfFileWriter()
+            count = reader.getNumPages()
+            if count != len(pages):
+                # The document repaginated between fixing the pages and execution.
+                # Stamp what still lines up and say so rather than mark wrong pages.
+                _logger.warning("%s: executed PDF has %s pages but %s were signed; "
+                                "stamping only the pages that still exist.",
+                                self.number, count, len(pages))
+            for index in range(count):
+                page = reader.getPage(index)
+                area = signed.get(index + 1)
+                if area:
+                    overlay = self._signature_overlay(page, area)
+                    if overlay is not None:
+                        merge = getattr(page, 'merge_page', None) or getattr(page, 'mergePage')
+                        merge(overlay)
+                writer.addPage(page)
+            with io.BytesIO() as buffer:
+                writer.write(buffer)
+                return buffer.getvalue()
+        except Exception:
+            # Never fail execution over a stamp: the signatures are recorded in the
+            # table regardless, and that is the authoritative record.
+            _logger.warning("%s: could not stamp page signatures.", self.number, exc_info=True)
+            return pdf_content
+
+    def _signature_overlay(self, page, area):
+        """A transparent page carrying one signature at the foot of the page."""
+        try:
+            box = page.mediabox
+            width, height = float(box.width), float(box.height)
+        except Exception:
+            width, height = A4
+        buffer = io.BytesIO()
+        canvas_obj = canvas.Canvas(buffer, pagesize=(width, height))
+        image = ImageReader(io.BytesIO(base64.b64decode(area.signature)))
+        img_w, img_h = 120, 40                       # points, bottom right above the footer
+        x, y = width - img_w - 40, 34
+        canvas_obj.drawImage(image, x, y, width=img_w, height=img_h,
+                             preserveAspectRatio=True, anchor='se', mask='auto')
+        canvas_obj.setFont('Helvetica', 6)
+        canvas_obj.setFillGray(0.35)
+        canvas_obj.drawRightString(width - 40, y - 8, _(
+            "Signed %(who)s · %(when)s",
+            who=area.signer_name or '',
+            when=format_datetime(self.env, area.signed_on, dt_format='short') if area.signed_on else ''))
+        canvas_obj.showPage()
+        canvas_obj.save()
+        return PdfFileReader(io.BytesIO(buffer.getvalue()), strict=False).getPage(0)
+
+    def _register_page_signatures(self, signature_values, signer_ip=None, accepted_terms=False):
+        """Record signatures on individual page areas.
+
+        Unlike _register_signatures this accepts a partial set: the portal signs page
+        by page, so the document is only completed once nothing required is left
+        outstanding. Each page keeps its own row, with its page number, so the table
+        shows exactly which page was signed and when.
+        """
+        self.ensure_one()
+        if self.state != 'pending_b':
+            raise UserError(_("Signing is not open for %s on this document.", PARTY_LABEL['b']))
+        self._integrity_check()
+        now = fields.Datetime.now()
+        signatory = self._get_signatory('b')
+        areas = self.signature_ids.filtered(
+            lambda s: s.party == 'b' and s.id in signature_values and not s.signature)
+        if not areas:
+            return False
+        for area in areas:
+            area.sudo()._wf().write({
+                'signature': signature_values[area.id],
+                'signed_on': now,
+                'signed_by_user_id': self.env.user.id,
+                'signer_ip': signer_ip or False,
+                'signer_name': signatory.name if signatory else '',
+            })
+        pages = ', '.join(str(a.page) for a in areas.sorted('page'))
+        if accepted_terms:
+            self.message_post(body=_(
+                "Party B accepted the terms of the agreement and signed all %(count)s "
+                "remaining page(s): %(pages)s.", count=len(areas), pages=pages))
+        else:
+            self.message_post(body=_("Party B signed page(s): %(pages)s.", pages=pages))
+
+        outstanding = self.signature_ids.filtered(lambda s: s.party == 'b' and s.required and not s.signature)
+        if not outstanding:
+            self._after_party_signed('b')
+        return True
+
     def _after_party_signed(self, party):
         self.ensure_one()
         now = fields.Datetime.now()
@@ -755,6 +931,7 @@ class AgreementDocumentMixin(models.AbstractModel):
         signatory = self._get_signatory(party)
         if party == 'a':
             self._wf().write({'state': 'pending_b', 'signed_a_on': now})
+            self._prepare_page_signing()
             self.message_post(body=_(
                 "Party A signing completed by %(who)s — %(done)s required signature area(s) signed. "
                 "Party B signature areas are now available.", who=signatory.name if signatory else '', done=done))
@@ -780,6 +957,7 @@ class AgreementDocumentMixin(models.AbstractModel):
         report = self.env.ref(self._get_report_ref())
         pdf_content, _ext = self.env['ir.actions.report'].with_context(agreement_signed_mode=True)._render_qweb_pdf(
             report.id, res_ids=self.ids)
+        pdf_content = self._stamp_page_signatures(pdf_content)
         filename = '%s-Executed.pdf' % (self.number or self._document_label()).replace('/', '-')
         attachment = self.env['ir.attachment'].create({
             'name': filename,

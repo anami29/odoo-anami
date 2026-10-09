@@ -24,3 +24,6 @@ access_agreement_sign_wizard_line_user,agreement.sign.wizard.line user,model_agr
 access_agreement_font_user,agreement.font user,model_agreement_font,group_agreement_user,1,0,0,0
 access_agreement_font_manager,agreement.font manager,model_agreement_font,group_agreement_manager,1,1,1,1
 access_agreement_agreement_portal,agreement.agreement portal,model_agreement_agreement,base.group_portal,1,0,0,0
+access_agreement_page_user,agreement.page user,model_agreement_page,group_agreement_user,1,0,0,0
+access_agreement_page_manager,agreement.page manager,model_agreement_page,group_agreement_manager,1,1,1,1
+access_agreement_page_portal,agreement.page portal,model_agreement_page,base.group_portal,1,0,0,0

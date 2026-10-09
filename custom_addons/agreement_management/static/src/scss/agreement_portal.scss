@@ -23,3 +23,14 @@
         margin-bottom: 1rem;
     }
 }
+
+// Page-wise signing: each image is a rendered A4 page, so hold the aspect ratio
+// and cap the width at A4 so a page never renders wider than the paper it is.
+.o_agreement_page {
+    .o_agreement_page_img {
+        max-width: 210mm;
+        aspect-ratio: 210 / 297;
+        object-fit: contain;
+        background: #fff;
+    }
+}

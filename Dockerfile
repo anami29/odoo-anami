@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     fonts-crosextra-carlito \
     fonts-crosextra-caladea \
     fonts-dejavu-core \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --break-system-packages html2text python-magic

@@ -113,5 +113,17 @@
             <field name="perm_create" eval="False"/>
             <field name="perm_unlink" eval="False"/>
         </record>
+        <record id="rule_agreement_page_portal" model="ir.rule">
+            <field name="name">Agreement Page: portal user sees pages of their agreements</field>
+            <field name="model_id" ref="model_agreement_page"/>
+            <field name="domain_force">['|',
+                ('agreement_id.partner_b_id', 'child_of', [user.commercial_partner_id.id]),
+                ('agreement_id.signatory_b_id', 'child_of', [user.commercial_partner_id.id])]</field>
+            <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
     </data>
 </odoo>
