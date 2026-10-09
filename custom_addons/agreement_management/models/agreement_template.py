@@ -20,6 +20,24 @@ VERSION_STATES = [
 # Appended to the label of a mandatory dynamic field; styled red by agreement_properties.js.
 REQUIRED_MARK = '*'
 
+def strip_label_decorations(label, currency_symbol=None):
+    """Remove what _to_property_definition adds, so a label never decorates twice.
+
+    The definition's `string` carries presentation — a currency tag and the mandatory
+    marker — and _sync_fields_from_definition writes `string` back onto the field's
+    name. Without stripping, every round trip appends another marker.
+    """
+    label = (label or '').rstrip()
+    changed = True
+    while changed:
+        changed = False
+        if label.endswith(' ' + REQUIRED_MARK):
+            label, changed = label[:-2].rstrip(), True
+        if currency_symbol and label.endswith(' (%s)' % currency_symbol):
+            label, changed = label[:-len(currency_symbol) - 3].rstrip(), True
+    return label
+
+
 # A label that already names a currency is left alone when tagging a monetary field.
 CURRENCY_IN_LABEL_RE = re.compile(r'[$\u20ac\u00a3\u00a5\u20b9\u00a2]|\b(?:USD|EUR|GBP|INR|JPY|AED|SGD|AUD|CAD)\b',
                                   re.IGNORECASE)
@@ -308,7 +326,8 @@ class AgreementTemplateVersion(models.Model):
             seen.add(key)
             vals = {
                 'sequence': seq * 10,
-                'name': prop.get('string') or key,
+                'name': strip_label_decorations(
+                    prop.get('string') or key, self.company_id.currency_id.symbol),
                 'field_type': PROPERTY_TO_FIELD_TYPE.get(prop.get('type'), 'char'),
                 'selection_values': '\n'.join(label for _value, label in (prop.get('selection') or [])),
                 'default_value': str(prop['default']) if prop.get('default') not in (None, False, '') else False,

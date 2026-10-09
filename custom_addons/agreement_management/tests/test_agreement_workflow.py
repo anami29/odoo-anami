@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from odoo.addons.agreement_management.models.agreement_document_mixin import (
     BLANK_PAGE_MARKER, render_document_html)
+from odoo.addons.agreement_management.models.agreement_template import strip_label_decorations
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
@@ -320,6 +321,25 @@ class TestAgreementWorkflow(TransactionCase):
         self.assertEqual(agreement.state, 'draft')
         # and the form still renders rather than showing an error in place of the document
         self.assertNotIn('does not match format', str(agreement._render_document_html()))
+
+    def test_08e_label_markers_do_not_accumulate(self):
+        """The definition's `string` carries presentation and is written back onto the
+        field's name, so without stripping each round trip appended another marker."""
+        symbol = self.env.company.currency_id.symbol
+        self.assertEqual(strip_label_decorations('Vessel Name *', symbol), 'Vessel Name')
+        self.assertEqual(strip_label_decorations('Vessel Name * * *', symbol), 'Vessel Name')
+        # the author's own currency note survives; only the tag we add is removed
+        self.assertEqual(strip_label_decorations('Overtime Rate (US$/hr) *', symbol),
+                         'Overtime Rate (US$/hr)')
+        self.assertEqual(strip_label_decorations('Fee (%s) *' % symbol, symbol), 'Fee')
+
+        version = self.v1
+        field = version.field_ids.filtered(lambda f: f.required)[:1]
+        self.assertTrue(field, "the fixture needs a mandatory field")
+        before = field.name
+        for _ in range(3):   # round trip the definition repeatedly
+            version.sudo().write({'properties_definition': version.properties_definition})
+        self.assertEqual(field.name, before, "the marker leaked back into the field name")
 
     def test_09_executed_pdf_is_protected(self):
         agreement = self._executed_agreement()
