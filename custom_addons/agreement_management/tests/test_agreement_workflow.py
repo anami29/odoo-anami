@@ -298,6 +298,29 @@ class TestAgreementWorkflow(TransactionCase):
             # not mistaken for an unknown placeholder
             self.assertNotIn('[insert blank page]', html)
 
+    def test_08d_unreadable_date_is_refused_and_never_breaks_rendering(self):
+        """The web client stores 'Invalid DateTime' for an input it cannot parse.
+
+        It is not empty, so the mandatory check passes it; confirmation would then
+        freeze it into the signed document and every later render would raise.
+        """
+        agreement = self._create_agreement()
+        version = agreement.template_version_id
+        version.sudo().write({'field_ids': [(0, 0, {
+            'name': 'Review Date', 'key': 'review_date', 'field_type': 'datetime',
+            'applies_to': 'agreement',
+        })]})
+        agreement.invalidate_recordset()
+        props = dict(agreement.agreement_properties or {})
+        props['review_date'] = 'Invalid DateTime'
+        agreement.sudo().write({'agreement_properties': props})
+
+        with self.assertRaisesRegex(UserError, 'could not be read'):
+            agreement.action_confirm()
+        self.assertEqual(agreement.state, 'draft')
+        # and the form still renders rather than showing an error in place of the document
+        self.assertNotIn('does not match format', str(agreement._render_document_html()))
+
     def test_09_executed_pdf_is_protected(self):
         agreement = self._executed_agreement()
         attachment = agreement.executed_pdf_attachment_id

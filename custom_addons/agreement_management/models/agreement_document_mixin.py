@@ -345,10 +345,18 @@ class AgreementDocumentMixin(models.AbstractModel):
             if field_type == 'monetary':
                 return formatLang(self.env, float(value), currency_obj=self.company_id.currency_id)
             return formatLang(self.env, value, digits=2 if ptype == 'float' else 0)
-        if ptype == 'date':
-            return format_date(self.env, value)
-        if ptype == 'datetime':
-            return format_datetime(self.env, value, dt_format='medium')
+        if ptype in ('date', 'datetime'):
+            # The web client stores the literal string 'Invalid DateTime' when an input
+            # cannot be parsed, and Odoo raises on reading it back. Blank the value
+            # rather than let one bad field replace the entire document with an error.
+            try:
+                if ptype == 'date':
+                    return format_date(self.env, value)
+                return format_datetime(self.env, value, dt_format='medium')
+            except (ValueError, TypeError):
+                _logger.warning("%s: %s holds an unreadable %s value %r",
+                                self, definition.get('name'), ptype, value)
+                return ''
         if ptype == 'selection':
             mapping = dict(definition.get('selection') or [])
             return mapping.get(value, str(value))
@@ -597,6 +605,25 @@ class AgreementDocumentMixin(models.AbstractModel):
                                   ', '.join(zeros)))
             raise UserError(_("Please complete all mandatory information before confirming the %s — %s.",
                               self._document_label().lower(), '; '.join(problems)))
+        # A date the client could not parse is stored as the string 'Invalid DateTime'.
+        # It passes the emptiness check above, so catch it here — confirmation freezes
+        # these values into the signed document, and it cannot be corrected afterwards.
+        unreadable = []
+        for definition in self._property_definitions():
+            key, ptype = definition.get('name'), definition.get('type')
+            if ptype not in ('date', 'datetime'):
+                continue
+            value = values.get(key)
+            if value in (None, False, '', []):
+                continue
+            try:
+                fields.Datetime.to_datetime(value) if ptype == 'datetime' else fields.Date.to_date(value)
+            except (ValueError, TypeError):
+                unreadable.append(definition.get('string') or key)
+        if unreadable:
+            raise UserError(_(
+                "These dates could not be read and must be entered again before confirming the %s: %s.",
+                self._document_label().lower(), ', '.join(unreadable)))
         areas = version._get_areas(self._get_areas_applies_to())
         if not areas.filtered(lambda a: a.party == 'a' and a.required) or not areas.filtered(lambda a: a.party == 'b' and a.required):
             raise UserError(_("The template version has no required signature location for both parties. "
