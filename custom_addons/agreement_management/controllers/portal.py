@@ -76,7 +76,10 @@ class AgreementCustomerPortal(CustomerPortal):
         party = {'pending_a': 'a', 'pending_b': 'b'}.get(agreement.state)
         if not party:
             return None
-        return party if agreement.sudo()._user_can_sign(party) else None
+        # the context key is what distinguishes the portal from the backend for
+        # Party B; _user_can_sign refuses them anywhere else
+        return party if agreement.sudo().with_context(
+            agreement_portal_signing=True)._user_can_sign(party) else None
 
     @http.route(['/my/agreements/<int:agreement_id>/sign/page/<int:page>'],
                 type='json', auth='public', website=True)

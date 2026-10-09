@@ -696,6 +696,23 @@ class AgreementDocumentMixin(models.AbstractModel):
             raise UserError(_(
                 "These dates could not be read and must be entered again before confirming the %s: %s.",
                 self._document_label().lower(), ', '.join(unreadable)))
+        # With signing restricted to the designated signatory, a signatory without a
+        # user account makes the document unsignable. Refuse it here rather than
+        # confirm an agreement that can never be completed.
+        signatory_b = self._get_signatory('b')
+        if signatory_b and not signatory_b.user_ids:
+            raise UserError(_(
+                "%(name)s has no portal account, so they could not sign this %(label)s. "
+                "Grant them portal access from their contact first.",
+                name=signatory_b.name, label=self._document_label().lower()))
+        signatory_a = self._get_signatory('a')
+        if (signatory_a and not signatory_a.user_ids
+                and not self.company_id.agreement_allow_facilitated_signing):
+            raise UserError(_(
+                "%(name)s has no user account, so they could not sign this %(label)s. "
+                "Give them a login, or enable tablet signing in Agreements › "
+                "Configuration › Settings.", name=signatory_a.name,
+                label=self._document_label().lower()))
         areas = version._get_areas(self._get_areas_applies_to())
         if not areas.filtered(lambda a: a.party == 'a' and a.required) or not areas.filtered(lambda a: a.party == 'b' and a.required):
             raise UserError(_("The template version has no required signature location for both parties. "
@@ -760,14 +777,27 @@ class AgreementDocumentMixin(models.AbstractModel):
         return self._open_sign_wizard('b')
 
     def _user_can_sign(self, party):
-        """Manager, the designated signatory's user, or an internal user capturing the
-        signature on a tablet session (if allowed by the company settings)."""
+        """Only the designated signatory may sign, and Party B only from the portal.
+
+        A signature is a statement by a named person, so holding a role is never
+        enough: being an Agreement Manager, having created the agreement, or being the
+        party itself does not make someone that person. The party is a company; the
+        signatory is the individual authorised to sign for it, and only the user
+        account linked to that individual passes here.
+
+        Party A may still be captured in a facilitated session — an internal user
+        holding the device while the signatory signs in person — but only where the
+        company has deliberately enabled it.
+        """
         self.ensure_one()
-        user = self.env.user
-        if user.has_group('agreement_management.group_agreement_manager'):
-            return True
         signatory = self._get_signatory(party)
-        if signatory and signatory.user_ids and user in signatory.user_ids:
+        user = self.env.user
+        is_signatory = bool(signatory and signatory.user_ids and user in signatory.user_ids)
+        if party == 'b':
+            # Party B is the counterparty and signs from the customer portal, never
+            # from the backend, whatever groups their account happens to hold.
+            return is_signatory and bool(self.env.context.get('agreement_portal_signing'))
+        if is_signatory:
             return True
         return bool(self.company_id.agreement_allow_facilitated_signing and
                     user.has_group('agreement_management.group_agreement_user'))

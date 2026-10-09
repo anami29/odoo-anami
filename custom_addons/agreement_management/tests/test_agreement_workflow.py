@@ -4,7 +4,7 @@ from unittest.mock import patch
 from odoo.addons.agreement_management.models.agreement_document_mixin import (
     BLANK_PAGE_MARKER, render_document_html)
 from odoo.addons.agreement_management.models.agreement_template import strip_label_decorations
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
@@ -20,7 +20,7 @@ class TestAgreementWorkflow(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.company = cls.env.company
-        cls.company.write({'agreement_auto_email': True, 'agreement_allow_facilitated_signing': True})
+        cls.company.write({'agreement_auto_email': True, 'agreement_allow_facilitated_signing': False})
         cls.manager = cls.env['res.users'].create({
             'name': 'Agreement Manager',
             'login': 'agr_manager',
@@ -37,6 +37,20 @@ class TestAgreementWorkflow(TransactionCase):
         cls.signatory_b = cls.env['res.partner'].create({
             'name': 'Farhan Qureshi', 'parent_id': cls.party_b.id, 'type': 'contact',
             'email': 'farhan@nexus.example.com', 'function': 'Managing Partner'})
+
+        # Signing belongs to the designated signatory, so each needs a login: an
+        # internal user for Party A, a portal user for Party B, who signs on the web.
+        cls.user_sig_a = cls.env['res.users'].create({
+            'name': cls.signatory_a.name, 'login': 'sig_a_anita',
+            'partner_id': cls.signatory_a.id,
+            'groups_id': [(6, 0, [cls.env.ref('base.group_user').id,
+                                  cls.env.ref('agreement_management.group_agreement_user').id])],
+        })
+        cls.user_sig_b = cls.env['res.users'].create({
+            'name': cls.signatory_b.name, 'login': 'sig_b_farhan',
+            'partner_id': cls.signatory_b.id,
+            'groups_id': [(6, 0, [cls.env.ref('base.group_portal').id])],
+        })
 
         cls.template = cls.env['agreement.template'].with_user(cls.manager).create({
             'name': 'Master Service Agreement', 'code': 'msa',
@@ -340,6 +354,46 @@ class TestAgreementWorkflow(TransactionCase):
         for _ in range(3):   # round trip the definition repeatedly
             version.sudo().write({'properties_definition': version.properties_definition})
         self.assertEqual(field.name, before, "the marker leaked back into the field name")
+
+    def test_08f_only_the_designated_signatory_may_sign(self):
+        """A signature is a statement by a named person, so a role never substitutes.
+
+        Neither a manager, nor the creator, nor the party itself may sign for a
+        signatory — and Party B signs from the portal, never the backend.
+        """
+        agreement = self._create_agreement()
+        agreement.action_confirm()
+        self.assertEqual(agreement.state, 'pending_a')
+
+        # a manager who is not the signatory cannot sign, however senior
+        self.assertFalse(agreement.with_user(self.manager)._user_can_sign('a'))
+        with self.assertRaises(AccessError):
+            agreement.with_user(self.manager).action_sign_party_a()
+
+        # the designated signatory can
+        self.assertTrue(agreement.with_user(self.user_sig_a)._user_can_sign('a'))
+
+        self._sign(agreement, 'a')
+        self.assertEqual(agreement.state, 'pending_b')
+
+        # Party B's own signatory is refused in the backend, and allowed on the portal
+        as_b = agreement.with_user(self.user_sig_b)
+        self.assertFalse(as_b._user_can_sign('b'), "Party B must not sign from the backend")
+        self.assertTrue(as_b.with_context(agreement_portal_signing=True)._user_can_sign('b'))
+        # and a manager cannot stand in for them there either
+        self.assertFalse(agreement.with_user(self.manager)
+                         .with_context(agreement_portal_signing=True)._user_can_sign('b'))
+
+    def test_08g_a_signatory_without_an_account_blocks_confirmation(self):
+        """Confirming an agreement nobody could ever sign only discovers the problem
+        once it is locked, so refuse it up front."""
+        orphan = self.env['res.partner'].create({
+            'name': 'No Login', 'parent_id': self.party_b.id, 'type': 'contact',
+            'email': 'nologin@nexus.example.com'})
+        agreement = self._create_agreement(signatory_b_id=orphan.id)
+        with self.assertRaisesRegex(UserError, 'no portal account'):
+            agreement.action_confirm()
+        self.assertEqual(agreement.state, 'draft')
 
     def test_09_executed_pdf_is_protected(self):
         agreement = self._executed_agreement()

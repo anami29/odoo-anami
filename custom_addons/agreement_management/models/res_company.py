@@ -26,7 +26,9 @@ class ResCompany(models.Model):
         string='Allow Party A and Party B to be identical', default=False,
         help="By default the system prevents Party A and Party B from being the same partner (BR-PAR-005).")
     agreement_allow_facilitated_signing = fields.Boolean(
-        string='Allow tablet signing captured by internal users', default=True,
-        help="When enabled, any Agreement User can open the signing screen on a shared tablet so the "
-             "designated signatory signs in person. When disabled, only the signatory's own user (or an "
-             "Agreement Manager) can open the signing screen.")
+        string='Allow tablet signing captured by internal users', default=False,
+        help="Party A only. When enabled, any Agreement User can open the signing screen on a shared "
+             "tablet so the designated signatory signs in person. Off by default, because it lets "
+             "someone other than the signatory capture the signature. When disabled, only the "
+             "signatory's own user can sign — a manager cannot sign on their behalf. Party B always "
+             "signs from the customer portal and is unaffected by this setting.")
