@@ -4,6 +4,7 @@ from unittest.mock import patch
 from odoo.addons.agreement_management.models.agreement_document_mixin import (
     BLANK_PAGE_MARKER, render_document_html)
 from odoo.addons.agreement_management.models.agreement_template import strip_label_decorations
+from odoo import SUPERUSER_ID
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
@@ -394,6 +395,26 @@ class TestAgreementWorkflow(TransactionCase):
         with self.assertRaisesRegex(UserError, 'no portal account'):
             agreement.action_confirm()
         self.assertEqual(agreement.state, 'draft')
+
+    def test_08h_portal_identity_survives_the_sudo_record(self):
+        """The portal's _document_check_access returns the record bound to SUPERUSER.
+
+        Asking that record who is signing answers "the superuser", who is never the
+        signatory, so every portal signing control disappeared. The visitor has to be
+        named explicitly.
+        """
+        agreement = self._create_agreement()
+        agreement.action_confirm()
+        self._sign(agreement, 'a')
+        self.assertEqual(agreement.state, 'pending_b')
+
+        as_portal_sees_it = agreement.sudo().with_context(agreement_portal_signing=True)
+        # what the controller gets: a SUPERUSER-bound record, which is nobody's signatory
+        self.assertFalse(as_portal_sees_it.with_user(SUPERUSER_ID)._user_can_sign('b'))
+        # naming the visitor is what makes it answer the real question
+        self.assertTrue(as_portal_sees_it._user_can_sign('b', user=self.user_sig_b))
+        # and it still refuses anyone who is not the signatory
+        self.assertFalse(as_portal_sees_it._user_can_sign('b', user=self.manager))
 
     def test_09_executed_pdf_is_protected(self):
         agreement = self._executed_agreement()

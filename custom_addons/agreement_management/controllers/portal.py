@@ -78,8 +78,11 @@ class AgreementCustomerPortal(CustomerPortal):
             return None
         # the context key is what distinguishes the portal from the backend for
         # Party B; _user_can_sign refuses them anywhere else
+        # The record comes back bound to SUPERUSER, so name the visitor explicitly —
+        # otherwise the check asks whether the superuser is the signatory, and it never is.
         return party if agreement.sudo().with_context(
-            agreement_portal_signing=True)._user_can_sign(party) else None
+            agreement_portal_signing=True)._user_can_sign(
+                party, user=request.env.user) else None
 
     @http.route(['/my/agreements/<int:agreement_id>/sign/page/<int:page>'],
                 type='json', auth='public', website=True)

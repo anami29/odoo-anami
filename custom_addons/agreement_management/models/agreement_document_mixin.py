@@ -776,8 +776,12 @@ class AgreementDocumentMixin(models.AbstractModel):
     def action_sign_party_b(self):
         return self._open_sign_wizard('b')
 
-    def _user_can_sign(self, party):
+    def _user_can_sign(self, party, user=None):
         """Only the designated signatory may sign, and Party B only from the portal.
+
+        ``user`` is given explicitly by the portal. _document_check_access returns the
+        record bound to SUPERUSER, so self.env.user there is not the visitor and asking
+        it who is signing would always answer "the superuser".
 
         A signature is a statement by a named person, so holding a role is never
         enough: being an Agreement Manager, having created the agreement, or being the
@@ -791,7 +795,7 @@ class AgreementDocumentMixin(models.AbstractModel):
         """
         self.ensure_one()
         signatory = self._get_signatory(party)
-        user = self.env.user
+        user = user or self.env.user
         is_signatory = bool(signatory and signatory.user_ids and user in signatory.user_ids)
         if party == 'b':
             # Party B is the counterparty and signs from the customer portal, never
