@@ -137,10 +137,19 @@
               parent="menu_auction_reporting" action="action_auction_audit"
               sequence="90"/>
 
-    <!-- ========== set once, changed rarely ========== -->
+    <!-- ========== set once, changed rarely ==========
+
+         Open to Event Owners, not Managers only. FIX-026. An event cannot
+         be saved without a sourcing category and a rule set, so a buyer who
+         cannot reach this menu cannot finish their own first event and has
+         to go and find a manager. User testing stopped here.
+
+         Mechanisms stays with Managers: it is a registry of code-backed
+         strategies, not user data, and a list a buyer can only read is the
+         same dead end in a different place. -->
     <menuitem id="menu_auction_config" name="Configuration"
               parent="menu_auction_root" sequence="90"
-              groups="custom_auction_base.group_auction_manager"/>
+              groups="custom_auction_base.group_auction_event_owner"/>
 
     <menuitem id="menu_auction_config_templates" name="Event Templates"
               parent="menu_auction_config" action="action_auction_event_template"
@@ -156,6 +165,7 @@
 
     <menuitem id="menu_auction_config_mechanisms" name="Mechanisms"
               parent="menu_auction_config" action="action_auction_mechanism"
-              sequence="30"/>
+              sequence="30"
+              groups="custom_auction_base.group_auction_manager"/>
 
 </odoo>

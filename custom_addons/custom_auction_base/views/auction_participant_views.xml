@@ -5,12 +5,23 @@
         <field name="model">auction.participant</field>
         <field name="arch" type="xml">
             <form string="Participant">
+                <header>
+                    <button name="action_invite_bidder" type="object"
+                            string="Invite Bidder" class="oe_highlight"
+                            icon="fa-user-plus"/>
+                </header>
                 <sheet>
                     <group>
                         <group>
                             <field name="event_id"/>
-                            <field name="partner_id"/>
-                            <field name="alias"/>
+                            <!-- The BIDDING ORGANISATION, not a person.
+                                 Who may act for it is set below. -->
+                            <field name="partner_id"
+                                   string="Bidding Organisation"
+                                   context="{'default_is_company': True}"/>
+                            <field name="alias"
+                                   placeholder="Bidder A"
+                                   help="The anonymous label everyone sees while the event is anonymised. The real organisation name replaces it once the award is approved. Leave blank and the real name shows."/>
                             <field name="classification"/>
                         </group>
                         <group>
@@ -23,14 +34,34 @@
                     </group>
                     <notebook>
                         <page string="Portal Users and Roles">
-                            <div class="alert alert-info" role="status">
-                                Roles are per event. The same person may be the
-                                authorised bidder here and an observer on
-                                another event.
+                            <field name="portal_user_count" invisible="1"/>
+                            <!-- FIX-028. This list records WHO IS
+                                 ANSWERABLE for the bid. It does not grant
+                                 access, and saying so here is the whole
+                                 point: user testing filled it in and
+                                 reasonably assumed the bidder could now
+                                 log in. -->
+                            <div class="alert alert-warning" role="alert"
+                                 invisible="not portal_reach_warning">
+                                <field name="portal_reach_warning"
+                                       nolabel="1" readonly="1"/>
+                            </div>
+                            <div class="alert alert-info" role="status"
+                                 invisible="portal_reach_warning">
+                                Roles are per event: the same person may be
+                                the authorised bidder here and an observer on
+                                another event. They may never be the
+                                authorised bidder for two competing bidders
+                                in the same event.
+                                <br/>
+                                Access itself comes from the organisation a
+                                login's own contact sits under, not from this
+                                list. Use Invite Bidder to create one.
                             </div>
                             <field name="user_ids">
                                 <list editable="bottom">
-                                    <field name="user_id"/>
+                                    <field name="user_id" string="Person"/>
+                                    <field name="user_login" readonly="1"/>
                                     <field name="role"/>
                                 </list>
                             </field>
@@ -46,4 +77,62 @@
         <field name="res_model">auction.participant</field>
         <field name="view_mode">list,form</field>
     </record>
+
+    <!-- ===================================================================
+         Invite Bidder. FIX-028.
+
+         The whole operation in one dialog, because the alternative was
+         three steps across two apps and a piece of knowledge the interface
+         never stated. Runs with sudo for the contact and login only: the
+         buyer is not handed the Contacts app, they are handed this.
+         =================================================================== -->
+    <record id="view_auction_invite_bidder_wizard" model="ir.ui.view">
+        <field name="name">auction.invite.bidder.wizard.form</field>
+        <field name="model">auction.invite.bidder.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Invite Bidder">
+                <group>
+                    <field name="participant_id" invisible="1"/>
+                    <field name="event_id" readonly="1"/>
+                    <field name="organisation_id" readonly="1"/>
+                </group>
+                <div class="text-muted mb-2">
+                    The login is created as a contact under this
+                    organisation, which is what the portal reads when it
+                    decides who may see this tender.
+                </div>
+                <group>
+                    <field name="mode" widget="radio"/>
+                </group>
+                <group invisible="mode != 'new'">
+                    <field name="name" required="mode == 'new'"
+                           placeholder="Person who will submit the bid"/>
+                    <field name="email" required="mode == 'new'"
+                           placeholder="name@company.com"/>
+                    <field name="phone"/>
+                </group>
+                <group invisible="mode != 'existing'">
+                    <field name="user_id" required="mode == 'existing'"
+                           options="{'no_create': True}"/>
+                </group>
+                <group>
+                    <field name="role"/>
+                    <field name="send_invitation"/>
+                </group>
+                <field name="existing_note" invisible="1"/>
+                <div class="alert alert-warning" role="alert"
+                     invisible="not existing_note or role != 'authorised_bidder'">
+                    <field name="existing_note" nolabel="1" readonly="1"/>
+                    Saving will move that role to the person named above.
+                </div>
+                <footer>
+                    <button name="action_invite" type="object"
+                            string="Invite" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
 </odoo>

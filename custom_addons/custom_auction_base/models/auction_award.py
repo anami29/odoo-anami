@@ -26,7 +26,7 @@ import logging
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
-from odoo.tools import float_compare
+from odoo.tools import float_compare, formatLang
 
 _logger = logging.getLogger(__name__)
 
@@ -69,6 +69,14 @@ class AuctionAward(models.Model):
     sale_order_ids = fields.One2many("sale.order", "auction_award_id",
                                      readonly=True)
     document_count = fields.Integer(compute="_compute_documents")
+    # FIX-029. What was generated, in words, readable without the purchase
+    # or sales licence. The manual tells the Award Approver to press
+    # Generate Documents; until now the only way to see the result was a
+    # smart button guarded by a licence most approvers do not hold, so the
+    # step ended in either a hidden button or an access error. A reference,
+    # a vendor and a total are not sensitive -- the approver just approved
+    # the prices they are made of.
+    document_summary = fields.Text(compute="_compute_documents")
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -99,7 +107,25 @@ class AuctionAward(models.Model):
         """
         for award in self:
             a = award.sudo()
-            award.document_count = len(a.order_ids) + len(a.sale_order_ids)
+            orders = a.order_ids
+            sales = a.sale_order_ids
+            award.document_count = len(orders) + len(sales)
+            rows = []
+            for po in orders:
+                rows.append("%s  %s  %s  %s" % (
+                    po.name, po.partner_id.display_name or "",
+                    formatLang(self.env, po.amount_total or 0.0,
+                               currency_obj=po.currency_id),
+                    dict(po._fields["state"].selection).get(po.state,
+                                                            po.state)))
+            for so in sales:
+                rows.append("%s  %s  %s  %s" % (
+                    so.name, so.partner_id.display_name or "",
+                    formatLang(self.env, so.amount_total or 0.0,
+                               currency_obj=so.currency_id),
+                    dict(so._fields["state"].selection).get(so.state,
+                                                            so.state)))
+            award.document_summary = "\n".join(rows) or False
 
     # ------------------------------------------------------------------
     def action_approve(self):
@@ -433,6 +459,18 @@ class AuctionAward(models.Model):
     def action_view_documents(self):
         self.ensure_one()
         reverse = self.direction == "reverse"
+        model = "purchase.order" if reverse else "sale.order"
+        # FIX-029. Say which licence is missing rather than letting Odoo
+        # answer with its generic access error, which names a model the
+        # approver has never heard of and offers no next step.
+        if not self.env[model].has_access("read"):
+            raise UserError(_(
+                "The orders generated from this award exist and are listed "
+                "on this form, but opening them needs the %(app)s licence, "
+                "which this login does not have. The summary above is the "
+                "record of what was generated; ask an administrator for "
+                "%(app)s access if you need the orders themselves.",
+                app=_("Purchase") if reverse else _("Sales")))
         return {
             "type": "ir.actions.act_window",
             "name": _("Purchase Orders") if reverse else _("Sale Orders"),

@@ -306,19 +306,35 @@
                     </field>
 
                     <separator string="Questions from bidders"/>
-                    <field name="clarification_ids" readonly="1">
-                        <list decoration-warning="state == 'asked'">
+                    <!-- FIX-031. NOT readonly on the One2many.
+                         `readonly="1"` here made the whole record open
+                         read-only when a row was clicked, so the
+                         clarification dialog showed its answer field as
+                         blank space with no text box and a lone Close
+                         button, so the buyer could read a question on
+                         the event and had no way to answer it. create and
+                         delete stay off instead: a clarification is
+                         raised by a bidder through the portal and is
+                         never invented or destroyed here, but the answer
+                         must be typeable where the question is read. -->
+                    <field name="clarification_ids">
+                        <list decoration-warning="state == 'asked'"
+                              create="false" delete="false">
                             <field name="name"/>
                             <field name="participant_id"/>
                             <field name="question"/>
                             <field name="asked_on"/>
+                            <field name="answer" optional="show"/>
                             <field name="state" widget="badge"/>
                         </list>
                     </field>
 
                     <separator string="Corrigenda"/>
-                    <field name="corrigendum_ids" readonly="1">
-                        <list>
+                    <!-- Same trap, same fix: a draft corrigendum opened
+                         from here could not be edited either. -->
+                    <field name="corrigendum_ids"
+                           context="{'default_event_id': id}">
+                        <list delete="false">
                             <field name="name"/>
                             <field name="is_material"/>
                             <field name="new_close_datetime"/>

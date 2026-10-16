@@ -488,6 +488,155 @@ The dashboard shows a disabled `1 / 1` pager, an unavoidable consequence of
 opening a real record. Removing it needs an OWL class, which SCP-AUC-001
 keeps out of this module.
 
+## User testing round 2, 2026-10-16
+
+  FIX-031  THE ANSWER BOX WAS MISSING FROM A BIDDER QUESTION opened from
+           the event. `clarification_ids` on the Bidder-facing tab carried
+           `readonly="1"`, which makes the whole record open read-only when
+           a row is clicked: the answer field rendered as blank space under
+           its heading and the dialog offered a lone Close button. So a
+           buyer could read a question on the event and had no way to
+           answer it there.
+
+           The field itself was never readonly and the dedicated
+           Tendering > Clarifications screen always worked, which is why
+           nothing caught this: every test answered through that route.
+           The tell in the screenshot was the footer, not the missing box.
+
+           Fixed by dropping readonly from the One2many and putting
+           `create="false" delete="false"` on the list instead: a
+           clarification is raised by a bidder through the portal and is
+           never invented or destroyed from the event, but the answer must
+           be typeable where the question is read. The answer column was
+           added to the list so answered questions can be scanned without
+           opening each one.
+
+           Corrigenda on the same tab had the identical trap and the
+           identical fix; a draft corrigendum opened from the event could
+           not be edited either.
+
+           Guarded by F8 in tests/runtime_usertest_check.py, which checks
+           the view attribute and then answers and publishes a question end
+           to end, including that the published payload still names the
+           asker nowhere.
+
+Also corrected while verifying: the first draft of this fix put an em-dash
+inside an XML comment. `--` is illegal there and the file would not parse,
+which CLAUDE.md warns about and which I did anyway. The check now asserts
+no comment in that file contains it.
+
+## User testing round 1, 2026-10-16
+
+Six findings from a tester working as a Buyer and an Approver. All six
+reproduced; two were more serious than reported, and one was a control
+that existed only in the training manual.
+
+  FIX-025  THE SOURCING CATEGORY NAME WAS NEVER COMPUTED. `complete_name`
+           is a stored computed field that carried no `@api.depends`, so
+           it was never scheduled for computation at all: NULL on create,
+           NULL after a rename, NULL for children. The reported symptom
+           was a blank column. The quieter one is that `_order =
+           "complete_name"` had been sorting the whole model on a NULL
+           column, so the list came back arbitrary and merely looked
+           unsorted. It survived this long because `_rec_name` falls back
+           to `name`, so every Many2one to a category displayed correctly
+           and only the list of categories themselves showed the stored
+           value. Migration recomputes existing rows, parents first.
+
+  FIX-026  BUYERS COULD NOT CREATE A SOURCING CATEGORY OR A RULE SET, and
+           neither could Managers: create on `auction.category` was
+           admin-only, and the Configuration menu was manager-gated. An
+           event cannot be saved without both, so a buyer could not
+           finish their own first event. Create and write now sit with
+           Event Owner; Mechanisms stays with Managers, because a list a
+           buyer can only read is the same dead end somewhere else.
+
+  FIX-027  ONE PERSON COULD BE THE AUTHORISED BIDDER FOR TWO COMPETING
+           BIDDERS IN THE SAME TENDER. The existing constraint enforces
+           one authorised bidder PER PARTICIPANT, which reads like the
+           same rule and is not. Reproduced: one login authorised for two
+           rival organisations on one event.
+
+           The training manual already asserted this could not happen.
+           A control that exists only in the documentation is worse than
+           no control, because it is believed.
+
+  FIX-028  'PORTAL USERS AND ROLES' GRANTED NO ACCESS WHATSOEVER, and is
+           the single root of three of the six findings. Access is
+           resolved entirely from the logged-in user's own partner:
+           `portal_for_user` matches on commercial_partner_id and the
+           record rules do the same. Nothing in that path reads these
+           rows. Proved by adding a role row for a user on a competing
+           participant and watching the portal continue to resolve them
+           to their own organisation.
+
+           So a buyer who filled the list in had granted nothing, while a
+           buyer who filled in nothing had already granted access to
+           everyone under that commercial partner. The tester reported
+           this three separate ways -- as a roles problem, as a contacts
+           problem, and as "confusion in contact and giving portal access
+           to the bidders" -- which is what one invisible mechanism looks
+           like from three directions.
+
+           Now: a row whose user sits under another organisation is
+           refused with an explanation, the participant states how many
+           logins can actually reach it, and Invite Bidder does the whole
+           operation -- contact under the right company, portal login,
+           role -- from the participant form. The buyer is not given the
+           Contacts app; they are given this one well-defined thing,
+           which it performs with sudo.
+
+  FIX-029  THE APPROVER COULD NOT SEE THE DOCUMENTS THEY HAD JUST BEEN
+           TOLD TO GENERATE. The manual instructs the Award Approver to
+           press Generate Documents; opening the result needs the
+           Purchase or Sales licence, which an approver need not hold.
+           Depending on the install they get a hidden button or an access
+           error -- the tester got the record-rule variant, on
+           res.partner, which names a model they have never heard of and
+           offers no next step.
+
+           The orders are now listed on the award itself (reference,
+           vendor, value, status) read with sudo, so an approver who just
+           approved those prices can see what was raised from them. The
+           smart button still needs the licence and now says so in words.
+
+  FIX-030  THE DELIVERY SCHEDULE GAVE NO FEEDBACK UNTIL SAVE. Three
+           tranches totalling 130 against a line quantity of 120 looked
+           entirely normal; the dialog showed the tranche total and never
+           the line quantity. The constraint has always named both
+           numbers, but only on save. Line quantity, Scheduled and
+           Variance now sit above the tranches and the variance turns red
+           as it is typed. The constraint is unchanged -- this is
+           feedback, not a relaxation.
+
+Also fixed, found while verifying the above: the roles list showed a
+bidder's ORGANISATION where a person was expected, because a portal
+bidder's partner is usually the company record and `res.users.display_name`
+renders it. A Login column was added, and both new constraint messages name
+the login rather than the display name -- the first draft of FIX-027's
+message read "X is already the authorised bidder for X".
+
+### Documentation
+
+Both manuals are at v1.3. Module 3 now states who may create categories
+and rule sets; module 6 separates Bidding Organisation from Alias, adds
+the Invite Bidder procedure and explains where portal access actually
+comes from; the delivery-schedule rule gets the explanation the tester
+asked for, including why the total must be exact; module 15 states which
+licence an approver needs and what they can see without it.
+
+Five figures were re-captured because they were wrong in CONTENT, not
+merely in chrome: 02 (categories), 07 (line form), 08 (participants), 30
+(award) and b06 (bidder-facing).
+
+### Still outstanding
+
+Figures 01, 03-06, 09-29, 31-36 and b01-b05 were captured before the menu
+was restructured and still show the old flat eleven-item bar in their top
+strip. Their subject matter is current; only the navigation chrome is
+stale. The tester noticed this on the category figure. A full re-capture
+of ~36 figures is a session of its own.
+
 ## Completed
 
 | Stage | Name | Status |

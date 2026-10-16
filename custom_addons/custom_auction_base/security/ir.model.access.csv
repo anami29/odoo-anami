@@ -80,3 +80,6 @@ access_auction_analysis_manager,auction.analysis.manager,model_auction_analysis,
 access_auction_analysis_admin,auction.analysis.admin,model_auction_analysis,group_auction_admin,1,0,0,0
 access_auction_dashboard_observer,auction.dashboard.observer,model_auction_dashboard,group_auction_observer,1,1,1,0
 access_auction_dashboard_manager,auction.dashboard.manager,model_auction_dashboard,group_auction_manager,1,1,1,0
+access_auction_category_owner,auction.category.owner,model_auction_category,group_auction_event_owner,1,1,1,0
+access_auction_rule_set_owner,auction.rule.set.owner,model_auction_rule_set,group_auction_event_owner,1,1,1,0
+access_auction_invite_bidder_wizard,auction.invite.bidder.wizard,model_auction_invite_bidder_wizard,group_auction_event_owner,1,1,1,0

@@ -2,6 +2,7 @@
 """Content model — sections, lots, lines, attributes. BRD group CNT."""
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.tools import float_compare
 
 
 class AuctionSection(models.Model):
@@ -201,6 +202,35 @@ class AuctionLine(models.Model):
 
     # Phased delivery. Empty means a single delivery on required_by.
     schedule_ids = fields.One2many("auction.line.schedule", "line_id")
+
+    # FIX-030. Live arithmetic, so a schedule that does not add up is
+    # visible while it is being typed rather than at save.
+    #
+    # The constraint that enforces this has always named both numbers in
+    # its message, but it only fires on save: user testing sat in the
+    # dialog with three tranches totalling 130 against a line quantity of
+    # 120 and had nothing on screen to compare them with. The dialog
+    # showed the tranche total and never the line quantity.
+    scheduled_qty = fields.Float(
+        string="Scheduled", digits=(18, 6), compute="_compute_scheduled",
+        help="Total of the tranches below.")
+    schedule_variance = fields.Float(
+        string="Variance", digits=(18, 6), compute="_compute_scheduled",
+        help="Scheduled total less the line quantity. Must be zero.")
+    schedule_balanced = fields.Boolean(compute="_compute_scheduled")
+
+    @api.depends("schedule_ids.quantity", "product_qty")
+    def _compute_scheduled(self):
+        precision = self.env["decimal.precision"].precision_get(
+            "Product Unit of Measure") or 6
+        for line in self:
+            total = sum(line.schedule_ids.mapped("quantity"))
+            line.scheduled_qty = total
+            line.schedule_variance = total - line.product_qty
+            line.schedule_balanced = (
+                not line.schedule_ids
+                or float_compare(total, line.product_qty,
+                                 precision_digits=precision) == 0)
     schedule_count = fields.Integer(compute="_compute_schedule")
     delivery_summary = fields.Char(compute="_compute_schedule")
 

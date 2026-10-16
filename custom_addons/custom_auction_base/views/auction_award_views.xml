@@ -70,6 +70,15 @@
                                    invisible="state == 'draft'"/>
                         </group>
                     </group>
+                    <!-- FIX-029. Visible to anyone who can read the
+                         award, licence or not. The smart button above
+                         still needs Purchase or Sales to navigate; this
+                         is the record of what was generated. -->
+                    <group string="Documents Generated"
+                           invisible="not document_summary">
+                        <field name="document_summary" nolabel="1"
+                               readonly="1" widget="text"/>
+                    </group>
                     <notebook>
                         <page string="Allocation">
                             <div class="text-muted mb-2">

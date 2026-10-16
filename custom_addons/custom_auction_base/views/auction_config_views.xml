@@ -299,7 +299,33 @@
                                 Leave this empty for a single delivery on the
                                 required date. Add tranches for a phased
                                 schedule; the quantities must add up to the
-                                line quantity.
+                                line quantity exactly, and the event cannot
+                                be saved until they do. A schedule that does
+                                not add up is worse than none: it looks
+                                authoritative and the error surfaces at
+                                delivery.
+                            </div>
+                            <!-- FIX-030. The running total against the
+                                 line quantity, while it is being typed. -->
+                            <field name="schedule_balanced" invisible="1"/>
+                            <group invisible="not schedule_ids">
+                                <group>
+                                    <field name="product_qty" readonly="1"
+                                           string="Line quantity"/>
+                                    <field name="scheduled_qty" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="schedule_variance"
+                                           readonly="1"
+                                           decoration-danger="not schedule_balanced"
+                                           decoration-bf="not schedule_balanced"/>
+                                </group>
+                            </group>
+                            <div class="alert alert-danger" role="alert"
+                                 invisible="schedule_balanced">
+                                The tranches do not add up to the line
+                                quantity. Adjust them, or the line quantity,
+                                before saving.
                             </div>
                             <button name="action_open_schedule_wizard"
                                     type="object" string="Generate Schedule"
