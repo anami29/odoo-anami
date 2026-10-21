@@ -96,6 +96,21 @@ class TmsDriver(models.Model):
                 else "free"
             )
 
+    def contact_whatsapp(self):
+        # The driver form is a primary copy of the contact form, so it picks up
+        # odoo_whatsapp_integration's button beside the mobile number. Without a
+        # method of that name here the form fails validation. Hand the call to
+        # the driver's contact; the WhatsApp wizard reads its recipient from
+        # active_model/active_ids, and the action's own context overrides the
+        # driver ids the web client would otherwise put there.
+        self.ensure_one()
+        action = self.partner_id.contact_whatsapp()
+        if isinstance(action, dict):
+            action["context"] = dict(
+                action.get("context") or {},
+                active_model="res.partner", active_id=self.partner_id.id, active_ids=self.partner_id.ids)
+        return action
+
 
 class TmsInsurance(models.Model):
     _inherit = "tms.insurance"
