@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PRN-04 -->
+    <record id="action_report_pod_form" model="ir.actions.report">
+        <field name="name">POD form</field>
+        <field name="model">tms.trip.consignment</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms_core.report_pod_form</field>
+        <field name="report_file">tms_core.report_pod_form</field>
+        <field name="binding_model_id" ref="model_tms_trip_consignment"/>
+        <field name="paperformat_id" ref="paperformat_tms_a4"/>
+    </record>
+    <template id="report_pod_form">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="link">
+                <t t-call="web.basic_layout">
+                    <div class="page">
+                        <h3><t t-out="link.consignment_id.company_id.tms_print_label('Proof of delivery')"/></h3>
+                        <p><t t-out="link.consignment_id.company_id.tms_print_label('LR')"/> <strong t-out="link.consignment_id.name"/> dated <span t-out="link.consignment_id.date"/> · <t t-out="link.consignment_id.company_id.tms_print_label('Trip')"/> <span t-out="link.trip_id.name"/> · <t t-out="link.consignment_id.company_id.tms_print_label('Vehicle')"/> <span t-out="link.consignment_id.vehicle_number"/></p>
+                        <table class="table table-sm table-bordered">
+                            <tr><td><t t-out="link.consignment_id.company_id.tms_print_label('Consignee')"/></td><td t-out="link.consignment_id.consignee_id.name"/></tr>
+                            <tr><td><t t-out="link.consignment_id.company_id.tms_print_label('Packages sent')"/></td><td t-out="link.packages"/></tr>
+                            <tr><td><t t-out="link.consignment_id.company_id.tms_print_label('Packages received')"/></td><td style="height:24px"/></tr>
+                            <tr><td><t t-out="link.consignment_id.company_id.tms_print_label('Received by (name)')"/></td><td style="height:24px"/></tr>
+                            <tr><td><t t-out="link.consignment_id.company_id.tms_print_label('Shortage (packages)')"/></td><td style="height:24px"/></tr>
+                            <tr><td><t t-out="link.consignment_id.company_id.tms_print_label('Damage (packages and remarks)')"/></td><td style="height:48px"/></tr>
+                            <tr><td><t t-out="link.consignment_id.company_id.tms_print_label('Date and time')"/></td><td style="height:24px"/></tr>
+                        </table>
+                        <div class="row mt-5">
+                            <div class="col-6 text-center border-top pt-2"><t t-out="link.consignment_id.company_id.tms_print_label(&quot;Consignee's stamp&quot;)"/></div>
+                            <div class="col-6 text-center border-top pt-2"><t t-out="link.consignment_id.company_id.tms_print_label('Signature')"/></div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

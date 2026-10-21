@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_vendor_bill_match_form" model="ir.ui.view">
+        <field name="name">tms.vendor.bill.match.form</field>
+        <field name="model">tms.vendor.bill.match</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <header>
+                    <button name="action_refresh" type="object" string="Refresh"/>
+                    <button name="action_apply_recoveries" type="object" string="Apply recoveries to bill" invisible="state == 'posted'"/>
+                    <button name="action_open_reason" type="object" string="Override tolerance" invisible="state != 'blocked' or not pod_ok" groups="tms_core.group_finance_head" context="{'tms_reason_method': 'action_override'}"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="move_id"/>
+                            <field name="purchase_id"/>
+                            <field name="trip_id"/>
+                        </group>
+                        <group>
+                            <field name="pod_ok"/>
+                            <field name="tolerance_ok"/>
+                            <field name="override_by_id"/>
+                            <field name="override_reason" readonly="override_by_id"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="1">
+                        <list decoration-danger="result == 'fail'">
+                            <field name="kind"/>
+                            <field name="label"/>
+                            <field name="approved"/>
+                            <field name="billed"/>
+                            <field name="variance"/>
+                            <field name="tolerance"/>
+                            <field name="result"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="tms_vendor_bill_match_list" model="ir.ui.view">
+        <field name="name">tms.vendor.bill.match.list</field>
+        <field name="model">tms.vendor.bill.match</field>
+        <field name="arch" type="xml">
+            <list create="0" decoration-danger="state == 'blocked'">
+                <field name="name"/>
+                <field name="move_id"/>
+                <field name="purchase_id"/>
+                <field name="trip_id"/>
+                <field name="pod_ok"/>
+                <field name="tolerance_ok"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_vendor_bill_match" model="ir.actions.act_window">
+        <field name="name">Three-way matches</field>
+        <field name="res_model">tms.vendor.bill.match</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

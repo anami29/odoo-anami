@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UC-36: the Booking Clerk adds and releases items on contract orders owned by the Sales Executive -->
+<odoo>
+    <record id="tms_core.group_booking_clerk" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman_all_leads'))]"/>
+    </record>
+</odoo>

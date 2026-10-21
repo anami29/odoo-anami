@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_order_form_tms_core" model="ir.ui.view">
+        <field name="name">tms.order.form.tms.core</field>
+        <field name="model">tms.order</field>
+        <field name="inherit_id" ref="tms.tms_order_view_form"/>
+        <field name="arch" type="xml">
+            <!-- BR-EXE-02: stages move only through buttons -->
+            <xpath expr="//field[@name='stage_id']" position="attributes">
+                <attribute name="options">{'clickable': False, 'fold_field': 'fold'}</attribute>
+            </xpath>
+            <xpath expr="//button[@name='button_start_order']" position="attributes">
+                <attribute name="invisible">state_code != 'confirmed'</attribute>
+                <attribute name="string">Start</attribute>
+            </xpath>
+            <xpath expr="//button[@name='button_refresh_duration']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//button[@name='button_end_order']" position="attributes">
+                <attribute name="invisible">state_code not in ('started', 'in_transit')</attribute>
+                <attribute name="string">End (delivered)</attribute>
+            </xpath>
+            <xpath expr="//button[@name='button_start_order']" position="before">
+                <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state_code != 'draft'"/>
+                <button name="action_approve_payload" type="object" string="Approve payload" invisible="state_code != 'draft' or payload_approved_by_id or not payload_override_reason" groups="tms_core.group_operations_head"/>
+                <button name="action_create_hire_memo" type="object" string="Create hire memo" invisible="fleet_type != 'market' or state_code not in ('draft', 'confirmed')"/>
+            </xpath>
+            <xpath expr="//button[@name='button_end_order']" position="before">
+                <button name="action_depart" type="object" string="Depart" class="btn-primary" invisible="state_code != 'started'"/>
+                <button name="action_open_breakdown" type="object" string="Report breakdown" invisible="state_code not in ('started', 'in_transit')"/>
+            </xpath>
+            <xpath expr="//button[@name='button_end_order']" position="after">
+                <button name="action_new_settlement" type="object" string="Driver settlement" invisible="state_code not in ('delivered', 'in_transit', 'started')"/>
+                <button name="action_done" type="object" string="Close trip" class="btn-primary" invisible="state_code != 'delivered'"/>
+                <button name="action_print_trip_sheet" type="object" string="Trip sheet" invisible="state_code in ('draft', 'cancel')"/>
+                <button name="action_open_reason" type="object" string="Cancel" invisible="state_code not in ('draft', 'confirmed')" context="{'tms_reason_method': 'action_cancel_with_reason'}"/>
+                <button name="action_reset_draft" type="object" string="Reset to draft" invisible="state_code not in ('confirmed', 'cancel')"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_hire_memos" type="object" class="oe_stat_button" icon="fa-handshake-o" invisible="fleet_type != 'market'">
+                    <field name="hire_memo_count" widget="statinfo" string="Hire memos"/>
+                </button>
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]" position="after">
+                <div class="alert alert-danger" role="alert" invisible="not started_without_gate">Started without gate: compliance enforcement was off (BR-CMP-07).</div>
+                <div class="alert alert-warning" role="alert" invisible="not dsr_overdue">DSR overdue.</div>
+            </xpath>
+            <xpath expr="//field[@name='vehicle_id']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='driver_id']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='vehicle_id']" position="before">
+                <field name="company_id" string="Branch" groups="base.group_multi_company" readonly="state_code != 'draft'"/>
+                <field name="user_id"/>
+                <field name="tms_mode"/>
+                <field name="fleet_type" readonly="state_code != 'draft' or tms_mode == 'broker'"/>
+                <field name="tms_cargo_type" readonly="state_code != 'draft'"/>
+                <field name="empty_trip" readonly="state_code != 'draft'"/>
+                <field name="state_code" invisible="1"/>
+                <field name="planned_vehicle_id" invisible="fleet_type != 'owned'" readonly="state_code != 'draft'"/>
+                <field name="planned_driver_id" invisible="fleet_type != 'owned'" readonly="state_code != 'draft'"/>
+                <field name="planned_market_vehicle_id" invisible="fleet_type != 'market'" readonly="state_code != 'draft'"/>
+                <field name="broker_id" invisible="fleet_type != 'market'" readonly="state_code != 'draft'"/>
+                <field name="planned_hire_amount" invisible="fleet_type != 'market'" readonly="state_code != 'draft'"/>
+                <field name="market_driver_name" invisible="fleet_type != 'market'"/>
+                <field name="market_driver_phone" invisible="fleet_type != 'market'"/>
+                <field name="market_driver_licence" invisible="fleet_type != 'market'"/>
+                <field name="market_driver_licence_expiry" invisible="fleet_type != 'market'"/>
+                <field name="primary_vehicle_id"/>
+                <field name="open_assignment_id"/>
+                <field name="gate_status" widget="badge" decoration-success="gate_status == 'pass'" decoration-warning="gate_status == 'warn'" decoration-danger="gate_status == 'fail'"/>
+                <field name="started_without_gate" invisible="1"/>
+                <field name="dsr_overdue" invisible="1"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Consignments" name="consignments">
+                    <field name="consignment_link_ids" readonly="state_code not in ('draft', 'confirmed', 'started', 'in_transit', 'delivered')" context="{'default_trip_id': id}">
+                        <list editable="bottom" decoration-muted="state == 'cancel'">
+                            <field name="drop_sequence" widget="handle"/>
+                            <field name="consignment_id" readonly="id"/>
+                            <field name="lr_company_id" optional="hide"/>
+                            <field name="packages" readonly="id"/>
+                            <field name="weight" sum="Total"/>
+                            <field name="assignment_id" optional="hide"/>
+                            <field name="delivered_at"/>
+                            <field name="outcome"/>
+                            <field name="pod_status"/>
+                            <field name="state" column_invisible="1"/>
+                            <button name="action_mark_delivered" type="object" string="Delivered" icon="fa-check" invisible="outcome or state == 'cancel' or parent.state_code not in ('started', 'in_transit')"/>
+                        </list>
+                    </field>
+                    <group>
+                        <group>
+                            <field name="planned_weight"/>
+                            <field name="payload_kg"/>
+                            <field name="payload_override_reason" readonly="payload_approved_by_id"/>
+                            <field name="payload_approved_by_id"/>
+                        </group>
+                        <group>
+                            <field name="pod_status"/>
+                            <field name="consolidated_ewaybill"/>
+                            <field name="diversion_km"/>
+                        </group>
+                    </group>
+                </page>
+                <page string="Assignments" name="assignments">
+                    <group>
+                        <group>
+                            <field name="start_odometer" readonly="state_code not in ('draft', 'confirmed')"/>
+                            <field name="end_odometer" readonly="state_code in ('done', 'cancel')"/>
+                            <field name="own_km"/>
+                        </group>
+                        <group>
+                            <field name="fuel_kmpl"/>
+                            <field name="fuel_norm"/>
+                            <field name="delivered_on"/>
+                        </group>
+                    </group>
+                    <field name="assignment_ids" readonly="1"/>
+                    <field name="breakdown_ids" readonly="1"/>
+                </page>
+                <page string="Market vehicle documents" name="market_documents" invisible="fleet_type != 'market'">
+                    <!-- BR-CMP-05: documents captured on the assignment pass the same gate -->
+                    <field name="market_document_ids" context="{'default_trip_id': id}" readonly="state_code in ('delivered', 'done', 'cancel')">
+                        <list editable="bottom">
+                            <field name="type_id"/>
+                            <field name="number"/>
+                            <field name="valid_from"/>
+                            <field name="valid_until"/>
+                            <field name="attachment" filename="attachment_name"/>
+                            <field name="attachment_name" column_invisible="1"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="E-way bill tasks" name="ewaybill_tasks">
+                    <field name="ewaybill_update_ids" context="{'default_trip_id': id}"/>
+                </page>
+                <page string="DSR" name="dsr">
+                    <field name="dsr_ids" context="{'default_trip_id': id}" readonly="state_code not in ('started', 'in_transit')">
+                        <list editable="top">
+                            <field name="logged_at"/>
+                            <field name="location"/>
+                            <field name="status"/>
+                            <field name="consignment_id" optional="show" options="{'no_create': True}"/>
+                            <field name="eta"/>
+                            <field name="remark"/>
+                            <field name="source"/>
+                            <field name="logged_by_id" readonly="1"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Incidents, charges, expenses" name="money">
+                    <field name="incident_ids" context="{'default_trip_id': id}">
+                        <list>
+                            <field name="category_id"/>
+                            <field name="consignment_id"/>
+                            <field name="occurred_at"/>
+                            <field name="moves_money"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                    <field name="charge_ids" context="{'default_trip_id': id}">
+                        <list>
+                            <field name="name"/>
+                            <field name="consignment_id"/>
+                            <field name="category_id"/>
+                            <field name="recover_from"/>
+                            <field name="partner_id"/>
+                            <field name="amount" sum="Total"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                    <field name="expense_ids" context="{'default_trip_id': id}">
+                        <list>
+                            <field name="name"/>
+                            <field name="date"/>
+                            <field name="category_id"/>
+                            <field name="payment_mode"/>
+                            <field name="amount" sum="Total"/>
+                            <field name="tms_cost_class"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                    <field name="advance_ids" context="{'default_trip_id': id}">
+                        <list editable="bottom" delete="0">
+                            <field name="name" readonly="1"/>
+                            <field name="driver_id" readonly="state != 'draft'"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="payment_mode" readonly="state != 'draft'"/>
+                            <field name="amount" sum="Total" readonly="state != 'draft'"/>
+                            <field name="state" readonly="1"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <button name="action_post" type="object" string="Post" invisible="state != 'draft'"/>
+                        </list>
+                    </field>
+                    <field name="settlement_ids" readonly="1"/>
+                    <field name="claim_ids" readonly="1"/>
+                </page>
+                <page string="Trip ledger" name="ledger">
+                    <group>
+                        <group string="Posted (BR-LED-02..05)">
+                            <field name="fin_revenue"/>
+                            <field name="fin_recoveries"/>
+                            <field name="fin_direct_cost"/>
+                            <field name="fin_contribution"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Open commitments (BR-LED-06)">
+                            <field name="fin_open_commitments"/>
+                        </group>
+                    </group>
+                </page>
+                <page string="Timeline" name="timeline">
+                    <field name="timeline_ids" readonly="1">
+                        <list default_order="date asc, id asc">
+                            <field name="date"/>
+                            <field name="model"/>
+                            <field name="subtype_id"/>
+                            <field name="author_id"/>
+                            <field name="body"/>
+                        </list>
+                    </field>
+                    <field name="cancel_reason" invisible="not cancel_reason"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="tms_order_list_tms_core" model="ir.ui.view">
+        <field name="name">tms.order.list.tms.core</field>
+        <field name="model">tms.order</field>
+        <field name="inherit_id" ref="tms.tms_order_view_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="company_id" optional="show" string="Branch"/>
+                <field name="fleet_type" optional="show"/>
+                <field name="primary_vehicle_id" optional="show"/>
+                <field name="tms_cargo_type" optional="hide"/>
+                <field name="pod_status" optional="show"/>
+                <field name="state_code" widget="badge"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="tms_order_search_tms_core" model="ir.ui.view">
+        <field name="name">tms.order.search.tms.core</field>
+        <field name="model">tms.order</field>
+        <field name="inherit_id" ref="tms.view_tms_order_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter name="on_road" string="On the road" domain="[('state_code', 'in', ('started', 'in_transit'))]"/>
+                <filter name="to_close" string="Delivered, to close" domain="[('state_code', '=', 'delivered')]"/>
+                <filter name="dsr_overdue" string="DSR overdue" domain="[('dsr_overdue', '=', True)]"/>
+                <filter name="no_gate" string="Started without gate" domain="[('started_without_gate', '=', True)]"/>
+                <filter name="market" string="Market" domain="[('fleet_type', '=', 'market')]"/>
+                <filter name="odc" string="ODC" domain="[('tms_cargo_type', '=', 'odc')]"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state_code'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

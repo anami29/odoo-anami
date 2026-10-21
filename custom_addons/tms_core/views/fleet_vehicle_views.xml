@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="fleet_vehicle_form_tms_core" model="ir.ui.view">
+        <field name="name">fleet.vehicle.form.tms.core</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Transport" name="tms">
+                    <group>
+                        <group>
+                            <field name="tms_ownership"/>
+                            <field name="tms_vehicle_class_id"/>
+                            <field name="tms_vehicle_type"/>
+                            <field name="tms_payload_kg"/>
+                            <field name="tms_fuel_norm"/>
+                            <field name="tms_home_branch_id"/>
+                        </group>
+                        <group>
+                            <field name="tms_status"/>
+                            <field name="tms_open_assignment_id"/>
+                            <field name="tms_last_dsr_location"/>
+                            <field name="tms_expected_free"/>
+                        </group>
+                    </group>
+                    <separator string="Compliance documents (BR-MD-07)"/>
+                    <field name="tms_compliance_document_ids" context="{'default_vehicle_id': id}">
+                        <list editable="bottom" decoration-danger="state == 'expired'" decoration-warning="state == 'expiring'">
+                            <field name="type_id"/>
+                            <field name="number"/>
+                            <field name="valid_from"/>
+                            <field name="valid_until"/>
+                            <field name="attachment" filename="attachment_name"/>
+                            <field name="attachment_name" column_invisible="1"/>
+                            <field name="state"/>
+                            <field name="verified_by_id"/>
+                            <button name="action_verify" type="object" icon="fa-check" title="Verify"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    <!-- BR-TRP-09: planning board of owned vehicles -->
+    <record id="fleet_vehicle_planning_list" model="ir.ui.view">
+        <field name="name">fleet.vehicle.planning.list</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list create="0" decoration-success="tms_status == 'free'" decoration-danger="tms_status == 'breakdown'">
+                <field name="license_plate"/>
+                <field name="tms_vehicle_class_id"/>
+                <field name="tms_payload_kg"/>
+                <field name="tms_home_branch_id"/>
+                <field name="tms_status"/>
+                <field name="tms_open_assignment_id"/>
+                <field name="tms_last_dsr_location"/>
+                <field name="tms_expected_free"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_planning_board" model="ir.actions.act_window">
+        <field name="name">Planning board: vehicles</field>
+        <field name="res_model">fleet.vehicle</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="fleet_vehicle_planning_list"/>
+        <field name="domain">[('tms_ownership', '=', 'owned')]</field>
+    </record>
+    <record id="action_tms_owned_vehicles" model="ir.actions.act_window">
+        <field name="name">Owned vehicles</field>
+        <field name="res_model">fleet.vehicle</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('tms_ownership', '=', 'owned')]</field>
+        <field name="context">{'default_tms_ownership': 'owned'}</field>
+    </record>
+</odoo>

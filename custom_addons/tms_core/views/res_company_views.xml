@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_company_form_tms_core" model="ir.ui.view">
+        <field name="name">res.company.form.tms.core</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Transport" name="tms">
+                    <group>
+                        <group string="Branch">
+                            <field name="tms_branch_code"/>
+                            <field name="tms_allow_manual_lr"/>
+                            <field name="tms_lr_sequence_id" readonly="1"/>
+                            <field name="tms_operation_mode"/>
+                            <field name="tms_mode_locked"/>
+                            <field name="tms_second_language_id"/>
+                        </group>
+                        <group string="Mode unlock" groups="tms_core.group_tms_admin">
+                            <button name="action_open_unlock_wizard" type="object" string="Unlock operating mode" class="btn-secondary" invisible="not tms_mode_locked"/>
+                        </group>
+                    </group>
+                    <separator string="GTA GST option per financial year (BR-CFG-10)"/>
+                    <field name="tms_gta_option_ids">
+                        <list editable="bottom">
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="option"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

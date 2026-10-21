@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_consignment_form_tms_estimate" model="ir.ui.view">
+        <field name="name">tms.consignment.form.tms.estimate</field>
+        <field name="model">tms.consignment</field>
+        <field name="inherit_id" ref="tms_core.tms_consignment_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='typed_rate']" position="before">
+                <group string="Order item (BR-EST-13)" name="order_item">
+                    <field name="sale_line_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                    <field name="sale_order_id"/>
+                    <field name="movement_no" readonly="state != 'draft'" invisible="not sale_line_id"/>
+                    <field name="freight_frozen" invisible="not sale_line_id"/>
+                </group>
+            </xpath>
+            <xpath expr="//group[@name='typed_rate']" position="attributes">
+                <attribute name="invisible">sale_line_id</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_print_lr']" position="after">
+                <button name="action_tms_close_movement" type="object" string="Close movement" invisible="not sale_line_id or freight_frozen or state in ('draft', 'cancel')"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="tms_consignment_list_tms_estimate" model="ir.ui.view">
+        <field name="name">tms.consignment.list.tms.estimate</field>
+        <field name="model">tms.consignment</field>
+        <field name="inherit_id" ref="tms_core.tms_consignment_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='freight_basis']" position="after">
+                <field name="sale_line_id" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

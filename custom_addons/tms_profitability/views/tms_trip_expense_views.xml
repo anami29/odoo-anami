@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_trip_expense_form_tms_profitability" model="ir.ui.view">
+        <field name="name">tms.trip.expense.form.tms.profitability</field>
+        <field name="model">tms.trip.expense</field>
+        <field name="inherit_id" ref="tms_core.tms_trip_expense_form"/>
+        <field name="arch" type="xml">
+            <field name="tms_cost_class" position="after">
+                <field name="tms_truck_category_id" readonly="state != 'draft'" invisible="tms_cost_class not in ('truck_running', 'truck_fixed')" required="tms_cost_class in ('truck_running', 'truck_fixed')"/>
+                <field name="tms_cover_from" readonly="state != 'draft'" invisible="tms_cost_class != 'truck_fixed'"/>
+                <field name="tms_cover_to" readonly="state != 'draft'" invisible="tms_cost_class != 'truck_fixed'"/>
+                <field name="tms_useful_life_months" readonly="state != 'draft'" invisible="tms_cost_class != 'truck_running'"/>
+            </field>
+        </field>
+    </record>
+</odoo>

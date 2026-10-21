@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PRN-01, BR-LR-12: consignor, consignee, driver and office copies -->
+    <record id="action_report_lr" model="ir.actions.report">
+        <field name="name">LR (4 copies)</field>
+        <field name="model">tms.consignment</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms_core.report_lr</field>
+        <field name="report_file">tms_core.report_lr</field>
+        <field name="print_report_name">'LR %s' % object.name.replace('/', '-')</field>
+        <field name="binding_model_id" ref="model_tms_consignment"/>
+        <field name="paperformat_id" ref="paperformat_tms_a4"/>
+    </record>
+    <template id="report_lr_copy">
+        <div class="page" style="page-break-after: always; font-size: 12px;">
+            <div class="d-flex justify-content-between border-bottom pb-1 mb-2">
+                <div>
+                    <strong t-out="lr.company_id.name"/><br/>
+                    <span t-out="lr.company_id.partner_id.contact_address"/><br/>
+                    GSTIN: <span t-out="lr.company_id.vat"/>
+                </div>
+                <div class="text-end">
+                    <h4 class="mb-0"><t t-out="lr.company_id.tms_print_label('CONSIGNMENT NOTE')"/></h4>
+                    <strong t-out="lr.company_id.tms_print_label(copy_name)"/><br/>
+                    <t t-out="lr.company_id.tms_print_label('LR No.')"/> <strong t-out="lr.name"/> · <span t-out="lr.date"/>
+                </div>
+            </div>
+            <table class="table table-sm table-bordered">
+                <tr>
+                    <td style="width:50%"><strong><t t-out="lr.company_id.tms_print_label('Consignor')"/></strong><br/><span t-out="lr.consignor_id.name"/><br/><span t-out="lr.consignor_id.contact_address"/><br/>GSTIN <span t-out="lr.consignor_id.vat"/></td>
+                    <td><strong><t t-out="lr.company_id.tms_print_label('Consignee')"/></strong><br/><span t-out="lr.consignee_id.name"/><br/><span t-out="lr.consignee_id.contact_address"/><br/>GSTIN <span t-out="lr.consignee_id.vat"/></td>
+                </tr>
+                <tr>
+                    <td><strong><t t-out="lr.company_id.tms_print_label('From')"/></strong> <span t-out="lr.origin_id.display_name"/></td>
+                    <td><strong><t t-out="lr.company_id.tms_print_label('To')"/></strong> <span t-out="lr.destination_id.display_name"/></td>
+                </tr>
+                <tr>
+                    <td><strong><t t-out="lr.company_id.tms_print_label('Vehicle')"/></strong> <span t-out="lr.vehicle_number or '-'"/>
+                        <t t-if="lr.vehicle_history"><br/><small>Changed: <span t-out="lr.vehicle_history"/></small></t>
+                    </td>
+                    <td><strong><t t-out="lr.company_id.tms_print_label('Freight')"/></strong> <span t-out="dict(lr._fields['freight_basis'].selection).get(lr.freight_basis)"/> ·
+                        <strong><t t-out="lr.company_id.tms_print_label('GST payable by')"/></strong> <span t-out="dict(lr._fields['gst_payer'].selection).get(lr.gst_payer)"/> ·
+                        <span t-out="dict(lr._fields['risk_basis'].selection).get(lr.risk_basis)"/></td>
+                </tr>
+            </table>
+            <table class="table table-sm table-bordered">
+                <thead><tr><th><t t-out="lr.company_id.tms_print_label('Goods')"/></th><th><t t-out="lr.company_id.tms_print_label('Packing')"/></th><th class="text-end"><t t-out="lr.company_id.tms_print_label('Pkgs')"/></th><th class="text-end"><t t-out="lr.company_id.tms_print_label('Actual kg')"/></th><th class="text-end"><t t-out="lr.company_id.tms_print_label('Charged kg')"/></th><th class="text-end"><t t-out="lr.company_id.tms_print_label('Value')"/></th><th><t t-out="lr.company_id.tms_print_label('E-way bill')"/></th></tr></thead>
+                <tbody>
+                    <tr t-foreach="lr.line_ids" t-as="line">
+                        <td t-out="line.commodity"/>
+                        <td t-out="dict(line._fields['packaging_type'].selection).get(line.packaging_type)"/>
+                        <td class="text-end" t-out="line.packages"/>
+                        <td class="text-end" t-out="line.actual_weight"/>
+                        <td class="text-end" t-out="line.charged_weight"/>
+                        <td class="text-end" t-out="line.declared_value" t-options="{'widget': 'monetary', 'display_currency': lr.currency_id}"/>
+                        <td t-out="line.ewaybill_id.name or ''"/>
+                    </tr>
+                </tbody>
+            </table>
+            <p t-if="lr.freight_basis != 'tbb'"><strong><t t-out="lr.company_id.tms_print_label('Freight')"/>:</strong> <span t-out="lr.freight_amount" t-options="{'widget': 'monetary', 'display_currency': lr.currency_id}"/></p>
+            <div class="row mt-4">
+                <div class="col-4 text-center"><t t-out="lr.company_id.tms_print_label(&quot;Consignor's signature&quot;)"/></div>
+                <div class="col-4 text-center"><t t-out="lr.company_id.tms_print_label(&quot;Driver's signature&quot;)"/></div>
+                <div class="col-4 text-center"><t t-out="lr.company_id.tms_print_label('For')"/> <span t-out="lr.company_id.name"/></div>
+            </div>
+        </div>
+    </template>
+    <template id="report_lr">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="lr">
+                <t t-call="web.basic_layout">
+                    <t t-foreach="['CONSIGNOR COPY', 'CONSIGNEE COPY', 'DRIVER COPY', 'OFFICE COPY']" t-as="copy_name">
+                        <t t-call="tms_core.report_lr_copy"/>
+                    </t>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

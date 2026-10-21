@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_estimate_form_tms_odc" model="ir.ui.view">
+        <field name="name">tms.estimate.form.tms.odc</field>
+        <field name="model">tms.estimate</field>
+        <field name="inherit_id" ref="tms_estimate.tms_estimate_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_title')]" position="after">
+                <div class="alert alert-warning" role="alert" invisible="not odc_suggested or tms_cargo_type == 'odc'">
+                    A piece is above an ODC threshold: make the item ODC, or give a reason on the order item to keep it Regular (BR-ODC-02).
+                </div>
+                <div class="alert alert-info" role="status" invisible="tms_cargo_type != 'odc' or not odc_problems">
+                    <strong>ODC checks (BR-ODC-03)</strong>
+                    <field name="odc_problems" readonly="1" class="d-block"/>
+                </div>
+                <field name="odc_suggested" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']" position="before">
+                <group>
+                    <group string="Cargo pieces (BR-ODC-02)">
+                        <field name="piece_ids" nolabel="1" colspan="2" readonly="state == 'locked'" context="{'default_estimate_id': id}">
+                            <list editable="bottom" decoration-warning="is_odc">
+                                <field name="sequence" widget="handle"/>
+                                <field name="description"/>
+                                <field name="count"/>
+                                <field name="length"/>
+                                <field name="width"/>
+                                <field name="height"/>
+                                <field name="weight"/>
+                                <field name="is_odc"/>
+                                <field name="odc_reason" optional="hide"/>
+                            </list>
+                        </field>
+                        <field name="heaviest_piece"/>
+                        <field name="rated_capacity"/>
+                    </group>
+                    <group string="Route by state (BR-ODC-03)">
+                        <field name="route_ids" nolabel="1" colspan="2" readonly="state == 'locked'" context="{'default_estimate_id': id}">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle"/>
+                                <field name="state_id" options="{'no_create': True}"/>
+                                <field name="km" sum="km"/>
+                                <field name="permit_authority"/>
+                            </list>
+                        </field>
+                        <field name="route_km"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_estimate_amendment_wizard_form" model="ir.ui.view">
+        <field name="name">tms.estimate.amendment.wizard.form</field>
+        <field name="model">tms.estimate.amendment.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="estimate_id" readonly="1"/>
+                    <field name="reason" placeholder="Why the locked estimate changes"/>
+                </group>
+                <footer>
+                    <button name="action_open" type="object" string="Open amendment" class="btn-primary"/>
+                    <button special="cancel" string="Discard"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

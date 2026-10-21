@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PRN-05, BR-INV-05: the reverse-charge legend and the LR details on the freight invoice -->
+    <template id="report_invoice_document_tms" inherit_id="account.report_invoice_document">
+        <xpath expr="//div[@id='payment_term']" position="before">
+            <div t-if="o.tms_rcm_legend" class="mt-2"><strong t-out="o.tms_rcm_legend"/></div>
+            <div t-if="o.tms_consignment_ids" class="mt-2 small">
+                <strong>LRs:</strong>
+                <t t-foreach="o.tms_consignment_ids" t-as="lr">
+                    <span t-out="lr.name"/> (<span t-out="lr.date"/>, <span t-out="lr.origin_id.city or lr.origin_id.name"/> → <span t-out="lr.destination_id.city or lr.destination_id.name"/>, <span t-out="lr.total_packages"/> pkgs, <span t-out="lr.charged_weight"/> kg)<t t-if="not lr_last">; </t>
+                </t>
+            </div>
+            <div t-if="o.move_type == 'out_invoice' and o.company_id.partner_id.bank_ids" class="mt-2 small">
+                <strong>Bank:</strong>
+                <t t-set="bank" t-value="o.company_id.partner_id.bank_ids[:1]"/>
+                <span t-out="bank.bank_id.name"/> · A/c <span t-out="bank.acc_number"/> · IFSC <span t-out="bank.bank_id.bic"/>
+            </div>
+        </xpath>
+    </template>
+</odoo>

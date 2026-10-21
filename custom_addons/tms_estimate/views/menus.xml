@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_tms_sales" name="Sales" parent="tms.root" sequence="5"/>
+    <menuitem id="menu_tms_opportunities" name="Opportunities" parent="menu_tms_sales" action="crm.crm_lead_action_pipeline" sequence="10"/>
+    <menuitem id="menu_tms_quotations" name="Quotations and orders" parent="menu_tms_sales" action="sale.action_quotations_with_onboarding" sequence="20"/>
+    <menuitem id="menu_tms_estimates" name="Cost estimates" parent="menu_tms_sales" action="action_tms_estimate" sequence="30"/>
+    <menuitem id="menu_tms_report_so_pnl" name="Sales order P&amp;L" parent="tms.reporting" action="action_tms_so_pnl" sequence="30"/>
+    <menuitem id="menu_tms_report_so_pnl_line" name="Estimate against actual" parent="tms.reporting" action="action_tms_so_pnl_line" sequence="31"/>
+    <menuitem id="menu_tms_report_pipeline" name="Sales pipeline" parent="tms.reporting" action="crm.crm_opportunity_report_action" sequence="32"/>
+    <menuitem id="menu_tms_config_cost_category" name="Cost categories" parent="tms.config" action="action_tms_cost_category" sequence="60"/>
+    <menuitem id="menu_tms_config_cost_items" name="Cost items" parent="tms.config" action="action_tms_cost_items" sequence="61"/>
+    <!-- BR-DSH-02: bills and expenses awaiting variance approval (BR-ACT-06, BR-NTF-10) -->
+    <record id="action_tms_variance_bills" model="ir.actions.act_window">
+        <field name="name">Bills awaiting variance approval</field>
+        <field name="res_model">account.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'draft'), ('tms_variance_approved_by_id', '=', False), ('activity_ids.summary', '=', 'Variance approval needed')]</field>
+    </record>
+    <record id="action_tms_variance_expenses" model="ir.actions.act_window">
+        <field name="name">Expenses awaiting variance approval</field>
+        <field name="res_model">tms.trip.expense</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'draft'), ('variance_approved_by_id', '=', False), ('activity_ids.summary', '=', 'Variance approval needed')]</field>
+    </record>
+    <menuitem id="menu_tms_variance_bills" name="Bills awaiting variance approval" parent="tms.dashboard" action="action_tms_variance_bills" sequence="20"/>
+    <menuitem id="menu_tms_variance_expenses" name="Expenses awaiting variance approval" parent="tms.dashboard" action="action_tms_variance_expenses" sequence="21"/>
+</odoo>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BR-BRN-03: users see documents of their allowed branches only -->
+<odoo noupdate="1">
+    <record id="rule_tms_trip_consignment_branch" model="ir.rule">
+        <field name="name">tms.trip.consignment: allowed branches</field>
+        <field name="model_id" ref="model_tms_trip_consignment"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_trip_assignment_branch" model="ir.rule">
+        <field name="name">tms.trip.assignment: allowed branches</field>
+        <field name="model_id" ref="model_tms_trip_assignment"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_trip_dsr_branch" model="ir.rule">
+        <field name="name">tms.trip.dsr: allowed branches</field>
+        <field name="model_id" ref="model_tms_trip_dsr"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_trip_breakdown_branch" model="ir.rule">
+        <field name="name">tms.trip.breakdown: allowed branches</field>
+        <field name="model_id" ref="model_tms_trip_breakdown"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_trip_incident_branch" model="ir.rule">
+        <field name="name">tms.trip.incident: allowed branches</field>
+        <field name="model_id" ref="model_tms_trip_incident"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_trip_charge_branch" model="ir.rule">
+        <field name="name">tms.trip.charge: allowed branches</field>
+        <field name="model_id" ref="model_tms_trip_charge"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_trip_expense_branch" model="ir.rule">
+        <field name="name">tms.trip.expense: allowed branches</field>
+        <field name="model_id" ref="model_tms_trip_expense"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_driver_advance_branch" model="ir.rule">
+        <field name="name">tms.driver.advance: allowed branches</field>
+        <field name="model_id" ref="model_tms_driver_advance"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_driver_settlement_branch" model="ir.rule">
+        <field name="name">tms.driver.settlement: allowed branches</field>
+        <field name="model_id" ref="model_tms_driver_settlement"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_damage_claim_branch" model="ir.rule">
+        <field name="name">tms.damage.claim: allowed branches</field>
+        <field name="model_id" ref="model_tms_damage_claim"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_insurer_claim_branch" model="ir.rule">
+        <field name="name">tms.insurer.claim: allowed branches</field>
+        <field name="model_id" ref="model_tms_insurer_claim"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_hire_advance_branch" model="ir.rule">
+        <field name="name">tms.hire.advance: allowed branches</field>
+        <field name="model_id" ref="model_tms_hire_advance"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_vendor_bill_match_branch" model="ir.rule">
+        <field name="name">tms.vendor.bill.match: allowed branches</field>
+        <field name="model_id" ref="model_tms_vendor_bill_match"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_ewaybill_branch" model="ir.rule">
+        <field name="name">tms.ewaybill: allowed branches</field>
+        <field name="model_id" ref="model_tms_ewaybill"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_ewaybill_update_branch" model="ir.rule">
+        <field name="name">tms.ewaybill.update: allowed branches</field>
+        <field name="model_id" ref="model_tms_ewaybill_update"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_consignment_amendment_branch" model="ir.rule">
+        <field name="name">tms.consignment.amendment: allowed branches</field>
+        <field name="model_id" ref="model_tms_consignment_amendment"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_consignment_line_branch" model="ir.rule">
+        <field name="name">tms.consignment.line: allowed branches</field>
+        <field name="model_id" ref="model_tms_consignment_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_override_log_branch" model="ir.rule">
+        <field name="name">tms.override.log: allowed branches</field>
+        <field name="model_id" ref="model_tms_override_log"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_compliance_document_branch" model="ir.rule">
+        <field name="name">tms.compliance.document: allowed branches</field>
+        <field name="model_id" ref="model_tms_compliance_document"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_market_vehicle_branch" model="ir.rule">
+        <field name="name">tms.market.vehicle: allowed branches</field>
+        <field name="model_id" ref="model_tms_market_vehicle"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <!-- LR: booking or delivery branch; any Confirmed LR may be read for cross-branch planning (BR-BRN-10) -->
+    <record id="rule_tms_consignment_read" model="ir.rule">
+        <field name="name">tms.consignment: read</field>
+        <field name="model_id" ref="model_tms_consignment"/>
+        <field name="global" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">['|', '|', '|', ('company_id', '=', False), ('company_id', 'in', company_ids), ('delivery_branch_id', 'in', company_ids), ('state', '=', 'confirmed')]</field>
+    </record>
+    <record id="rule_tms_consignment_write" model="ir.rule">
+        <field name="name">tms.consignment: write</field>
+        <field name="model_id" ref="model_tms_consignment"/>
+        <field name="global" eval="True"/>
+        <field name="perm_read" eval="False"/>
+        <field name="domain_force">['|', '|', ('company_id', '=', False), ('company_id', 'in', company_ids), ('delivery_branch_id', 'in', company_ids)]</field>
+    </record>
+    <!-- OCA's empty global trip rule becomes a branch rule -->
+    <record id="tms.tms_order_comp_rule" model="ir.rule">
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BR-PNL-34, BR-BRN-03: each role sees only its allowed branches -->
+<odoo noupdate="1">
+    <record id="rule_tms_std_rate_branch" model="ir.rule">
+        <field name="name">tms.std.rate: allowed branches</field>
+        <field name="model_id" ref="model_tms_std_rate"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_prepaid_schedule_branch" model="ir.rule">
+        <field name="name">tms.prepaid.schedule: allowed branches</field>
+        <field name="model_id" ref="model_tms_prepaid_schedule"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_prepaid_schedule_line_branch" model="ir.rule">
+        <field name="name">tms.prepaid.schedule.line: allowed branches</field>
+        <field name="model_id" ref="model_tms_prepaid_schedule_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_pnl_close_branch" model="ir.rule">
+        <field name="name">tms.pnl.close: allowed branches</field>
+        <field name="model_id" ref="model_tms_pnl_close"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_pnl_close_truck_branch" model="ir.rule">
+        <field name="name">tms.pnl.close.truck: allowed branches</field>
+        <field name="model_id" ref="model_tms_pnl_close_truck"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_pnl_close_diff_branch" model="ir.rule">
+        <field name="name">tms.pnl.close.diff: allowed branches</field>
+        <field name="model_id" ref="model_tms_pnl_close_diff"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_pnl_line_branch" model="ir.rule">
+        <field name="name">tms.pnl.line: allowed branches</field>
+        <field name="model_id" ref="model_tms_pnl_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_trip_leg_branch" model="ir.rule">
+        <field name="name">tms.trip.leg: allowed branches</field>
+        <field name="model_id" ref="model_tms_trip_leg"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_trip_pnl_branch" model="ir.rule">
+        <field name="name">tms.trip.pnl: allowed branches</field>
+        <field name="model_id" ref="model_tms_trip_pnl"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_customer_pnl_branch" model="ir.rule">
+        <field name="name">tms.customer.pnl: allowed branches</field>
+        <field name="model_id" ref="model_tms_customer_pnl"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_truck_pnl_branch" model="ir.rule">
+        <field name="name">tms.truck.pnl: allowed branches</field>
+        <field name="model_id" ref="model_tms_truck_pnl"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_recovery_statement_branch" model="ir.rule">
+        <field name="name">tms.recovery.statement: allowed branches</field>
+        <field name="model_id" ref="model_tms_recovery_statement"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_fleet_pnl_branch" model="ir.rule">
+        <field name="name">tms.fleet.pnl: allowed branches</field>
+        <field name="model_id" ref="model_tms_fleet_pnl"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_vendor_pnl_branch" model="ir.rule">
+        <field name="name">tms.vendor.pnl: allowed branches</field>
+        <field name="model_id" ref="model_tms_vendor_pnl"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_branch_pnl_branch" model="ir.rule">
+        <field name="name">tms.branch.pnl: allowed branches</field>
+        <field name="model_id" ref="model_tms_branch_pnl"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>

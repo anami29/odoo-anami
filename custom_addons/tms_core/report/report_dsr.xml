@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PRN-06: customer DSR as PDF -->
+    <record id="action_report_dsr" model="ir.actions.report">
+        <field name="name">DSR</field>
+        <field name="model">tms.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms_core.report_dsr</field>
+        <field name="report_file">tms_core.report_dsr</field>
+        <field name="binding_model_id" ref="tms.model_tms_order"/>
+        <field name="paperformat_id" ref="paperformat_tms_a4"/>
+    </record>
+    <template id="report_dsr">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="trip">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h3>Daily status report: <span t-out="trip.name"/></h3>
+                        <p>LRs: <span t-out="', '.join(trip.consignment_ids.mapped('name'))"/></p>
+                        <table class="table table-sm">
+                            <thead><tr><th>Time</th><th>Location</th><th>Status</th><th>ETA</th><th>Remark</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="trip.dsr_ids" t-as="dsr">
+                                    <td t-out="dsr.logged_at"/>
+                                    <td t-out="dsr.location"/>
+                                    <td t-out="dict(dsr._fields['status'].selection).get(dsr.status)"/>
+                                    <td t-out="dsr.eta or ''"/>
+                                    <td t-out="dsr.remark or ''"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- BR-PRN-06: the customer's daily DSR as PDF (attached to the daily email); only that customer's LRs -->
+    <record id="action_report_customer_dsr" model="ir.actions.report">
+        <field name="name">Customer DSR</field>
+        <field name="model">res.partner</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms_core.report_customer_dsr</field>
+        <field name="report_file">tms_core.report_customer_dsr</field>
+        <field name="paperformat_id" ref="paperformat_tms_a4"/>
+    </record>
+    <template id="report_customer_dsr">
+        <t t-call="web.html_container">
+            <t t-set="links" t-value="env['tms.trip.consignment'].browse((data or {}).get('link_ids') or [])"/>
+            <t t-foreach="docs" t-as="party">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h3>Consignments in transit: <span t-out="party.name"/></h3>
+                        <table class="table table-sm">
+                            <thead><tr><th>LR</th><th>From</th><th>To</th><th>Vehicle</th><th>Last status</th><th>Location</th><th>ETA</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="links" t-as="link">
+                                    <t t-set="dsr" t-value="link.trip_id.dsr_ids[:1]"/>
+                                    <td t-out="link.consignment_id.name"/>
+                                    <td t-out="link.consignment_id.origin_id.city or link.consignment_id.origin_id.name"/>
+                                    <td t-out="link.consignment_id.destination_id.city or link.consignment_id.destination_id.name"/>
+                                    <td t-out="link.consignment_id.vehicle_number"/>
+                                    <td t-out="dsr and dict(dsr._fields['status'].selection).get(dsr.status) or ''"/>
+                                    <td t-out="dsr.location or ''"/>
+                                    <td t-out="dsr.eta or ''"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

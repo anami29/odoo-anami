@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- BR-MD-06: seeded types; Road tax is tracked but not mandatory for start (BR-CMP-01 lists six) -->
+    <record id="doc_type_dl" model="tms.compliance.document.type">
+        <field name="name">Driving licence</field>
+        <field name="code">DL</field>
+        <field name="sequence">10</field>
+        <field name="applies_to">driver</field>
+        <field name="mandatory_for_start" eval="True"/>
+    </record>
+    <record id="doc_type_rc" model="tms.compliance.document.type">
+        <field name="name">Registration certificate</field>
+        <field name="code">RC</field>
+        <field name="sequence">20</field>
+        <field name="applies_to">vehicle</field>
+        <field name="mandatory_for_start" eval="True"/>
+    </record>
+    <record id="doc_type_fit" model="tms.compliance.document.type">
+        <field name="name">Fitness certificate</field>
+        <field name="code">FIT</field>
+        <field name="sequence">30</field>
+        <field name="applies_to">vehicle</field>
+        <field name="mandatory_for_start" eval="True"/>
+    </record>
+    <record id="doc_type_permit" model="tms.compliance.document.type">
+        <field name="name">Permit</field>
+        <field name="code">PERMIT</field>
+        <field name="sequence">40</field>
+        <field name="applies_to">vehicle</field>
+        <field name="mandatory_for_start" eval="True"/>
+    </record>
+    <record id="doc_type_ins" model="tms.compliance.document.type">
+        <field name="name">Insurance</field>
+        <field name="code">INS</field>
+        <field name="sequence">50</field>
+        <field name="applies_to">vehicle</field>
+        <field name="mandatory_for_start" eval="True"/>
+    </record>
+    <record id="doc_type_puc" model="tms.compliance.document.type">
+        <field name="name">Pollution under control</field>
+        <field name="code">PUC</field>
+        <field name="sequence">60</field>
+        <field name="applies_to">vehicle</field>
+        <field name="mandatory_for_start" eval="True"/>
+    </record>
+    <record id="doc_type_roadtax" model="tms.compliance.document.type">
+        <field name="name">Road tax</field>
+        <field name="code">ROADTAX</field>
+        <field name="sequence">70</field>
+        <field name="applies_to">vehicle</field>
+        <field name="mandatory_for_start" eval="False"/>
+    </record>
+</odoo>

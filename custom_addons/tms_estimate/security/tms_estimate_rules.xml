@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="rule_tms_estimate_branch" model="ir.rule">
+        <field name="name">tms.estimate: allowed branches</field>
+        <field name="model_id" ref="model_tms_estimate"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_estimate_line_branch" model="ir.rule">
+        <field name="name">tms.estimate.line: allowed branches</field>
+        <field name="model_id" ref="model_tms_estimate_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_estimate_amendment_branch" model="ir.rule">
+        <field name="name">tms.estimate.amendment: allowed branches</field>
+        <field name="model_id" ref="model_tms_estimate_amendment"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_so_pnl_branch" model="ir.rule">
+        <field name="name">tms.so.pnl: allowed branches</field>
+        <field name="model_id" ref="model_tms_so_pnl"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_so_pnl_line_branch" model="ir.rule">
+        <field name="name">tms.so.pnl.line: allowed branches</field>
+        <field name="model_id" ref="model_tms_so_pnl_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_lead_lane_branch" model="ir.rule">
+        <field name="name">tms.lead.lane: allowed branches</field>
+        <field name="model_id" ref="model_tms_lead_lane"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PRN-07: claim note to the customer; the vendor debit note prints as the standard bill credit note -->
+    <record id="action_report_claim_note" model="ir.actions.report">
+        <field name="name">Claim note</field>
+        <field name="model">tms.damage.claim</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms_core.report_claim_note</field>
+        <field name="report_file">tms_core.report_claim_note</field>
+        <field name="binding_model_id" ref="model_tms_damage_claim"/>
+        <field name="paperformat_id" ref="paperformat_tms_a4"/>
+    </record>
+    <template id="report_claim_note">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="claim">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h3>Claim note <span t-out="claim.name"/></h3>
+                        <p>To <strong t-out="claim.claimant_id.name"/></p>
+                        <table class="table table-sm table-bordered">
+                            <tr><td>LR</td><td><span t-out="claim.consignment_id.name"/> dated <span t-out="claim.consignment_id.date"/></td></tr>
+                            <tr><td>Damage type</td><td t-out="dict(claim._fields['damage_type'].selection).get(claim.damage_type)"/></tr>
+                            <tr><td>Affected packages</td><td t-out="claim.affected_qty"/></tr>
+                            <tr><td>Amount claimed</td><td t-out="claim.estimated_amount" t-options="{'widget': 'monetary', 'display_currency': claim.currency_id}"/></tr>
+                            <tr><td>Amount approved</td><td t-out="claim.approved_amount" t-options="{'widget': 'monetary', 'display_currency': claim.currency_id}"/></tr>
+                            <tr><td>Settled by credit note</td><td t-out="claim.credit_note_id.name or 'to follow'"/></tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

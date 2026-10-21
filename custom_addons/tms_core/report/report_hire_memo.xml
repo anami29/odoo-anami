@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PRN-02, BR-HIR-03 -->
+    <record id="action_report_hire_memo" model="ir.actions.report">
+        <field name="name">Hire memo</field>
+        <field name="model">purchase.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms_core.report_hire_memo</field>
+        <field name="report_file">tms_core.report_hire_memo</field>
+        <field name="paperformat_id" ref="paperformat_tms_a4"/>
+    </record>
+    <template id="report_hire_memo">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="po">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h3>Hire memo <span t-out="po.name"/></h3>
+                        <table class="table table-sm table-bordered">
+                            <tr><td><strong>Vendor</strong> <span t-out="po.partner_id.name"/> · PAN <span t-out="po.partner_id.commercial_partner_id.l10n_in_pan"/></td>
+                                <td><strong>Broker</strong> <span t-out="po.tms_broker_id.name or '-'"/></td></tr>
+                            <tr><td><strong>Vehicle</strong> <span t-out="po.tms_vehicle_number"/></td>
+                                <td><strong>Driver</strong> <span t-out="po.tms_driver_name or po.tms_trip_id.market_driver_name or '-'"/></td></tr>
+                            <tr><td><strong>Route</strong> <span t-out="po.tms_route"/></td>
+                                <td><strong>Trip</strong> <span t-out="po.tms_trip_id.name"/></td></tr>
+                            <tr><td><strong>Halting per day</strong> <span t-out="po.tms_halting_rate" t-options="{'widget': 'monetary', 'display_currency': po.currency_id}"/></td>
+                                <td><strong>TDS</strong> <span t-out="dict(po._fields['tms_tds_treatment'].selection).get(po.tms_tds_treatment)"/></td></tr>
+                        </table>
+                        <table class="table table-sm table-bordered">
+                            <thead><tr><th>Item</th><th>Description</th><th class="text-end">Amount</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="po.order_line.filtered(lambda l: not l.display_type)" t-as="line">
+                                    <td t-out="line.tms_item_no"/>
+                                    <td t-out="line.name"/>
+                                    <td class="text-end" t-out="line.price_subtotal" t-options="{'widget': 'monetary', 'display_currency': po.currency_id}"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p>Agreed hire <strong t-out="po.tms_hire_amount" t-options="{'widget': 'monetary', 'display_currency': po.currency_id}"/> · Advance <strong t-out="po.tms_advance_total" t-options="{'widget': 'monetary', 'display_currency': po.currency_id}"/> · Balance <strong t-out="po.tms_balance" t-options="{'widget': 'monetary', 'display_currency': po.currency_id}"/></p>
+                        <p class="small">The balance is paid against the verified POD and the bill, within the agreed terms.</p>
+                        <div class="row mt-5">
+                            <div class="col-4 text-center border-top pt-2">Vendor</div>
+                            <div class="col-4 text-center border-top pt-2">Driver</div>
+                            <div class="col-4 text-center border-top pt-2">For <span t-out="po.company_id.name"/></div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

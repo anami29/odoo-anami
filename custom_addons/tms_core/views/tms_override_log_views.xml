@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_override_log_list" model="ir.ui.view">
+        <field name="name">tms.override.log.list</field>
+        <field name="model">tms.override.log</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="create_date" string="When"/>
+                <field name="user_id"/>
+                <field name="company_id"/>
+                <field name="kind"/>
+                <field name="summary"/>
+                <field name="reason"/>
+                <field name="amount"/>
+                <button name="action_open_record" type="object" icon="fa-external-link" title="Open"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_override_log_search" model="ir.ui.view">
+        <field name="name">tms.override.log.search</field>
+        <field name="model">tms.override.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="summary"/>
+                <field name="user_id"/>
+                <filter name="credit" string="Credit overrides" domain="[('kind', '=', 'credit')]"/>
+                <group expand="0" string="Group by">
+                    <filter name="by_kind" string="Kind" context="{'group_by': 'kind'}"/>
+                    <filter name="by_user" string="User" context="{'group_by': 'user_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_override_log" model="ir.actions.act_window">
+        <field name="name">Override log</field>
+        <field name="res_model">tms.override.log</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

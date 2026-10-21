@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_trip_expense_form_tms_estimate" model="ir.ui.view">
+        <field name="name">tms.trip.expense.form.tms.estimate</field>
+        <field name="model">tms.trip.expense</field>
+        <field name="inherit_id" ref="tms_core.tms_trip_expense_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='tms_cost_class']" position="before">
+                <field name="estimate_line_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                <field name="variance_approved_by_id"/>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button name="action_tms_approve_variance" type="object" string="Approve variance" invisible="state != 'draft' or variance_approved_by_id or not estimate_line_id" groups="tms_core.group_branch_manager"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

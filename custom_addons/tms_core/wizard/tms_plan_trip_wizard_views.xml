@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_plan_trip_wizard_form" model="ir.ui.view">
+        <field name="name">tms.plan.trip.wizard.form</field>
+        <field name="model">tms.plan.trip.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group>
+                        <field name="fleet_type"/>
+                        <field name="planned_vehicle_id" invisible="fleet_type != 'owned'"/>
+                        <field name="planned_driver_id" invisible="fleet_type != 'owned'"/>
+                        <field name="planned_market_vehicle_id" invisible="fleet_type != 'market'"/>
+                        <field name="broker_id" invisible="fleet_type != 'market'"/>
+                        <field name="planned_hire_amount" invisible="fleet_type != 'market'"/>
+                    </group>
+                    <group>
+                        <field name="origin_id"/>
+                        <field name="destination_id"/>
+                        <field name="scheduled_date_start"/>
+                        <field name="scheduled_duration"/>
+                    </group>
+                </group>
+                <field name="consignment_ids"/>
+                <footer>
+                    <button name="action_plan" type="object" string="Create draft trip" class="btn-primary"/>
+                    <button special="cancel" string="Discard"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

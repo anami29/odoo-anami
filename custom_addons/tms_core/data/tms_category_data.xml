@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Products used by TMS documents -->
+    <record id="product_freight" model="product.product">
+        <field name="name">Freight</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+        <field name="list_price">0</field>
+        <field name="default_code">TMS-FREIGHT</field>
+        <field name="l10n_in_hsn_code">996791</field>
+    </record>
+    <record id="product_vehicle_hire" model="product.product">
+        <field name="name">Vehicle hire</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="purchase_method">receive</field>
+        <field name="default_code">TMS-HIRE</field>
+        <field name="l10n_in_hsn_code">996791</field>
+    </record>
+    <record id="product_hire_extra" model="product.product">
+        <field name="name">Hire extra (halting, detention)</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="purchase_method">receive</field>
+        <field name="default_code">TMS-HIRE-EXTRA</field>
+    </record>
+    <record id="product_broker_commission" model="product.product">
+        <field name="name">Broker commission</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="purchase_method">receive</field>
+        <field name="default_code">TMS-COMMISSION</field>
+    </record>
+    <!-- Market vehicles carry a fleet record of this model -->
+    <record id="fleet_vehicle_brand_market" model="fleet.vehicle.model.brand">
+        <field name="name">Market</field>
+    </record>
+    <record id="fleet_vehicle_model_market" model="fleet.vehicle.model">
+        <field name="name">Market vehicle</field>
+        <field name="brand_id" ref="fleet_vehicle_brand_market"/>
+        <field name="vehicle_type">car</field>
+    </record>
+    <record id="fleet_service_type_breakdown" model="fleet.service.type">
+        <field name="name">Breakdown repair</field>
+        <field name="category">service</field>
+    </record>
+    <record id="tms_category_vehicle_breakdown" model="tms.category">
+        <field name="name">Vehicle Breakdown</field>
+        <field name="code">BREAKDOWN</field>
+        <field name="sequence">10</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_vehicle_replacement" model="tms.category">
+        <field name="name">Vehicle Replacement</field>
+        <field name="code">REPLACEMENT</field>
+        <field name="sequence">20</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_accident" model="tms.category">
+        <field name="name">Accident</field>
+        <field name="code">ACCIDENT</field>
+        <field name="sequence">30</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="True"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_damage" model="tms.category">
+        <field name="name">Damage</field>
+        <field name="code">DAMAGE</field>
+        <field name="sequence">40</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="True"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_shortage" model="tms.category">
+        <field name="name">Shortage</field>
+        <field name="code">SHORTAGE</field>
+        <field name="sequence">50</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="True"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_detention" model="tms.category">
+        <field name="name">Detention</field>
+        <field name="code">DETENTION</field>
+        <field name="sequence">60</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_traffic_fine" model="tms.category">
+        <field name="name">Traffic / RTO fine</field>
+        <field name="code">FINE</field>
+        <field name="sequence">70</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="True"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">pure_agent</field>
+    </record>
+    <record id="tms_category_theft" model="tms.category">
+        <field name="name">Theft or pilferage</field>
+        <field name="code">THEFT</field>
+        <field name="sequence">80</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="True"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_delay" model="tms.category">
+        <field name="name">Delay</field>
+        <field name="code">DELAY</field>
+        <field name="sequence">90</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_route_deviation" model="tms.category">
+        <field name="name">Route deviation</field>
+        <field name="code">DEVIATION</field>
+        <field name="sequence">100</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_driver_issue" model="tms.category">
+        <field name="name">Driver issue</field>
+        <field name="code">DRIVER</field>
+        <field name="sequence">110</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_documentation" model="tms.category">
+        <field name="name">Documentation issue</field>
+        <field name="code">DOCS</field>
+        <field name="sequence">120</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_weather" model="tms.category">
+        <field name="name">Weather or natural event</field>
+        <field name="code">WEATHER</field>
+        <field name="sequence">130</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_other_incident" model="tms.category">
+        <field name="name">Other incident</field>
+        <field name="code">OTHER</field>
+        <field name="sequence">140</field>
+        <field name="use_incident" eval="True"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_fuel" model="tms.category">
+        <field name="name">Fuel</field>
+        <field name="code">FUEL</field>
+        <field name="sequence">150</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="True"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_toll" model="tms.category">
+        <field name="name">Toll</field>
+        <field name="code">TOLL</field>
+        <field name="sequence">160</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">pure_agent</field>
+    </record>
+    <record id="tms_category_driver_allowance" model="tms.category">
+        <field name="name">Driver allowance (bhatta)</field>
+        <field name="code">ALLOWANCE</field>
+        <field name="sequence">170</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_loading" model="tms.category">
+        <field name="name">Loading</field>
+        <field name="code">LOADING</field>
+        <field name="sequence">180</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_unloading" model="tms.category">
+        <field name="name">Unloading</field>
+        <field name="code">UNLOADING</field>
+        <field name="sequence">190</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_parking" model="tms.category">
+        <field name="name">Parking</field>
+        <field name="code">PARKING</field>
+        <field name="sequence">200</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_rto_police" model="tms.category">
+        <field name="name">RTO / check-post</field>
+        <field name="code">RTO</field>
+        <field name="sequence">210</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">pure_agent</field>
+    </record>
+    <record id="tms_category_roadside_repair" model="tms.category">
+        <field name="name">Roadside repair</field>
+        <field name="code">REPAIR</field>
+        <field name="sequence">220</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">truck_running</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_weighbridge" model="tms.category">
+        <field name="name">Weighbridge</field>
+        <field name="code">WEIGHBRIDGE</field>
+        <field name="sequence">230</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_food_lodging" model="tms.category">
+        <field name="name">Food and lodging</field>
+        <field name="code">LODGING</field>
+        <field name="sequence">240</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_misc_expense" model="tms.category">
+        <field name="name">Miscellaneous</field>
+        <field name="code">MISC</field>
+        <field name="sequence">250</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="False"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_state_charge" model="tms.category">
+        <field name="name">State charge / entry tax</field>
+        <field name="code">STATECHG</field>
+        <field name="sequence">260</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">pure_agent</field>
+    </record>
+    <record id="tms_category_godown_demurrage" model="tms.category">
+        <field name="name">Godown demurrage</field>
+        <field name="code">DEMURRAGE</field>
+        <field name="sequence">270</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_dead_freight" model="tms.category">
+        <field name="name">Dead freight</field>
+        <field name="code">DEADFREIGHT</field>
+        <field name="sequence">280</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_damage_recovery" model="tms.category">
+        <field name="name">Damage recovery</field>
+        <field name="code">DMGREC</field>
+        <field name="sequence">290</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_shortage_recovery" model="tms.category">
+        <field name="name">Shortage recovery</field>
+        <field name="code">SHTREC</field>
+        <field name="sequence">300</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_misc_recovery" model="tms.category">
+        <field name="name">Other recovery</field>
+        <field name="code">MISCREC</field>
+        <field name="sequence">310</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="False"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+    <record id="tms_category_towing" model="tms.category">
+        <field name="name">Towing and call-out</field>
+        <field name="code">TOWING</field>
+        <field name="sequence">320</field>
+        <field name="use_incident" eval="False"/>
+        <field name="use_charge" eval="True"/>
+        <field name="use_expense" eval="True"/>
+        <field name="incident_moves_money" eval="False"/>
+        <field name="default_cost_class">trip_direct</field>
+        <field name="is_fuel" eval="False"/>
+        <field name="gst_treatment">gta</field>
+    </record>
+</odoo>

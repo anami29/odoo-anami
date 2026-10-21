@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_driver_form_tms_core" model="ir.ui.view">
+        <field name="name">tms.driver.form.tms.core</field>
+        <field name="model">tms.driver</field>
+        <field name="inherit_id" ref="tms.view_tms_driver_form_inherit"/>
+        <field name="arch" type="xml">
+            <!-- Contact smart buttons (Meetings, Opportunities, Sales, Invoices ...) call res.partner methods that
+                 tms.driver does not inherit; without this, updating the module fails view validation. -->
+            <xpath expr="//div[@name='button_box']" position="replace">
+                <div class="oe_button_box" name="button_box"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Compliance" name="tms_compliance">
+                <group>
+                    <field name="tms_home_branch_id"/>
+                    <field name="tms_availability"/>
+                </group>
+                <separator string="Compliance documents (BR-MD-07)"/>
+                <field name="tms_compliance_document_ids" context="{'default_driver_id': id}">
+                    <list editable="bottom">
+                        <field name="type_id"/>
+                        <field name="number"/>
+                        <field name="valid_until"/>
+                        <field name="attachment" filename="attachment_name"/>
+                        <field name="attachment_name" column_invisible="1"/>
+                        <field name="state"/>
+                    </list>
+                </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    <record id="tms_insurance_form_tms_core" model="ir.ui.view">
+        <field name="name">tms.insurance.form.tms.core</field>
+        <field name="model">tms.insurance</field>
+        <field name="inherit_id" ref="tms.tms_insurance_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='policy_number']" position="after">
+                <field name="tms_policy_type"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-LED-05, BR-LED-08, BR-PNL-17: the profitability section of the trip ledger -->
+    <record id="tms_order_form_tms_profitability" model="ir.ui.view">
+        <field name="name">tms.order.form.tms.profitability</field>
+        <field name="model">tms.order</field>
+        <field name="inherit_id" ref="tms_core.tms_order_form_tms_core"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='ledger']/group" position="after">
+                <group string="Profitability (BR-LED-05, BR-PNL-17)" name="tms_profitability">
+                    <group>
+                        <field name="tms_pnl_revenue"/>
+                        <field name="tms_pnl_recoveries"/>
+                        <field name="tms_pnl_direct"/>
+                        <field name="tms_pnl_replacement"/>
+                        <field name="tms_pnl_contribution"/>
+                        <field name="tms_std_charge"/>
+                        <field name="tms_std_charge_posted"/>
+                        <field name="tms_trip_margin" decoration-danger="tms_trip_margin &lt; 0" decoration-bf="1"/>
+                        <field name="tms_margin_pct"/>
+                    </group>
+                    <group>
+                        <field name="tms_pnl_date"/>
+                        <field name="tms_pnl_wip"/>
+                        <field name="tms_std_rate_id"/>
+                        <field name="tms_std_km"/>
+                        <field name="tms_return_km"/>
+                        <field name="tms_pnl_km" invisible="fleet_type == 'owned'"/>
+                        <field name="tms_analytic_account_id"/>
+                    </group>
+                </group>
+                <div class="d-flex gap-2">
+                    <button name="action_tms_view_pnl_lines" type="object" string="Ledger lines" class="btn-secondary" icon="fa-list"/>
+                    <button name="action_tms_view_legs" type="object" string="Legs" class="btn-secondary" icon="fa-random"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

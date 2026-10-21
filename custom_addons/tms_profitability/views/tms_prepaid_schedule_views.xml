@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PNL-10, BR-PNL-11, BR-MIG-08 -->
+    <record id="tms_prepaid_schedule_list" model="ir.ui.view">
+        <field name="name">tms.prepaid.schedule.list</field>
+        <field name="model">tms.prepaid.schedule</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'done'">
+                <field name="name"/>
+                <field name="company_id" optional="show" groups="base.group_multi_company"/>
+                <field name="kind"/>
+                <field name="vehicle_id"/>
+                <field name="category_id"/>
+                <field name="date_from"/>
+                <field name="months"/>
+                <field name="amount" sum="Total"/>
+                <field name="released_amount" sum="Released"/>
+                <field name="remaining_amount" sum="Remaining"/>
+                <field name="state" widget="badge"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_prepaid_schedule_form" model="ir.ui.view">
+        <field name="name">tms.prepaid.schedule.form</field>
+        <field name="model">tms.prepaid.schedule</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_plan" type="object" string="Plan releases" class="btn-primary" invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="kind" readonly="state != 'draft'"/>
+                            <field name="vehicle_id" readonly="state != 'draft'"/>
+                            <field name="category_id" readonly="state != 'draft'"/>
+                            <field name="cost_class"/>
+                            <field name="company_id" readonly="state != 'draft'" groups="base.group_multi_company"/>
+                            <field name="move_line_id"/>
+                        </group>
+                        <group>
+                            <field name="amount" readonly="state != 'draft'"/>
+                            <field name="date_from" readonly="state != 'draft'"/>
+                            <field name="date_to" readonly="state != 'draft'"/>
+                            <field name="months" readonly="state != 'draft'"/>
+                            <field name="expense_account_id" readonly="state != 'draft'"/>
+                            <field name="prepaid_account_id" readonly="state != 'draft'"/>
+                            <field name="released_amount"/>
+                            <field name="remaining_amount"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="1">
+                        <list>
+                            <field name="sequence"/>
+                            <field name="date"/>
+                            <field name="amount" sum="Total"/>
+                            <field name="state" widget="badge"/>
+                            <field name="move_id"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_tms_prepaid_schedule" model="ir.actions.act_window">
+        <field name="name">Prepaid truck costs</field>
+        <field name="res_model">tms.prepaid.schedule</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

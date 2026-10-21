@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BR-CRM-03: New, Qualified, Quoted, Negotiation and Won; Lost is the lost state with a reason -->
+<odoo noupdate="1">
+    <record id="crm.stage_lead3" model="crm.stage">
+        <field name="name">Quoted</field>
+    </record>
+    <record id="crm_stage_negotiation" model="crm.stage">
+        <field name="name">Negotiation</field>
+        <field name="sequence">4</field>
+    </record>
+</odoo>

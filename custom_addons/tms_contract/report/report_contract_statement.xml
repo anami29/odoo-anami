@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PRN-11: contract statement for the customer -->
+    <record id="action_report_contract_statement" model="ir.actions.report">
+        <field name="name">Contract statement</field>
+        <field name="model">tms.contract</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms_contract.report_contract_statement</field>
+        <field name="report_file">tms_contract.report_contract_statement</field>
+        <field name="print_report_name">'Contract statement %s' % object.name</field>
+        <field name="binding_model_id" ref="model_tms_contract"/>
+        <field name="paperformat_id" ref="tms_core.paperformat_tms_a4"/>
+    </record>
+    <template id="report_contract_statement">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="contract">
+                <t t-call="web.external_layout">
+                    <t t-set="figs" t-value="contract._tms_figures()"/>
+                    <t t-set="cur" t-value="contract.currency_id"/>
+                    <div class="page">
+                        <h3>Contract statement: <span t-out="contract.name"/></h3>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td><strong>Customer</strong></td><td t-out="contract.partner_id.display_name"/>
+                                <td><strong>Customer PO / LOI</strong></td>
+                                <td><span t-out="contract.po_number or ''"/> <span t-if="contract.po_date">dt <span t-out="contract.po_date"/></span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Validity</strong></td>
+                                <td><span t-out="contract.date_start"/> to <span t-out="contract.date_end"/></td>
+                                <td><strong>Value basis</strong></td>
+                                <td t-out="dict(contract._fields['value_basis'].selection).get(contract.value_basis)"/>
+                            </tr>
+                            <tr>
+                                <td><strong>Statement date</strong></td>
+                                <td t-out="context_timestamp(datetime.datetime.now()).strftime('%d/%m/%Y')"/>
+                                <td><strong>Status</strong></td>
+                                <td t-out="dict(contract._fields['state'].selection).get(contract.state)"/>
+                            </tr>
+                        </table>
+
+                        <h5>Value and balance</h5>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr><td>Contract value</td><td class="text-end" t-out="contract.value" t-options="{'widget': 'monetary', 'display_currency': cur}"/></tr>
+                                <tr t-foreach="contract.extension_ids.filtered(lambda e: e.state == 'approved')" t-as="ext">
+                                    <td>Extension <span t-out="ext.name"/> (<span t-out="ext.date"/>)<span t-if="ext.new_date_end">, valid to <span t-out="ext.new_date_end"/></span></td>
+                                    <td class="text-end" t-out="ext.added_value" t-options="{'widget': 'monetary', 'display_currency': cur}"/>
+                                </tr>
+                                <tr><td><strong>Value with extensions</strong></td><td class="text-end"><strong t-out="figs['V']" t-options="{'widget': 'monetary', 'display_currency': cur}"/></td></tr>
+                                <tr><td>Invoiced (net of rate-correction credit notes)</td><td class="text-end" t-out="figs['I']" t-options="{'widget': 'monetary', 'display_currency': cur}"/></tr>
+                                <tr><td>Reserved for released movements</td><td class="text-end" t-out="figs['R']" t-options="{'widget': 'monetary', 'display_currency': cur}"/></tr>
+                                <tr><td><strong>Balance</strong></td><td class="text-end"><strong t-out="figs['balance']" t-options="{'widget': 'monetary', 'display_currency': cur}"/></td></tr>
+                                <tr><td>Utilisation</td><td class="text-end"><span t-out="'%.1f' % ((figs['I'] + figs['R']) / figs['V'] * 100.0 if figs['V'] else 0.0)"/> %</td></tr>
+                                <tr t-if="figs['I'] + figs['R'] - figs['V'] &gt; 0.005">
+                                    <td>Over-contract (awaiting your extension)</td>
+                                    <td class="text-end" t-out="figs['I'] + figs['R'] - figs['V']" t-options="{'widget': 'monetary', 'display_currency': cur}"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h5>Contract rates</h5>
+                        <table class="table table-sm">
+                            <thead><tr><th>Element</th><th>Basis</th><th class="text-end">Rate</th><th>Effective from</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="contract.rate_ids.filtered(lambda r: r.effective)" t-as="rate">
+                                    <td t-out="rate.name"/>
+                                    <td t-out="dict(rate._fields['basis'].selection).get(rate.basis)"/>
+                                    <td class="text-end" t-out="rate.rate" t-options="{'widget': 'monetary', 'display_currency': cur}"/>
+                                    <td t-out="rate.date_from or ''"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h5>Released movements</h5>
+                        <table class="table table-sm">
+                            <thead><tr><th>Item</th><th>Lane</th><th class="text-end">km</th><th>Released</th><th class="text-end">Budget</th><th class="text-end">Invoiced</th><th>Status</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="contract.item_ids.filtered(lambda i: i.tms_release_state in ('released', 'closed'))" t-as="item">
+                                    <td t-out="item.tms_item_no"/>
+                                    <td><span t-out="item.tms_origin_id.city or item.tms_origin_id.name or ''"/> → <span t-out="item.tms_destination_id.city or item.tms_destination_id.name or ''"/></td>
+                                    <td class="text-end" t-out="'%.0f' % item.tms_distance_km"/>
+                                    <td t-out="item.tms_released_on"/>
+                                    <td class="text-end" t-out="item.tms_budget_reserved" t-options="{'widget': 'monetary', 'display_currency': cur}"/>
+                                    <td class="text-end" t-out="figs['inv'].get(item.id, 0.0)" t-options="{'widget': 'monetary', 'display_currency': cur}"/>
+                                    <td t-out="dict(item._fields['tms_release_state'].selection).get(item.tms_release_state)"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <t t-set="credits" t-value="contract._tms_invoices().filtered(lambda m: m.move_type == 'out_refund' and m.state == 'posted')"/>
+                        <t t-if="credits">
+                            <h5>Credit notes</h5>
+                            <table class="table table-sm">
+                                <thead><tr><th>Number</th><th>Date</th><th>Reason</th><th class="text-end">Amount</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="credits" t-as="cn">
+                                        <td t-out="cn.name"/>
+                                        <td t-out="cn.invoice_date"/>
+                                        <td t-out="dict(cn._fields['tms_credit_reason'].selection).get(cn.tms_credit_reason) or ''"/>
+                                        <td class="text-end" t-out="cn.amount_untaxed" t-options="{'widget': 'monetary', 'display_currency': cur}"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

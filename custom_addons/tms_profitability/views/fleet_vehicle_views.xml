@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="fleet_vehicle_form_tms_profitability" model="ir.ui.view">
+        <field name="name">fleet.vehicle.form.tms.profitability</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="inherit_id" ref="tms_core.fleet_vehicle_form_tms_core"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-warning mb-0" role="alert" invisible="not tms_review_flag">
+                    Flagged for a repair-or-replace review: running cost above the class rate in consecutive closed
+                    months (BR-PNL-21).
+                    <button name="action_tms_clear_review_flag" type="object" string="Clear flag" class="btn-link" groups="tms_core.group_fleet_manager"/>
+                </div>
+            </xpath>
+            <field name="tms_home_branch_id" position="after">
+                <field name="tms_analytic_account_id"/>
+                <field name="tms_review_flag" readonly="1"/>
+                <field name="tms_review_flag_date" invisible="not tms_review_flag"/>
+            </field>
+        </field>
+    </record>
+</odoo>

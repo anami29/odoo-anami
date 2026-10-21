@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_kpi_kanban" model="ir.ui.view">
+        <field name="name">tms.kpi.kanban</field>
+        <field name="model">tms.kpi</field>
+        <field name="arch" type="xml">
+            <kanban create="0" action="action_drill" type="object" default_group_by="group" group_create="0" group_delete="0" group_edit="0" records_draggable="0">
+                <field name="alert"/>
+                <field name="available"/>
+                <templates>
+                    <t t-name="card">
+                        <div t-attf-class="#{record.alert.raw_value ? 'border-start border-4 border-danger ps-2' : 'ps-2'}">
+                            <div class="d-flex justify-content-between">
+                                <field name="code" class="text-muted small"/>
+                                <field name="alert_rule" class="text-muted small"/>
+                            </div>
+                            <field name="name" class="fw-bold fs-5"/>
+                            <div class="d-flex gap-3 mt-2" t-if="record.available.raw_value">
+                                <span class="fs-3"><field name="value_count"/></span>
+                                <span class="fs-6 text-muted align-self-end"><field name="value_amount" widget="float"/></span>
+                            </div>
+                            <div t-else="" class="text-muted small mt-2">Computed by its module once installed.</div>
+                            <field name="definition" class="small text-muted"/>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    <record id="tms_kpi_list" model="ir.ui.view">
+        <field name="name">tms.kpi.list</field>
+        <field name="model">tms.kpi</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="value_count"/>
+                <field name="value_amount"/>
+                <field name="alert"/>
+                <field name="alert_rule"/>
+                <button name="action_drill" type="object" icon="fa-search" title="Drill down"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_kpi_dashboard" model="ir.actions.act_window">
+        <field name="name">Exception dashboard</field>
+        <field name="res_model">tms.kpi</field>
+        <field name="view_mode">kanban,list</field>
+    </record>
+</odoo>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_consignment_form_tms_contract" model="ir.ui.view">
+        <field name="name">tms.consignment.form.tms.contract</field>
+        <field name="model">tms.consignment</field>
+        <field name="inherit_id" ref="tms_estimate.tms_consignment_form_tms_estimate"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='order_item']/field[@name='sale_order_id']" position="after">
+                <field name="tms_contract_id" invisible="not tms_contract_id"/>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button name="action_tms_approve_contract_rate" type="object" string="Approve typed rate (contract customer)"
+                        invisible="state != 'draft' or sale_line_id or typed_rate_approved_by_id"
+                        groups="tms_core.group_branch_manager"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

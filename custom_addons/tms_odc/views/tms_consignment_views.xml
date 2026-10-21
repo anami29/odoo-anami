@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_consignment_form_tms_odc" model="ir.ui.view">
+        <field name="name">tms.consignment.form.tms.odc</field>
+        <field name="model">tms.consignment</field>
+        <field name="inherit_id" ref="tms_core.tms_consignment_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='tms_cargo_type']" position="after">
+                <field name="odc_suggested" invisible="1"/>
+                <field name="ewaybill_validity_mismatch" invisible="1"/>
+                <field name="tms_regular_reason" invisible="tms_cargo_type != 'regular' or not odc_suggested" required="tms_cargo_type == 'regular' and odc_suggested and state == 'draft' and not sale_line_id" readonly="state != 'draft'"/>
+            </xpath>
+            <xpath expr="//notebook" position="before">
+                <div class="alert alert-warning" role="alert" invisible="not odc_suggested or tms_cargo_type == 'odc'">
+                    A commodity line is above an ODC threshold: make the LR ODC or give a reason to keep it Regular (BR-ODC-02).
+                </div>
+                <div class="alert alert-danger" role="alert" invisible="not ewaybill_validity_mismatch">
+                    An e-way bill's portal validity does not match the expected validity (BR-ODC-04, #23.5).
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='piece_length']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='piece_width']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='piece_height']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='piece_height']" position="after">
+                <field name="piece_odc" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='ewaybill_ids']/list/field[@name='validity_mismatch']" position="attributes">
+                <attribute name="widget">boolean</attribute>
+                <attribute name="decoration-danger">validity_mismatch</attribute>
+            </xpath>
+            <xpath expr="//field[@name='ewaybill_ids']/list/field[@name='valid_until']" position="after">
+                <field name="expected_valid_until" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="tms_consignment_list_tms_odc" model="ir.ui.view">
+        <field name="name">tms.consignment.list.tms.odc</field>
+        <field name="model">tms.consignment</field>
+        <field name="inherit_id" ref="tms_core.tms_consignment_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='tms_cargo_type']" position="after">
+                <field name="ewaybill_validity_mismatch" optional="hide" string="EWB mismatch"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

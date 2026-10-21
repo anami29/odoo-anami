@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- BR-CON-14, BR-NTF-13, BR-NTF-15, BR-NTF-16, BR-NTF-18, BR-NTF-19 -->
+    <record id="ir_cron_tms_contract_daily" model="ir.cron">
+        <field name="name">TMS: contract states, alerts and reservations</field>
+        <field name="model_id" ref="model_tms_contract"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_contract_daily()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

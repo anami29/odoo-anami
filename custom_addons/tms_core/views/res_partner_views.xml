@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_partner_form_tms_core" model="ir.ui.view">
+        <field name="name">res.partner.form.tms.core</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Transport" name="tms" groups="tms.group_tms_user">
+                    <group>
+                        <group string="Customer (BR-MD-01, BR-MD-16)">
+                            <field name="tms_freight_basis"/>
+                            <field name="tms_billing_cycle"/>
+                            <field name="tms_credit_limit"/>
+                            <field name="tms_exposure"/>
+                            <field name="tms_has_overdue"/>
+                            <field name="tms_unregistered"/>
+                            <field name="tms_credit_from_submission"/>
+                            <field name="tms_free_hours_loading"/>
+                            <field name="tms_free_hours_unloading"/>
+                            <field name="tms_detention_rate"/>
+                        </group>
+                        <group string="Transporter / broker (BR-MD-10)">
+                            <field name="tms_is_transporter"/>
+                            <field name="tms_gta_status" invisible="not tms_is_transporter"/>
+                            <field name="tms_advance_percent" invisible="not tms_is_transporter"/>
+                            <field name="tms_tds_tax_id" invisible="not tms_is_transporter"/>
+                        </group>
+                    </group>
+                    <field name="tms_tds_declaration_ids" invisible="not tms_is_transporter">
+                        <list editable="bottom">
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="vehicle_count"/>
+                            <field name="reference"/>
+                            <field name="attachment" filename="attachment_name"/>
+                            <field name="attachment_name" column_invisible="1"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

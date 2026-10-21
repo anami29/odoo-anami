@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_trip_charge_form" model="ir.ui.view">
+        <field name="name">tms.trip.charge.form</field>
+        <field name="model">tms.trip.charge</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_approve" type="object" string="Approve" class="btn-primary" invisible="state != 'to_approve'" groups="tms_core.group_branch_manager"/>
+                    <button name="action_invoice_third_party" type="object" string="Invoice third party" invisible="state != 'approved' or recover_from != 'third_party'"/>
+                    <button name="action_vendor_debit_note" type="object" string="Vendor debit note" invisible="state != 'approved' or recover_from != 'vendor'"/>
+                    <button name="action_open_reason" type="object" string="Waive" invisible="state not in ('draft', 'to_approve', 'approved')" groups="tms_core.group_branch_manager" context="{'tms_reason_method': 'action_waive'}"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('billed', 'deducted', 'cancel', 'waived')"/>
+                    <button name="action_draft" type="object" string="Reset to draft" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,to_approve,approved,billed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="trip_id" readonly="state != 'draft'"/>
+                            <field name="consignment_id" readonly="state != 'draft'"/>
+                            <field name="category_id" readonly="state != 'draft'"/>
+                            <field name="amount" readonly="state not in ('draft', 'to_approve')"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="recover_from" readonly="state != 'draft'"/>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="driver_id" invisible="recover_from != 'driver'"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="incident_id"/>
+                            <field name="expense_id"/>
+                            <field name="claim_id"/>
+                            <field name="hire_memo_id"/>
+                            <field name="detention_kind"/>
+                            <field name="approved_by_id"/>
+                            <field name="self_approved"/>
+                            <field name="billing_status"/>
+                            <field name="move_line_id"/>
+                            <field name="waive_reason" invisible="state != 'waived'"/>
+                        </group>
+                    </group>
+                    <field name="note" placeholder="Notes"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="tms_trip_charge_list" model="ir.ui.view">
+        <field name="name">tms.trip.charge.list</field>
+        <field name="model">tms.trip.charge</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="trip_id"/>
+                <field name="consignment_id"/>
+                <field name="category_id"/>
+                <field name="recover_from"/>
+                <field name="partner_id"/>
+                <field name="amount" sum="Total"/>
+                <field name="billing_status"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_trip_charge_search" model="ir.ui.view">
+        <field name="name">tms.trip.charge.search</field>
+        <field name="model">tms.trip.charge</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="trip_id"/>
+                <field name="consignment_id"/>
+                <field name="partner_id"/>
+                <filter name="to_approve" string="To approve" domain="[('state', '=', 'to_approve')]"/>
+                <filter name="unbilled" string="Approved, unbilled" domain="[('state', '=', 'approved')]"/>
+                <filter name="customer" string="Customer" domain="[('recover_from', '=', 'customer')]"/>
+                <filter name="recoveries" string="Recoveries" domain="[('recover_from', '!=', 'customer')]"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_charge" model="ir.actions.act_window">
+        <field name="name">Charges and recoveries</field>
+        <field name="res_model">tms.trip.charge</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_tms_recovery_ageing" model="ir.actions.act_window">
+        <field name="name">Recovery ageing</field>
+        <field name="res_model">tms.trip.charge</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="domain">[('recover_from', '!=', 'customer'), ('state', '=', 'approved')]</field>
+    </record>
+
+    <record id="tms_trip_expense_form" model="ir.ui.view">
+        <field name="name">tms.trip.expense.form</field>
+        <field name="model">tms.trip.expense</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_approve" type="object" string="Approve and post" class="btn-primary" invisible="state != 'draft'" groups="tms_core.group_branch_accountant"/>
+                    <button name="action_create_recovery" type="object" string="Create recovery charge" invisible="recoverable_from == 'none' or charge_id"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state == 'cancel'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="trip_id" readonly="state != 'draft'"/>
+                            <field name="consignment_id" readonly="state != 'draft'"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="category_id" readonly="state != 'draft'"/>
+                            <field name="amount" readonly="state != 'draft'"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="payment_mode" readonly="state != 'draft'"/>
+                            <field name="paid_to_id" readonly="state != 'draft'"/>
+                            <field name="driver_id" readonly="state != 'draft'"/>
+                            <field name="bill_reference"/>
+                            <field name="receipt" filename="receipt_name"/>
+                            <field name="receipt_name" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="vehicle_id" readonly="state != 'draft'"/>
+                            <field name="tms_cost_class" readonly="state != 'draft'"/>
+                            <field name="tms_overhead_reason" invisible="tms_cost_class != 'overhead'"/>
+                            <field name="incident_id"/>
+                            <field name="recoverable_from"/>
+                            <field name="recoverable_amount" invisible="recoverable_from == 'none'"/>
+                            <field name="charge_id"/>
+                            <field name="move_id"/>
+                            <field name="approved_by_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group string="Fuel (BR-EXP-04)" invisible="not is_fuel">
+                        <field name="is_fuel" invisible="1"/>
+                        <field name="fuel_litres"/>
+                        <field name="fuel_rate"/>
+                        <field name="fuel_odometer"/>
+                        <field name="fuel_station"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="tms_trip_expense_list" model="ir.ui.view">
+        <field name="name">tms.trip.expense.list</field>
+        <field name="model">tms.trip.expense</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="trip_id"/>
+                <field name="category_id"/>
+                <field name="payment_mode"/>
+                <field name="vehicle_id" optional="show"/>
+                <field name="tms_cost_class" optional="show"/>
+                <field name="amount" sum="Total"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_expense" model="ir.actions.act_window">
+        <field name="name">Trip expenses</field>
+        <field name="res_model">tms.trip.expense</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

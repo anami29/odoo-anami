@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_contract_release_wizard_form" model="ir.ui.view">
+        <field name="name">tms.contract.release.wizard.form</field>
+        <field name="model">tms.contract.release.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Release contract item">
+                <div class="alert alert-warning" role="alert" invisible="not shortfall">
+                    The budget exceeds the balance by <field name="shortfall" class="oe_inline"/>: the item is held until a
+                    customer extension or an approved excess covers it (BR-CON-10).
+                </div>
+                <div class="alert alert-warning" role="alert" invisible="not below_floor or markup_approved">
+                    Below the markup floor: a Branch Manager approves before release (BR-CON-26).
+                </div>
+                <group>
+                    <group>
+                        <field name="sale_line_id"/>
+                        <field name="contract_id"/>
+                        <field name="freight"/>
+                        <field name="incidentals"/>
+                        <field name="budget"/>
+                    </group>
+                    <group>
+                        <field name="balance"/>
+                        <field name="excess" invisible="not excess"/>
+                        <field name="contribution"/>
+                        <field name="markup_pct"/>
+                        <field name="below_floor" invisible="1"/>
+                        <field name="markup_approved" invisible="1"/>
+                        <field name="currency_id" invisible="1"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_release" type="object" string="Release" class="btn-primary"
+                            invisible="shortfall or (below_floor and not markup_approved)"/>
+                    <button name="action_request_excess" type="object" string="Request excess" invisible="not shortfall"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="tms_contract_excess_wizard_form" model="ir.ui.view">
+        <field name="name">tms.contract.excess.wizard.form</field>
+        <field name="model">tms.contract.excess.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Request excess over the contract value">
+                <group>
+                    <group>
+                        <field name="contract_id" readonly="1"/>
+                        <field name="sale_line_id" readonly="1" invisible="not sale_line_id"/>
+                        <field name="move_id" readonly="1" invisible="not move_id"/>
+                        <field name="amount"/>
+                    </group>
+                    <group>
+                        <field name="cover"/>
+                        <field name="expected_cover_date" required="cover == 'extension'"/>
+                        <field name="currency_id" invisible="1"/>
+                    </group>
+                </group>
+                <field name="reason" placeholder="Why the excess is needed"/>
+                <footer>
+                    <button name="action_request" type="object" string="Request" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="tms_contract_partial_post_wizard_form" model="ir.ui.view">
+        <field name="name">tms.contract.partial.post.wizard.form</field>
+        <field name="model">tms.contract.partial.post.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Post the lines that fit">
+                <p>The lines that fit the contract balance post now; the rest move to a new draft invoice marked Awaiting
+                    extension (BR-CON-12). The partial posting is logged.</p>
+                <group>
+                    <field name="move_id"/>
+                    <field name="fit_amount"/>
+                    <field name="shortfall"/>
+                    <field name="currency_id" invisible="1"/>
+                </group>
+                <field name="reason" placeholder="Reason"/>
+                <footer>
+                    <button name="action_confirm" type="object" string="Post the lines that fit" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="tms_contract_item_amend_wizard_form" model="ir.ui.view">
+        <field name="name">tms.contract.item.amend.wizard.form</field>
+        <field name="model">tms.contract.item.amend.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Amend contract item">
+                <p>Km, units, rate lines and equipment substitution. Any increase is checked against the balance and
+                    logged as an amendment reservation line (BR-CON-23).</p>
+                <group>
+                    <group>
+                        <field name="sale_line_id"/>
+                        <field name="contract_id"/>
+                    </group>
+                    <group>
+                        <field name="old_freight"/>
+                        <field name="new_freight"/>
+                        <field name="currency_id" invisible="1"/>
+                    </group>
+                </group>
+                <field name="line_ids">
+                    <list editable="bottom">
+                        <field name="use_id" column_invisible="1"/>
+                        <field name="rate_id" domain="[('contract_id', '=', parent.contract_id)]" options="{'no_create': True}"/>
+                        <field name="basis"/>
+                        <field name="units"/>
+                        <field name="km"/>
+                        <field name="days" optional="hide"/>
+                        <field name="states" optional="hide"/>
+                        <field name="tonnes" optional="hide"/>
+                        <field name="trips" optional="hide"/>
+                        <field name="rate"/>
+                        <field name="amount" sum="Freight"/>
+                        <field name="currency_id" column_invisible="1"/>
+                    </list>
+                </field>
+                <field name="reason" placeholder="Reason for the amendment"/>
+                <footer>
+                    <button name="action_apply" type="object" string="Approve and apply" class="btn-primary"
+                            groups="tms_core.group_operations_head"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

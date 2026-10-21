@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sales roles see the pipeline: own branch for Sales Executives and Planners, every branch for managers (BR-CRM-01) -->
+<odoo>
+    <record id="tms_core.group_sales_executive" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
+    </record>
+    <record id="tms_core.group_planner" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
+    </record>
+    <record id="tms_core.group_branch_manager" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman_all_leads'))]"/>
+    </record>
+    <record id="tms_core.group_operations_head" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman_all_leads'))]"/>
+    </record>
+    <record id="tms_core.group_finance_head" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman_all_leads'))]"/>
+    </record>
+</odoo>

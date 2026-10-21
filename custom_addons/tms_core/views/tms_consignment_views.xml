@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_consignment_list" model="ir.ui.view">
+        <field name="name">tms.consignment.list</field>
+        <field name="model">tms.consignment</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'" decoration-info="state == 'draft'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="company_id" string="Booking branch" optional="show"/>
+                <field name="consignor_id"/>
+                <field name="consignee_id"/>
+                <field name="billing_partner_id" optional="show"/>
+                <field name="origin_id" optional="show"/>
+                <field name="destination_id" optional="show"/>
+                <field name="freight_basis"/>
+                <field name="tms_cargo_type" optional="hide"/>
+                <field name="total_packages" optional="hide"/>
+                <field name="charged_weight" sum="Total"/>
+                <field name="freight_amount" sum="Total"/>
+                <field name="freight_invoiced" optional="hide" sum="Total"/>
+                <field name="vehicle_number" optional="show"/>
+                <field name="pod_status" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state in ('delivered', 'invoiced')" decoration-warning="state == 'not_delivered'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="tms_consignment_form" model="ir.ui.view">
+        <field name="name">tms.consignment.form</field>
+        <field name="model">tms.consignment</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_deliver_from_godown" type="object" string="Deliver from godown" invisible="not godown_hold" help="BR-LR-10, BR-POD-09"/>
+                    <button name="action_return_to_origin" type="object" string="Return to origin" invisible="not godown_hold" help="BR-POD-09: new LR billed to the billing party"/>
+                    <button name="action_open_credit_override" type="object" string="Confirm over credit block" invisible="state != 'draft'" groups="tms_core.group_branch_manager,tms_core.group_finance_head" help="BR-CRD-03: confirm with a logged reason"/>
+                    <button name="action_invoice" type="object" string="Create invoice" invisible="state in ('draft', 'cancel', 'invoiced')" groups="tms_core.group_booking_clerk,tms_core.group_branch_accountant"/>
+                    <button name="action_print_lr" type="object" string="Print LR" invisible="state == 'draft'"/>
+                    <button name="action_open_amendment" type="object" string="Request amendment" invisible="state in ('draft', 'cancel', 'invoiced')"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state not in ('draft', 'confirmed')" confirm="Cancel this LR?"/>
+                    <button name="action_draft" type="object" string="Reset to draft" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,dispatched,delivered,invoiced"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_trips" type="object" class="oe_stat_button" icon="fa-truck" invisible="not trip_count">
+                            <field name="trip_count" widget="statinfo" string="Trips"/>
+                        </button>
+                        <button name="action_view_invoices" type="object" class="oe_stat_button" icon="fa-file-text-o" invisible="not invoice_ids">
+                            <field name="freight_invoiced" widget="statinfo" string="Invoiced"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Godown" bg_color="text-bg-warning" invisible="not godown_hold"/>
+                    <div class="oe_title">
+                        <label for="name" string="LR number"/>
+                        <h1><field name="name" readonly="state != 'draft' or not manual_number" placeholder="/"/></h1>
+                        <field name="manual_number" invisible="state != 'draft'"/>
+                        <label for="manual_number" string="Manual number from printed LR book" invisible="state != 'draft'"/>
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="not ewaybill_missing or state in ('draft', 'cancel')">
+                        A required e-way bill is missing: the trip cannot start until it is added (BR-EWB-04).
+                    </div>
+                    <group>
+                        <group string="Parties">
+                            <field name="consignor_id" readonly="state not in ('draft',)"/>
+                            <field name="consignee_id" readonly="state not in ('draft',)"/>
+                            <field name="freight_basis" readonly="state not in ('draft',)"/>
+                            <field name="billing_partner_id" readonly="state not in ('draft',)"/>
+                            <field name="gst_payer" readonly="state not in ('draft',)"/>
+                        </group>
+                        <group string="Movement">
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="company_id" string="Booking branch" readonly="state != 'draft'" groups="base.group_multi_company"/>
+                            <field name="delivery_branch_id"/>
+                            <field name="origin_id" readonly="state != 'draft'"/>
+                            <field name="destination_id" readonly="state != 'draft'"/>
+                            <field name="service_type" readonly="state != 'draft'"/>
+                            <field name="risk_basis" readonly="state != 'draft'"/>
+                            <field name="tms_cargo_type" readonly="state != 'draft'"/>
+                            <field name="tms_mode"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Typed rate (no order item)" name="typed_rate">
+                            <field name="rate_type" readonly="state != 'draft'"/>
+                            <field name="typed_rate" readonly="state != 'draft'"/>
+                            <field name="typed_min_weight" readonly="state != 'draft'"/>
+                            <field name="typed_rate_reason" readonly="state != 'draft'" required="rate_type"/>
+                            <field name="typed_rate_approved_by_id" invisible="not typed_rate_approved_by_id"/>
+                        </group>
+                        <group string="Totals">
+                            <field name="total_packages"/>
+                            <field name="total_actual_weight"/>
+                            <field name="computed_charged_weight"/>
+                            <field name="charged_weight_override" readonly="state != 'draft'"/>
+                            <field name="charged_weight_reason" required="charged_weight_override" readonly="state != 'draft'"/>
+                            <field name="godown_hold" invisible="not godown_hold"/>
+                            <field name="godown_since" invisible="not godown_hold"/>
+                            <field name="godown_delivered_on" invisible="not godown_delivered_on"/>
+                            <field name="return_of_id" invisible="not return_of_id"/>
+                            <field name="charged_weight"/>
+                            <field name="declared_value"/>
+                            <field name="freight_amount"/>
+                            <field name="freight_uninvoiced"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Commodities" name="lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="commodity"/>
+                                    <field name="hsn_code" optional="hide"/>
+                                    <field name="packaging_type"/>
+                                    <field name="packages" sum="Total"/>
+                                    <field name="actual_weight" sum="Total"/>
+                                    <field name="charged_weight" sum="Total" readonly="1"/>
+                                    <field name="declared_value" sum="Total"/>
+                                    <field name="ewaybill_id" options="{'no_create': True}"/>
+                                    <field name="ewaybill_exempt" optional="show"/>
+                                    <field name="piece_length" optional="hide"/>
+                                    <field name="piece_width" optional="hide"/>
+                                    <field name="piece_height" optional="hide"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="consignment_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="E-way bills" name="ewaybills">
+                            <field name="ewaybill_ids" context="{'default_consignment_id': id}">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="consignor_invoice_number"/>
+                                    <field name="consignor_invoice_value"/>
+                                    <field name="generated_on"/>
+                                    <field name="valid_until"/>
+                                    <field name="is_odc"/>
+                                    <field name="partb_vehicle"/>
+                                    <field name="validity_mismatch"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Trips and POD" name="trips">
+                            <field name="trip_link_ids" readonly="1">
+                                <list>
+                                    <field name="trip_id"/>
+                                    <field name="packages"/>
+                                    <field name="weight"/>
+                                    <field name="delivered_at"/>
+                                    <field name="outcome"/>
+                                    <field name="pod_status"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                            <group>
+                                <field name="vehicle_number"/>
+                                <field name="vehicle_history"/>
+                                <field name="delivered_on"/>
+                                <field name="pod_status"/>
+                                <field name="unplanned_packages"/>
+                            </group>
+                        </page>
+                        <page string="Charges and claims" name="charges">
+                            <field name="charge_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="category_id"/>
+                                    <field name="recover_from"/>
+                                    <field name="amount"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                            <field name="claim_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="damage_type"/>
+                                    <field name="approved_amount"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Amendments" name="amendments">
+                            <field name="amendment_ids">
+                                <list create="0">
+                                    <field name="create_date"/>
+                                    <field name="reason"/>
+                                    <field name="summary"/>
+                                    <field name="requested_by_id"/>
+                                    <field name="approved_by_id"/>
+                                    <field name="state"/>
+                                    <button name="action_approve" type="object" string="Approve" invisible="state != 'to_approve'" groups="tms_core.group_branch_manager"/>
+                                    <button name="action_reject" type="object" string="Reject" invisible="state != 'to_approve'" groups="tms_core.group_branch_manager"/>
+                                </list>
+                            </field>
+                            <group><field name="cancel_reason"/></group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="tms_consignment_search" model="ir.ui.view">
+        <field name="name">tms.consignment.search</field>
+        <field name="model">tms.consignment</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="consignor_id"/>
+                <field name="consignee_id"/>
+                <field name="billing_partner_id"/>
+                <field name="vehicle_number"/>
+                <filter name="confirmed" string="Confirmed, unplanned" domain="[('state', '=', 'confirmed'), ('unplanned_packages', '>', 0)]"/>
+                <filter name="in_transit" string="Dispatched" domain="[('state', '=', 'dispatched')]"/>
+                <filter name="to_invoice" string="Delivered, not invoiced" domain="[('state', 'in', ('delivered', 'not_delivered'))]"/>
+                <filter name="tbb_overdue" string="To-Be-Billed past cycle" domain="[('tbb_overdue', '=', True)]"/>
+                <separator/>
+                <filter name="odc" string="ODC" domain="[('tms_cargo_type', '=', 'odc')]"/>
+                <group expand="0" string="Group by">
+                    <filter name="by_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="by_party" string="Billing party" context="{'group_by': 'billing_partner_id'}"/>
+                    <filter name="by_branch" string="Booking branch" context="{'group_by': 'company_id'}"/>
+                    <filter name="by_basis" string="Freight basis" context="{'group_by': 'freight_basis'}"/>
+                    <filter name="by_date" string="Date" context="{'group_by': 'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="tms_consignment_pivot" model="ir.ui.view">
+        <field name="name">tms.consignment.pivot</field>
+        <field name="model">tms.consignment</field>
+        <field name="arch" type="xml">
+            <pivot string="LR register">
+                <field name="company_id" type="row"/>
+                <field name="date" interval="month" type="col"/>
+                <field name="freight_amount" type="measure"/>
+                <field name="charged_weight" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_tms_consignment" model="ir.actions.act_window">
+        <field name="name">Consignment notes (LR)</field>
+        <field name="res_model">tms.consignment</field>
+        <field name="view_mode">list,form,pivot</field>
+        <field name="help" type="html"><p class="o_view_nocontent_smiling_face">Book the first LR</p></field>
+    </record>
+    <record id="action_tms_lr_register" model="ir.actions.act_window">
+        <field name="name">LR register</field>
+        <field name="res_model">tms.consignment</field>
+        <field name="view_mode">pivot,list,form</field>
+    </record>
+
+    <record id="action_server_plan_trip" model="ir.actions.server">
+        <field name="name">Plan trip</field>
+        <field name="model_id" ref="model_tms_consignment"/>
+        <field name="binding_model_id" ref="model_tms_consignment"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = {"type": "ir.actions.act_window", "res_model": "tms.plan.trip.wizard", "view_mode": "form", "target": "new", "context": {"active_model": "tms.consignment", "active_ids": records.ids}}</field>
+    </record>
+    <record id="action_server_invoice_lrs" model="ir.actions.server">
+        <field name="name">Create invoices</field>
+        <field name="model_id" ref="model_tms_consignment"/>
+        <field name="binding_model_id" ref="model_tms_consignment"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = {"type": "ir.actions.act_window", "res_model": "tms.invoice.lr.wizard", "view_mode": "form", "target": "new", "context": {"active_model": "tms.consignment", "active_ids": records.ids}}</field>
+    </record>
+</odoo>

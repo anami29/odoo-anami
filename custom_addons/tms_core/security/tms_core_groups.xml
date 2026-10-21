@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BR-BRN-07: the fourteen roles of BRD #4 plus the approval-only Contract Excess Approver -->
+<odoo>
+    <record id="module_category_tms_roles" model="ir.module.category">
+        <field name="name">Transport Roles</field>
+        <field name="sequence">11</field>
+    </record>
+
+    <!-- Every operational role implies this group: create and edit TMS documents.
+         The Auditor deliberately does not imply it. -->
+    <record id="group_tms_staff" model="res.groups">
+        <field name="name">TMS Staff (create and edit)</field>
+        <field name="category_id" ref="base.module_category_hidden"/>
+        <field name="implied_ids" eval="[(4, ref('tms.group_tms_user')), (4, ref('fleet.fleet_group_user'))]"/>
+    </record>
+
+    <!-- BR-CON-18: approval-only group; Finance Head up to the excess ceiling,
+         Director above it. Directors hold only this group. -->
+    <record id="group_contract_excess_approver" model="res.groups">
+        <field name="name">Contract Excess Approver</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('tms.group_tms_user'))]"/>
+    </record>
+    <record id="group_director" model="res.groups">
+        <field name="name">Director (excess above ceiling)</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_contract_excess_approver'))]"/>
+    </record>
+    <record id="group_sales_executive" model="res.groups">
+        <field name="name">Sales Executive</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff'))]"/>
+    </record>
+    <record id="group_planner" model="res.groups">
+        <field name="name">Planner</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff'))]"/>
+    </record>
+    <record id="group_booking_clerk" model="res.groups">
+        <field name="name">Booking Clerk</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <!-- BR-INV-01, BR-INV-02, BR-LR-15: invoices and collects Paid and To-Pay LRs -->
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff')), (4, ref('account.group_account_invoice'))]"/>
+    </record>
+    <record id="group_dispatcher" model="res.groups">
+        <field name="name">Dispatcher</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff')), (4, ref('group_planner')), (4, ref('purchase.group_purchase_user'))]"/>
+    </record>
+    <record id="group_control_room" model="res.groups">
+        <field name="name">Control Room</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff'))]"/>
+    </record>
+    <record id="group_fleet_manager" model="res.groups">
+        <field name="name">Fleet Manager</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff')), (4, ref('fleet.fleet_group_manager'))]"/>
+    </record>
+    <record id="group_pod_verifier" model="res.groups">
+        <field name="name">POD Verifier</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff'))]"/>
+    </record>
+    <record id="group_claims_officer" model="res.groups">
+        <field name="name">Claims Officer</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff'))]"/>
+    </record>
+    <record id="group_branch_accountant" model="res.groups">
+        <field name="name">Branch Accountant</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff')), (4, ref('account.group_account_invoice')), (4, ref('purchase.group_purchase_user'))]"/>
+    </record>
+    <record id="group_branch_manager" model="res.groups">
+        <field name="name">Branch Manager</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff'))]"/>
+    </record>
+    <record id="group_operations_head" model="res.groups">
+        <field name="name">Operations Head</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff'))]"/>
+    </record>
+    <record id="group_finance_head" model="res.groups">
+        <field name="name">Finance Head</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff')), (4, ref('account.group_account_manager')), (4, ref('group_contract_excess_approver'))]"/>
+    </record>
+    <record id="group_tms_admin" model="res.groups">
+        <field name="name">TMS Administrator</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <field name="implied_ids" eval="[(4, ref('group_tms_staff')), (4, ref('tms.group_tms_admin'))]"/>
+        <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+    </record>
+    <record id="group_auditor" model="res.groups">
+        <field name="name">Auditor (read-only)</field>
+        <field name="category_id" ref="module_category_tms_roles"/>
+        <!-- BRD #4: reads audit logs and the books -->
+        <field name="implied_ids" eval="[(4, ref('tms.group_tms_user')), (4, ref('auditlog.group_auditlog_user')), (4, ref('account.group_account_readonly'))]"/>
+    </record>
+</odoo>

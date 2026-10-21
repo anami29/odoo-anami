@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_damage_claim_form" model="ir.ui.view">
+        <field name="name">tms.damage.claim.form</field>
+        <field name="model">tms.damage.claim</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit" type="object" string="Submit for review" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_approve" type="object" string="Approve" class="btn-primary" invisible="state != 'under_review'" groups="tms_core.group_branch_manager,tms_core.group_operations_head"/>
+                    <button name="action_open_accept_owner_risk" type="object" string="Accept owner's risk" invisible="state != 'under_review' or not owner_risk or owner_risk_accepted_by_id" groups="tms_core.group_operations_head"/>
+                    <button name="action_open_admit_late_notice" type="object" string="Admit late notice" invisible="state != 'under_review' or not time_barred or timebar_admitted_by_id" groups="tms_core.group_operations_head"/>
+                    <button name="action_override_cap" type="object" string="Approve above cap" invisible="state != 'under_review' or cap_override_by_id" groups="tms_core.group_operations_head"/>
+                    <button name="action_open_reason" type="object" string="Reject" invisible="state not in ('draft', 'under_review')" context="{'tms_reason_method': 'action_reject'}"/>
+                    <button name="action_print_claim_note" type="object" string="Claim note" invisible="state not in ('approved', 'settled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,under_review,approved,settled"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <div class="alert alert-warning" role="status" invisible="not time_barred">The customer's notice is later than the claim notice period (BR-CLM-11).</div>
+                    <div class="alert alert-info" role="status" invisible="not owner_risk">Owner's-risk LR: the Operations Head must accept liability (BR-CLM-09).</div>
+                    <group>
+                        <group>
+                            <field name="consignment_id"/>
+                            <field name="trip_id"/>
+                            <field name="incident_id"/>
+                            <field name="pod_link_id"/>
+                            <field name="damage_type"/>
+                            <field name="affected_qty"/>
+                            <field name="claimant_id"/>
+                            <field name="notice_date"/>
+                            <field name="evidence" filename="evidence_name"/>
+                            <field name="evidence_name" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="estimated_amount"/>
+                            <field name="approved_amount" readonly="state not in ('draft', 'under_review')"/>
+                            <field name="cap_amount"/>
+                            <field name="cap_override_reason"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="responsible"/>
+                            <field name="responsible_partner_id" invisible="responsible in ('company', 'driver')"/>
+                            <field name="responsible_driver_id" invisible="responsible != 'driver'"/>
+                            <field name="recovery_amount" invisible="responsible == 'company'"/>
+                            <field name="owner_risk" invisible="1"/>
+                            <field name="time_barred" invisible="1"/>
+                            <field name="owner_risk_accepted_by_id"/>
+                            <field name="timebar_admitted_by_id"/>
+                            <field name="cap_override_by_id"/>
+                            <field name="approved_by_id"/>
+                            <field name="credit_note_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Recoveries"><field name="recovery_charge_ids" readonly="1"/></page>
+                        <page string="Insurer claims (BR-CLM-07)">
+                            <field name="insurer_claim_ids">
+                                <list editable="bottom">
+                                    <field name="policy_id"/>
+                                    <field name="reference"/>
+                                    <field name="filed_on"/>
+                                    <field name="amount_claimed"/>
+                                    <field name="amount_received"/>
+                                    <field name="received_on"/>
+                                    <field name="state"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                    <field name="reject_reason" invisible="state != 'rejected'"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="tms_damage_claim_list" model="ir.ui.view">
+        <field name="name">tms.damage.claim.list</field>
+        <field name="model">tms.damage.claim</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="consignment_id"/>
+                <field name="trip_id"/>
+                <field name="damage_type"/>
+                <field name="estimated_amount" sum="Total"/>
+                <field name="approved_amount" sum="Total"/>
+                <field name="responsible"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_claim" model="ir.actions.act_window">
+        <field name="name">Claims register</field>
+        <field name="res_model">tms.damage.claim</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

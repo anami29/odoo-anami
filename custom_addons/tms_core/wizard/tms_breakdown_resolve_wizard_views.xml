@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_breakdown_resolve_wizard_form" model="ir.ui.view">
+        <field name="name">tms.breakdown.resolve.wizard.form</field>
+        <field name="model">tms.breakdown.resolve.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group>
+                        <field name="breakdown_id" readonly="1"/>
+                        <field name="resolution"/>
+                        <field name="resumed_at"/>
+                        <field name="repair_cost"/>
+                        <field name="reason" invisible="resolution == 'repair'"/>
+                        <field name="odometer_at_breakdown" invisible="resolution == 'repair'"/>
+                    </group>
+                    <group invisible="resolution != 'replace_own'" string="Own replacement (gate runs first, BR-ASG-06)">
+                        <field name="vehicle_id"/>
+                        <field name="driver_id"/>
+                        <field name="replacement_odometer"/>
+                    </group>
+                    <group invisible="resolution != 'replace_market'" string="Market replacement (own hire memo, BR-ASG-07)">
+                        <field name="market_vehicle_id"/>
+                        <field name="broker_id"/>
+                        <field name="hire_amount"/>
+                        <field name="market_driver_name"/>
+                        <field name="market_driver_phone"/>
+                        <field name="market_driver_licence"/>
+                        <field name="market_driver_licence_expiry"/>
+                    </group>
+                </group>
+                <group string="Replaced market vehicle (pro rata hire, BR-ASG-11)" invisible="resolution == 'repair'">
+                    <field name="km_run"/>
+                    <field name="km_planned"/>
+                </group>
+                <footer>
+                    <button name="action_resolve" type="object" string="Resolve" class="btn-primary"/>
+                    <button special="cancel" string="Discard"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

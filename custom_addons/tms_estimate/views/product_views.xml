@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_tms_estimate" model="ir.ui.view">
+        <field name="name">product.template.form.tms.estimate</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="TMS cost item" name="tms_cost_item">
+                    <group>
+                        <group>
+                            <field name="tms_cost_item"/>
+                            <field name="tms_cost_category_id" invisible="not tms_cost_item"/>
+                            <field name="tms_cost_basis" invisible="not tms_cost_item"/>
+                            <field name="tms_default_markup" invisible="not tms_cost_item"/>
+                        </group>
+                        <group invisible="not tms_cost_item">
+                            <field name="tms_equipment_kind"/>
+                            <field name="tms_rated_capacity" invisible="tms_equipment_kind not in ('axle', 'trailer_bed')"/>
+                            <field name="tms_owned_truck"/>
+                            <field name="tms_vehicle_class_id" invisible="not tms_owned_truck"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    <record id="action_tms_cost_items" model="ir.actions.act_window">
+        <field name="name">Cost items</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('tms_cost_item', '=', True)]</field>
+        <field name="context">{'default_tms_cost_item': True, 'default_type': 'service', 'default_sale_ok': False}</field>
+    </record>
+</odoo>

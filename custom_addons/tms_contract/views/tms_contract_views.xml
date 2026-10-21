@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_contract_form" model="ir.ui.view">
+        <field name="name">tms.contract.form</field>
+        <field name="model">tms.contract</field>
+        <field name="arch" type="xml">
+            <form string="Sales contract">
+                <header>
+                    <button name="action_submit" type="object" string="Submit" class="btn-primary"
+                            invisible="state != 'draft' or submitted" groups="tms_core.group_sales_executive,tms_core.group_branch_manager"/>
+                    <button name="action_approve" type="object" string="Approve and activate" class="btn-primary"
+                            invisible="state != 'draft' or not submitted" groups="tms_core.group_operations_head"/>
+                    <button name="action_open_reason" type="object" string="Reject"
+                            context="{'tms_reason_method': 'action_reject', 'tms_reason_title': 'Reject contract'}"
+                            invisible="state != 'draft' or not submitted" groups="tms_core.group_operations_head"/>
+                    <button name="action_new_item" type="object" string="New item" class="btn-primary"
+                            invisible="state in ('draft', 'closed')"/>
+                    <button name="action_new_extension" type="object" string="Record extension"
+                            invisible="state in ('draft', 'closed')" groups="tms_core.group_sales_executive,tms_core.group_branch_manager,tms_core.group_operations_head"/>
+                    <button name="action_print_statement" type="object" string="Contract statement" invisible="state == 'draft'"/>
+                    <button name="action_raise_sla_deductions" type="object" string="Raise SLA deductions"
+                            invisible="state == 'draft' or not sla_penalty_due" groups="tms_core.group_branch_accountant,tms_core.group_finance_head"/>
+                    <button name="action_bill_shortfall" type="object" string="Bill commitment shortfall"
+                            invisible="state not in ('expired', 'exhausted', 'closed') or not min_commitment or shortfall_move_id"
+                            groups="tms_core.group_branch_accountant,tms_core.group_finance_head"/>
+                    <button name="action_close" type="object" string="Close contract"
+                            invisible="state in ('draft', 'closed')" groups="tms_core.group_sales_executive,tms_core.group_branch_manager"
+                            confirm="Close the contract? Every item must be closed for billing."/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,exhausted,expired,closed"/>
+                </header>
+                <div class="alert alert-warning" role="alert" invisible="not fully_reserved or state in ('draft', 'closed')">
+                    Fully reserved: the balance is <field name="balance" class="oe_inline"/>; new items wait for an extension or an approved excess (BR-CON-10).
+                </div>
+                <div class="alert alert-danger" role="alert" invisible="not over_contract">
+                    Over-contract: <field name="over_contract" class="oe_inline"/> reserved or invoiced above value plus extensions (BR-CON-19).
+                </div>
+                <div class="alert alert-info" role="alert" invisible="state != 'draft' or not submitted">
+                    Submitted: waiting for the Operations Head's approval (BR-CON-04).
+                </div>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_items" type="object" class="oe_stat_button" icon="fa-list-ol">
+                            <field name="item_count" widget="statinfo" string="Items"/>
+                        </button>
+                        <button name="action_view_lrs" type="object" class="oe_stat_button" icon="fa-file-text">
+                            <field name="lr_count" widget="statinfo" string="LRs"/>
+                        </button>
+                        <button name="action_view_invoices" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
+                            <field name="invoice_count" widget="statinfo" string="Invoices"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                        <h3><field name="partner_id" placeholder="Customer" readonly="state != 'draft'"/></h3>
+                    </div>
+                    <group>
+                        <group string="Order">
+                            <field name="po_number" readonly="state != 'draft'"/>
+                            <field name="po_date" readonly="state != 'draft'"/>
+                            <field name="po_file" filename="po_filename" readonly="state != 'draft'"/>
+                            <field name="po_filename" invisible="1"/>
+                            <field name="date_start" readonly="state != 'draft'"/>
+                            <field name="date_end" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                            <field name="user_id"/>
+                            <field name="order_id" readonly="1"/>
+                            <field name="approved_by_id" invisible="not approved_by_id"/>
+                        </group>
+                        <group string="Value (#23.7)">
+                            <field name="value" readonly="state != 'draft'"/>
+                            <field name="value_basis" readonly="state != 'draft'"/>
+                            <field name="opening_consumption" readonly="state != 'draft'"/>
+                            <field name="extension_total"/>
+                            <field name="value_total"/>
+                            <field name="excess_approved"/>
+                            <field name="invoiced"/>
+                            <field name="reserved"/>
+                            <field name="balance" decoration-danger="balance &lt; 0" decoration-bf="1"/>
+                            <field name="utilisation" widget="progressbar"/>
+                            <field name="over_contract" invisible="not over_contract"/>
+                            <field name="fully_reserved" invisible="1"/>
+                            <field name="submitted" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Rates" name="rates">
+                            <field name="rate_ids" readonly="state != 'draft'" context="{'default_contract_id': id}">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="kind"/>
+                                    <field name="vehicle_class_id" invisible="kind != 'vehicle'" required="kind == 'vehicle'"/>
+                                    <field name="product_id" invisible="kind == 'vehicle'" required="kind == 'accessory'"/>
+                                    <field name="name"/>
+                                    <field name="basis"/>
+                                    <field name="rate"/>
+                                    <field name="date_from"/>
+                                    <field name="escalation_per_rupee" optional="hide"/>
+                                    <field name="extension_id" optional="show" readonly="1"/>
+                                    <field name="escalation_id" optional="show" readonly="1"/>
+                                    <field name="effective" optional="show"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Items" name="items" invisible="state == 'draft'">
+                            <field name="item_ids" readonly="1" context="{'form_view_ref': 'tms_contract.tms_contract_item_form'}">
+                                <list>
+                                    <field name="tms_item_no" string="Item"/>
+                                    <field name="tms_origin_id"/>
+                                    <field name="tms_destination_id"/>
+                                    <field name="tms_distance_km"/>
+                                    <field name="tms_cargo_type"/>
+                                    <field name="tms_release_state" widget="badge" decoration-success="tms_release_state == 'released'" decoration-info="tms_release_state == 'closed'"/>
+                                    <field name="tms_held" string="Held"/>
+                                    <field name="tms_freight" sum="Freight"/>
+                                    <field name="tms_budget_reserved" sum="Budget"/>
+                                    <field name="tms_item_invoiced" sum="Invoiced"/>
+                                    <field name="tms_open_reservation" sum="Reserved"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Billing parties and branches" name="parties">
+                            <group>
+                                <field name="billing_partner_ids" widget="many2many_tags" readonly="state == 'closed'"/>
+                                <field name="branch_ids" widget="many2many_tags" readonly="state == 'closed'"/>
+                                <field name="payment_term_id"/>
+                                <field name="incidental_category_ids" widget="many2many_tags" readonly="state != 'draft'"/>
+                                <field name="claims_reduce_invoiced" readonly="state != 'draft'"/>
+                            </group>
+                        </page>
+                        <page string="Extensions and excess" name="extensions" invisible="state == 'draft'">
+                            <field name="extension_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="added_value" sum="Added"/>
+                                    <field name="new_date_end"/>
+                                    <field name="approval_role"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="absorbed_excess"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                            <field name="excess_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="sale_line_id"/>
+                                    <field name="move_id"/>
+                                    <field name="amount" sum="Amount"/>
+                                    <field name="cover"/>
+                                    <field name="expected_cover_date"/>
+                                    <field name="open_amount" sum="Open"/>
+                                    <field name="absorbed_amount"/>
+                                    <field name="lapsed_amount"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Reservation ledger" name="ledger" invisible="state == 'draft'">
+                            <group>
+                                <group>
+                                    <field name="as_at_date"/>
+                                    <field name="balance_as_at" invisible="not as_at_date"/>
+                                </group>
+                            </group>
+                            <field name="reservation_ids" readonly="1">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="item_no"/>
+                                    <field name="event"/>
+                                    <field name="amount" sum="Open reservations"/>
+                                    <field name="consignment_id"/>
+                                    <field name="trip_id"/>
+                                    <field name="source"/>
+                                    <field name="note"/>
+                                    <field name="user_id" optional="hide"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Terms" name="terms">
+                            <group>
+                                <group string="Detention (BR-MD-16)">
+                                    <field name="free_hours_loading"/>
+                                    <field name="free_hours_unloading"/>
+                                    <field name="detention_rate"/>
+                                </group>
+                                <group string="Commitment and SLA (BR-CON-27)">
+                                    <field name="min_commitment"/>
+                                    <field name="shortfall_move_id" invisible="not shortfall_move_id"/>
+                                    <field name="sla_transit_days"/>
+                                    <field name="sla_penalty_per_day"/>
+                                    <field name="sla_penalty_due" invisible="not sla_penalty_due"/>
+                                    <field name="sla_move_ids" widget="many2many_tags" invisible="not sla_move_ids"/>
+                                </group>
+                                <group string="Security deposit or guarantee">
+                                    <field name="deposit_kind"/>
+                                    <field name="deposit_amount" invisible="deposit_kind == 'none'"/>
+                                    <field name="deposit_reference" invisible="deposit_kind == 'none'"/>
+                                    <field name="deposit_expiry" invisible="deposit_kind == 'none'"/>
+                                </group>
+                                <group string="Diesel escalation (BR-CON-22)">
+                                    <field name="escalation_clause" readonly="state != 'draft'"/>
+                                    <field name="diesel_base_price" invisible="not escalation_clause" readonly="state != 'draft'"/>
+                                    <field name="diesel_base_date" invisible="not escalation_clause" readonly="state != 'draft'"/>
+                                    <field name="diesel_index_source" invisible="not escalation_clause"/>
+                                    <field name="escalation_band" invisible="not escalation_clause" readonly="state != 'draft'"/>
+                                    <field name="escalation_review" invisible="not escalation_clause"/>
+                                    <field name="escalation_revises_released" invisible="not escalation_clause" readonly="state != 'draft'"/>
+                                </group>
+                            </group>
+                            <field name="escalation_ids" readonly="1" invisible="not escalation_clause">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="diesel_price"/>
+                                    <field name="change"/>
+                                    <field name="within_band"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="tms_contract_list" model="ir.ui.view">
+        <field name="name">tms.contract.list</field>
+        <field name="model">tms.contract</field>
+        <field name="arch" type="xml">
+            <list string="Sales contracts" decoration-muted="state == 'closed'" decoration-warning="state in ('exhausted', 'expired')">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="po_number"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="value_total" string="Value"/>
+                <field name="invoiced"/>
+                <field name="reserved"/>
+                <field name="balance"/>
+                <field name="utilisation" widget="progressbar"/>
+                <field name="user_id" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'active'" decoration-warning="state in ('exhausted', 'expired')"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="tms_contract_search" model="ir.ui.view">
+        <field name="name">tms.contract.search</field>
+        <field name="model">tms.contract</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="po_number"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="to_approve" string="To approve" domain="[('state', '=', 'draft'), ('submitted', '=', True)]"/>
+                <filter name="active" string="Active" domain="[('state', '=', 'active')]"/>
+                <filter name="ended" string="Exhausted or expired" domain="[('state', 'in', ('exhausted', 'expired'))]"/>
+                <filter name="mine" string="My contracts" domain="[('user_id', '=', uid)]"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_partner" string="Customer" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_tms_contract" model="ir.actions.act_window">
+        <field name="name">Contracts</field>
+        <field name="res_model">tms.contract</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Register a customer's contract</p>
+            <p>A contract fixes km rates per vehicle class and accessory up to a value; movements are released against its balance (WF-11).</p>
+        </field>
+    </record>
+</odoo>

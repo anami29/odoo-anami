@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- #18.4, BR-PNL-24..34: P&L views; every view filters by branch, period, customer,
+     vehicle class, fleet type and Cargo Type, drills to its lines and exports to Excel from the list -->
+<odoo>
+    <record id="tms_pnl_line_list" model="ir.ui.view">
+        <field name="name">tms.pnl.line.list</field>
+        <field name="model">tms.pnl.line</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" decoration-danger="amount &lt; 0">
+                <field name="date"/>
+                <field name="period" optional="hide"/>
+                <field name="kind"/>
+                <field name="company_id"/>
+                <field name="trip_id"/>
+                <field name="consignment_id" optional="show"/>
+                <field name="partner_id"/>
+                <field name="vendor_id" optional="hide"/>
+                <field name="vehicle_id"/>
+                <field name="cost_pool" optional="hide"/>
+                <field name="is_replacement" optional="hide"/>
+                <field name="account_id" optional="hide"/>
+                <field name="move_line_id" optional="show"/>
+                <field name="analytic_line_id" optional="hide"/>
+                <field name="line_kind" optional="hide"/>
+                <field name="amount" sum="Total"/>
+                <button name="action_open_source" type="object" icon="fa-external-link" title="Open source document"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_pnl_line_pivot" model="ir.ui.view">
+        <field name="name">tms.pnl.line.pivot</field>
+        <field name="model">tms.pnl.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Ledger lines" sample="1">
+                <field name="kind" type="row"/>
+                <field name="amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="tms_pnl_line_search" model="ir.ui.view">
+        <field name="name">tms.pnl.line.search</field>
+        <field name="model">tms.pnl.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="company_id"/>
+                <field name="partner_id"/>
+                <field name="vehicle_id"/>
+                <field name="trip_id"/>
+                <field name="vendor_id"/>
+                <filter name="wip" string="Work in progress" domain="[('wip', '=', True)]"/>
+                <filter name="not_wip" string="In period results" domain="[('wip', '=', False)]"/>
+                <filter name="filter_period" string="Period" date="period"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_period" string="Period" context="{'group_by': 'period:month'}"/>
+                    <filter name="group_partner" string="Customer" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_vehicle" string="Truck" context="{'group_by': 'vehicle_id'}"/>
+                    <filter name="group_kind" string="Kind" context="{'group_by': 'kind'}"/>
+                    <filter name="group_pool" string="Pool" context="{'group_by': 'cost_pool'}"/>
+                    <filter name="group_vendor" string="Vendor" context="{'group_by': 'vendor_id'}"/>
+                    <filter name="group_trip" string="Trip" context="{'group_by': 'trip_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_pnl_line" model="ir.actions.act_window">
+        <field name="name">Ledger lines</field>
+        <field name="res_model">tms.pnl.line</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{}</field>
+    </record>
+    <record id="tms_trip_pnl_list" model="ir.ui.view">
+        <field name="name">tms.trip.pnl.list</field>
+        <field name="model">tms.trip.pnl</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" decoration-danger="trip_margin &lt; 0">
+                <field name="trip_id"/>
+                <field name="date"/>
+                <field name="company_id"/>
+                <field name="partner_id"/>
+                <field name="vehicle_id"/>
+                <field name="fleet_type"/>
+                <field name="cargo_type" optional="hide"/>
+                <field name="origin_id" optional="hide"/>
+                <field name="destination_id" optional="hide"/>
+                <field name="km" sum="Total"/>
+                <field name="revenue" sum="Total"/>
+                <field name="direct_cost" sum="Total"/>
+                <field name="recoveries" sum="Total"/>
+                <field name="replacement_cost" sum="Total"/>
+                <field name="contribution" sum="Total"/>
+                <field name="std_charge" sum="Total"/>
+                <field name="std_provisional" optional="hide"/>
+                <field name="trip_margin" sum="Total"/>
+                <field name="margin_pct"/>
+                <field name="open_commitments" sum="Total"/>
+                <field name="unbilled_charges" optional="hide"/>
+                <field name="wip" optional="hide"/>
+                <button name="action_open_lines" type="object" icon="fa-search-plus" title="Drill to lines"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_trip_pnl_pivot" model="ir.ui.view">
+        <field name="name">tms.trip.pnl.pivot</field>
+        <field name="model">tms.trip.pnl</field>
+        <field name="arch" type="xml">
+            <pivot string="Trip P&amp;L" sample="1">
+                <field name="trip_id" type="row"/>
+                <field name="trip_margin" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="tms_trip_pnl_search" model="ir.ui.view">
+        <field name="name">tms.trip.pnl.search</field>
+        <field name="model">tms.trip.pnl</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="company_id"/>
+                <field name="partner_id"/>
+                <field name="vehicle_id"/>
+                <field name="trip_id"/>
+                <filter name="owned" string="Owned" domain="[('fleet_type', '=', 'owned')]"/>
+                <filter name="market" string="Market" domain="[('fleet_type', '=', 'market')]"/>
+                <filter name="odc" string="ODC" domain="[('cargo_type', '=', 'odc')]"/>
+                <filter name="regular" string="Regular" domain="[('cargo_type', '=', 'regular')]"/>
+                <filter name="wip" string="Work in progress" domain="[('wip', '=', True)]"/>
+                <filter name="not_wip" string="In period results" domain="[('wip', '=', False)]"/>
+                <filter name="filter_period" string="Period" date="date"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_partner" string="Customer" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_vehicle" string="Truck" context="{'group_by': 'vehicle_id'}"/>
+                    <filter name="group_fleet_type" string="Fleet type" context="{'group_by': 'fleet_type'}"/>
+                    <filter name="group_cargo_type" string="Cargo Type" context="{'group_by': 'cargo_type'}"/>
+                    <filter name="group_trip" string="Trip" context="{'group_by': 'trip_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_trip_pnl" model="ir.actions.act_window">
+        <field name="name">Trip P&amp;L</field>
+        <field name="res_model">tms.trip.pnl</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{'search_default_not_wip': 1}</field>
+    </record>
+    <record id="tms_trip_leg_list" model="ir.ui.view">
+        <field name="name">tms.trip.leg.list</field>
+        <field name="model">tms.trip.leg</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" decoration-danger="leg_margin &lt; 0">
+                <field name="trip_id"/>
+                <field name="date"/>
+                <field name="sale_line_id"/>
+                <field name="order_id" optional="hide"/>
+                <field name="consignment_id"/>
+                <field name="partner_id"/>
+                <field name="company_id"/>
+                <field name="weight"/>
+                <field name="share"/>
+                <field name="km" sum="Total"/>
+                <field name="revenue" sum="Total"/>
+                <field name="direct_cost" sum="Total"/>
+                <field name="recoveries" sum="Total"/>
+                <field name="std_charge" sum="Total"/>
+                <field name="contribution" sum="Total"/>
+                <field name="leg_margin" sum="Total"/>
+                <button name="action_open_lines" type="object" icon="fa-search-plus" title="Drill to lines"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_trip_leg_pivot" model="ir.ui.view">
+        <field name="name">tms.trip.leg.pivot</field>
+        <field name="model">tms.trip.leg</field>
+        <field name="arch" type="xml">
+            <pivot string="Trip legs" sample="1">
+                <field name="trip_id" type="row"/>
+                <field name="leg_margin" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="tms_trip_leg_search" model="ir.ui.view">
+        <field name="name">tms.trip.leg.search</field>
+        <field name="model">tms.trip.leg</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="company_id"/>
+                <field name="partner_id"/>
+                <field name="trip_id"/>
+                <filter name="filter_period" string="Period" date="date"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_partner" string="Customer" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_trip" string="Trip" context="{'group_by': 'trip_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_trip_leg" model="ir.actions.act_window">
+        <field name="name">Trip legs</field>
+        <field name="res_model">tms.trip.leg</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{}</field>
+    </record>
+    <record id="tms_customer_pnl_list" model="ir.ui.view">
+        <field name="name">tms.customer.pnl.list</field>
+        <field name="model">tms.customer.pnl</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" decoration-danger="trip_margin &lt; 0">
+                <field name="partner_id"/>
+                <field name="period"/>
+                <field name="company_id"/>
+                <field name="vehicle_class_id" optional="hide"/>
+                <field name="fleet_type" optional="hide"/>
+                <field name="cargo_type" optional="hide"/>
+                <field name="order_count" sum="Total"/>
+                <field name="trip_count" sum="Total"/>
+                <field name="km" sum="Total"/>
+                <field name="revenue" sum="Total"/>
+                <field name="direct_cost" sum="Total"/>
+                <field name="recoveries" sum="Total"/>
+                <field name="std_charge" sum="Total"/>
+                <field name="trip_margin" sum="Total"/>
+                <field name="margin_pct"/>
+                <field name="revenue_per_km"/>
+                <field name="charges" sum="Total"/>
+                <field name="claims" sum="Total"/>
+                <button name="action_open_lines" type="object" icon="fa-search-plus" title="Drill to source"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_customer_pnl_pivot" model="ir.ui.view">
+        <field name="name">tms.customer.pnl.pivot</field>
+        <field name="model">tms.customer.pnl</field>
+        <field name="arch" type="xml">
+            <pivot string="Customer P&amp;L" sample="1">
+                <field name="partner_id" type="row"/>
+                <field name="trip_margin" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="tms_customer_pnl_search" model="ir.ui.view">
+        <field name="name">tms.customer.pnl.search</field>
+        <field name="model">tms.customer.pnl</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="company_id"/>
+                <field name="partner_id"/>
+                <field name="vehicle_class_id"/>
+                <filter name="owned" string="Owned" domain="[('fleet_type', '=', 'owned')]"/>
+                <filter name="market" string="Market" domain="[('fleet_type', '=', 'market')]"/>
+                <filter name="odc" string="ODC" domain="[('cargo_type', '=', 'odc')]"/>
+                <filter name="regular" string="Regular" domain="[('cargo_type', '=', 'regular')]"/>
+                <filter name="filter_period" string="Period" date="period"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_period" string="Period" context="{'group_by': 'period:month'}"/>
+                    <filter name="group_partner" string="Customer" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_vehicle_class" string="Vehicle class" context="{'group_by': 'vehicle_class_id'}"/>
+                    <filter name="group_fleet_type" string="Fleet type" context="{'group_by': 'fleet_type'}"/>
+                    <filter name="group_cargo_type" string="Cargo Type" context="{'group_by': 'cargo_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_customer_pnl" model="ir.actions.act_window">
+        <field name="name">Customer P&amp;L</field>
+        <field name="res_model">tms.customer.pnl</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{}</field>
+    </record>
+    <record id="tms_truck_pnl_list" model="ir.ui.view">
+        <field name="name">tms.truck.pnl.list</field>
+        <field name="model">tms.truck.pnl</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" decoration-danger="operating_result &lt; 0">
+                <field name="vehicle_id"/>
+                <field name="period"/>
+                <field name="company_id"/>
+                <field name="fleet_type"/>
+                <field name="trip_count" sum="Total"/>
+                <field name="revenue" sum="Total"/>
+                <field name="direct_cost" sum="Total"/>
+                <field name="contribution" sum="Total"/>
+                <field name="std_charge" sum="Total"/>
+                <field name="trip_margin" sum="Total"/>
+                <field name="running_actual" sum="Total"/>
+                <field name="fixed_actual" sum="Total"/>
+                <field name="recovery_variance" sum="Total"/>
+                <field name="volume_variance" sum="Total"/>
+                <field name="fixed_spending_variance" sum="Total"/>
+                <field name="running_variance" sum="Total"/>
+                <field name="fixed_other_variance" optional="hide"/>
+                <field name="operating_result" sum="Total"/>
+                <field name="charged_km" sum="Total"/>
+                <field name="odometer_km" sum="Total"/>
+                <field name="gap_km" sum="Total"/>
+                <field name="idle_days" sum="Total"/>
+                <field name="recovery_pct"/>
+                <button name="action_open_lines" type="object" icon="fa-search-plus" title="Drill to lines"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_truck_pnl_pivot" model="ir.ui.view">
+        <field name="name">tms.truck.pnl.pivot</field>
+        <field name="model">tms.truck.pnl</field>
+        <field name="arch" type="xml">
+            <pivot string="Truck P&amp;L" sample="1">
+                <field name="vehicle_id" type="row"/>
+                <field name="operating_result" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="tms_truck_pnl_search" model="ir.ui.view">
+        <field name="name">tms.truck.pnl.search</field>
+        <field name="model">tms.truck.pnl</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="company_id"/>
+                <field name="vehicle_id"/>
+                <filter name="owned" string="Owned" domain="[('fleet_type', '=', 'owned')]"/>
+                <filter name="market" string="Market" domain="[('fleet_type', '=', 'market')]"/>
+                <filter name="filter_period" string="Period" date="period"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_period" string="Period" context="{'group_by': 'period:month'}"/>
+                    <filter name="group_vehicle" string="Truck" context="{'group_by': 'vehicle_id'}"/>
+                    <filter name="group_fleet_type" string="Fleet type" context="{'group_by': 'fleet_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_truck_pnl" model="ir.actions.act_window">
+        <field name="name">Truck P&amp;L</field>
+        <field name="res_model">tms.truck.pnl</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{}</field>
+    </record>
+    <record id="tms_recovery_statement_list" model="ir.ui.view">
+        <field name="name">tms.recovery.statement.list</field>
+        <field name="model">tms.recovery.statement</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" decoration-danger="variance &lt; 0">
+                <field name="vehicle_id"/>
+                <field name="cost_pool"/>
+                <field name="period"/>
+                <field name="company_id"/>
+                <field name="charged" sum="Total"/>
+                <field name="actual" sum="Total"/>
+                <field name="variance" sum="Total"/>
+                <field name="volume_variance" sum="Total"/>
+                <field name="spending_variance" sum="Total"/>
+                <field name="other_variance" optional="hide"/>
+                <field name="planned_km"/>
+                <field name="charged_km"/>
+                <field name="odometer_km"/>
+                <field name="gap_km"/>
+                <field name="gap_flag"/>
+                <button name="action_open_lines" type="object" icon="fa-search-plus" title="Drill to lines"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_recovery_statement_pivot" model="ir.ui.view">
+        <field name="name">tms.recovery.statement.pivot</field>
+        <field name="model">tms.recovery.statement</field>
+        <field name="arch" type="xml">
+            <pivot string="Recovery statement" sample="1">
+                <field name="vehicle_id" type="row"/>
+                <field name="variance" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="tms_recovery_statement_search" model="ir.ui.view">
+        <field name="name">tms.recovery.statement.search</field>
+        <field name="model">tms.recovery.statement</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="company_id"/>
+                <field name="vehicle_id"/>
+                <filter name="filter_period" string="Period" date="period"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_period" string="Period" context="{'group_by': 'period:month'}"/>
+                    <filter name="group_vehicle" string="Truck" context="{'group_by': 'vehicle_id'}"/>
+                    <filter name="group_pool" string="Pool" context="{'group_by': 'cost_pool'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_recovery_statement" model="ir.actions.act_window">
+        <field name="name">Recovery statement</field>
+        <field name="res_model">tms.recovery.statement</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{}</field>
+    </record>
+    <record id="tms_fleet_pnl_list" model="ir.ui.view">
+        <field name="name">tms.fleet.pnl.list</field>
+        <field name="model">tms.fleet.pnl</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" decoration-danger="trip_margin &lt; 0">
+                <field name="fleet_type"/>
+                <field name="origin_id"/>
+                <field name="destination_id"/>
+                <field name="period"/>
+                <field name="company_id"/>
+                <field name="trip_count" sum="Total"/>
+                <field name="km" sum="Total"/>
+                <field name="revenue" sum="Total"/>
+                <field name="direct_cost" sum="Total"/>
+                <field name="std_charge" sum="Total"/>
+                <field name="full_cost" sum="Total"/>
+                <field name="trip_margin" sum="Total"/>
+                <field name="revenue_per_km"/>
+                <field name="cost_per_km"/>
+                <button name="action_open_lines" type="object" icon="fa-search-plus" title="Drill to source"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_fleet_pnl_pivot" model="ir.ui.view">
+        <field name="name">tms.fleet.pnl.pivot</field>
+        <field name="model">tms.fleet.pnl</field>
+        <field name="arch" type="xml">
+            <pivot string="Fleet P&amp;L" sample="1">
+                <field name="fleet_type" type="row"/>
+                <field name="trip_margin" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="tms_fleet_pnl_search" model="ir.ui.view">
+        <field name="name">tms.fleet.pnl.search</field>
+        <field name="model">tms.fleet.pnl</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="company_id"/>
+                <filter name="owned" string="Owned" domain="[('fleet_type', '=', 'owned')]"/>
+                <filter name="market" string="Market" domain="[('fleet_type', '=', 'market')]"/>
+                <filter name="filter_period" string="Period" date="period"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_period" string="Period" context="{'group_by': 'period:month'}"/>
+                    <filter name="group_fleet_type" string="Fleet type" context="{'group_by': 'fleet_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_fleet_pnl" model="ir.actions.act_window">
+        <field name="name">Fleet P&amp;L</field>
+        <field name="res_model">tms.fleet.pnl</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{}</field>
+    </record>
+    <record id="tms_vendor_pnl_list" model="ir.ui.view">
+        <field name="name">tms.vendor.pnl.list</field>
+        <field name="model">tms.vendor.pnl</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" decoration-danger="margin &lt; 0">
+                <field name="vendor_id"/>
+                <field name="period"/>
+                <field name="company_id"/>
+                <field name="trip_count" sum="Total"/>
+                <field name="vehicle_count" sum="Total"/>
+                <field name="revenue" sum="Total"/>
+                <field name="hire" sum="Total"/>
+                <field name="other_cost" sum="Total"/>
+                <field name="deductions" sum="Total"/>
+                <field name="margin" sum="Total"/>
+                <field name="claims" sum="Total"/>
+                <button name="action_open_lines" type="object" icon="fa-search-plus" title="Drill to source"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_vendor_pnl_pivot" model="ir.ui.view">
+        <field name="name">tms.vendor.pnl.pivot</field>
+        <field name="model">tms.vendor.pnl</field>
+        <field name="arch" type="xml">
+            <pivot string="Market vendor P&amp;L" sample="1">
+                <field name="vendor_id" type="row"/>
+                <field name="margin" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="tms_vendor_pnl_search" model="ir.ui.view">
+        <field name="name">tms.vendor.pnl.search</field>
+        <field name="model">tms.vendor.pnl</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="company_id"/>
+                <field name="vendor_id"/>
+                <filter name="filter_period" string="Period" date="period"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_period" string="Period" context="{'group_by': 'period:month'}"/>
+                    <filter name="group_vendor" string="Vendor" context="{'group_by': 'vendor_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_vendor_pnl" model="ir.actions.act_window">
+        <field name="name">Market vendor P&amp;L</field>
+        <field name="res_model">tms.vendor.pnl</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{}</field>
+    </record>
+    <record id="tms_branch_pnl_list" model="ir.ui.view">
+        <field name="name">tms.branch.pnl.list</field>
+        <field name="model">tms.branch.pnl</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" decoration-danger="branch_result &lt; 0">
+                <field name="company_id"/>
+                <field name="period"/>
+                <field name="trip_margin" sum="Total"/>
+                <field name="recovery_variance" sum="Total"/>
+                <field name="overhead" sum="Total"/>
+                <field name="branch_result" sum="Total"/>
+                <field name="truck_view" sum="Total"/>
+                <field name="check_difference" sum="Total"/>
+                <button name="action_open_lines" type="object" icon="fa-search-plus" title="Drill to source"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_branch_pnl_pivot" model="ir.ui.view">
+        <field name="name">tms.branch.pnl.pivot</field>
+        <field name="model">tms.branch.pnl</field>
+        <field name="arch" type="xml">
+            <pivot string="Branch P&amp;L" sample="1">
+                <field name="company_id" type="row"/>
+                <field name="branch_result" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="tms_branch_pnl_search" model="ir.ui.view">
+        <field name="name">tms.branch.pnl.search</field>
+        <field name="model">tms.branch.pnl</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="company_id"/>
+                <filter name="filter_period" string="Period" date="period"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_period" string="Period" context="{'group_by': 'period:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_branch_pnl" model="ir.actions.act_window">
+        <field name="name">Branch P&amp;L</field>
+        <field name="res_model">tms.branch.pnl</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="context">{}</field>
+    </record>
+    <record id="action_tms_trip_pnl_wip" model="ir.actions.act_window">
+        <field name="name">Work in progress</field>
+        <field name="res_model">tms.trip.pnl</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="domain">[('wip', '=', True)]</field>
+    </record>
+    <record id="tms_company_pnl_list" model="ir.ui.view">
+        <field name="name">tms.company.pnl.list</field>
+        <field name="model">tms.branch.pnl</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false">
+                <field name="company_id"/>
+                <field name="period"/>
+                <field name="branch_result" sum="Total"/>
+                <field name="head_office_cost" sum="Total"/>
+                <field name="operating_result" sum="Total"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_company_pnl" model="ir.actions.act_window">
+        <field name="name">Company P&amp;L</field>
+        <field name="res_model">tms.branch.pnl</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="view_id" ref="tms_company_pnl_list"/>
+    </record>
+</odoo>

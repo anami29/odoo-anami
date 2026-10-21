@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_ewaybill_form" model="ir.ui.view">
+        <field name="name">tms.ewaybill.form</field>
+        <field name="model">tms.ewaybill</field>
+        <field name="arch" type="xml">
+            <form>
+                <header><field name="state" widget="statusbar" options="{'clickable': '1'}"/></header>
+                <sheet>
+                    <div class="alert alert-warning" role="status" invisible="not validity_mismatch">The portal validity does not match the distance rule (#23.5, BR-ODC-04).</div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="consignment_id"/>
+                            <field name="consignor_invoice_number"/>
+                            <field name="consignor_invoice_date"/>
+                            <field name="consignor_invoice_value"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="generated_on"/>
+                            <field name="distance_km"/>
+                            <field name="is_odc"/>
+                            <field name="valid_until"/>
+                            <field name="expected_valid_until"/>
+                            <field name="validity_mismatch" invisible="1"/>
+                            <field name="partb_vehicle"/>
+                            <field name="attachment" filename="attachment_name"/>
+                            <field name="attachment_name" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="update_ids" readonly="1">
+                        <list>
+                            <field name="trip_id"/>
+                            <field name="kind"/>
+                            <field name="vehicle_number"/>
+                            <field name="new_valid_until"/>
+                            <field name="state"/>
+                            <field name="done_by_id"/>
+                            <field name="done_at"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="tms_ewaybill_list" model="ir.ui.view">
+        <field name="name">tms.ewaybill.list</field>
+        <field name="model">tms.ewaybill</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="consignment_id"/>
+                <field name="generated_on"/>
+                <field name="valid_until"/>
+                <field name="partb_vehicle"/>
+                <field name="is_odc"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_ewaybill" model="ir.actions.act_window">
+        <field name="name">E-way bills</field>
+        <field name="res_model">tms.ewaybill</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="tms_ewaybill_update_list" model="ir.ui.view">
+        <field name="name">tms.ewaybill.update.list</field>
+        <field name="model">tms.ewaybill.update</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" decoration-warning="state == 'pending'">
+                <field name="trip_id" readonly="id" options="{'no_create': True}"/>
+                <field name="ewaybill_id"/>
+                <field name="kind"/>
+                <field name="vehicle_number"/>
+                <field name="consolidated_number" optional="show"/>
+                <field name="new_valid_until" optional="show"/>
+                <field name="evidence_reference"/>
+                <field name="evidence" filename="evidence_name"/>
+                <field name="evidence_name" column_invisible="1"/>
+                <field name="state"/>
+                <field name="done_by_id" optional="hide"/>
+                <button name="action_done" type="object" string="Done" icon="fa-check" invisible="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_ewaybill_update" model="ir.actions.act_window">
+        <field name="name">E-way bill tasks</field>
+        <field name="res_model">tms.ewaybill.update</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[]</field>
+    </record>
+</odoo>

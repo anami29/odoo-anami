@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="purchase_order_form_tms_core" model="ir.ui.view">
+        <field name="name">purchase.order.form.tms.core</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_print_hire_memo" type="object" string="Print hire memo" invisible="not tms_is_hire_memo"/>
+                <button name="action_open_reason" type="object" string="Approve cancellation" invisible="not tms_is_hire_memo or state not in ('purchase', 'done') or tms_cancel_approved_by_id" groups="tms_core.group_branch_manager" context="{'tms_reason_method': 'action_tms_approve_cancel'}"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_matches" type="object" class="oe_stat_button" icon="fa-balance-scale" string="Three-way match" invisible="not tms_is_hire_memo"/>
+            </xpath>
+            <xpath expr="//field[@name='partner_ref']" position="after">
+                <field name="tms_is_hire_memo"/>
+                <field name="tms_trip_id" invisible="not tms_is_hire_memo"/>
+                <field name="tms_assignment_id" invisible="not tms_is_hire_memo"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='product_id']" position="before">
+                <field name="tms_item_no" string="Item" readonly="id"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='product_id']" position="after">
+                <field name="tms_hire_element" optional="show" column_invisible="not parent.tms_is_hire_memo"/>
+                <field name="tms_extra_approved" optional="show" column_invisible="not parent.tms_is_hire_memo"/>
+                <field name="tms_waiver_reason" optional="hide" column_invisible="not parent.tms_is_hire_memo"/>
+                <button name="action_tms_approve_extra" type="object" icon="fa-check" title="Approve extra" invisible="tms_extra_approved or tms_hire_element in (False, 'hire', 'commission')" groups="tms_core.group_branch_manager"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Hire memo" name="hire_memo" invisible="not tms_is_hire_memo">
+                    <group>
+                        <group>
+                            <field name="tms_vehicle_number"/>
+                            <field name="tms_driver_name"/>
+                            <field name="tms_broker_id"/>
+                            <field name="tms_route"/>
+                            <field name="tms_halting_rate"/>
+                            <field name="tms_vendor_liable_breakdown"/>
+                            <field name="tms_full_hire_on_replacement"/>
+                        </group>
+                        <group>
+                            <field name="tms_hire_amount"/>
+                            <field name="tms_advance_percent"/>
+                            <field name="tms_advance_cap"/>
+                            <field name="tms_advance_total"/>
+                            <field name="tms_balance"/>
+                            <field name="tms_tds_treatment"/>
+                            <field name="tms_pro_rata_fraction" readonly="1"/>
+                            <field name="tms_cancel_approved_by_id"/>
+                            <field name="tms_cancel_reason"/>
+                        </group>
+                    </group>
+                    <separator string="Advances (BR-HIR-04, BR-HIR-16)"/>
+                    <field name="tms_advance_ids">
+                        <list editable="bottom">
+                            <field name="kind"/>
+                            <field name="date"/>
+                            <field name="amount" sum="Total"/>
+                            <field name="fuel_station" optional="show"/>
+                            <field name="fuel_litres" optional="hide"/>
+                            <field name="state" readonly="1"/>
+                            <field name="move_id" readonly="1"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <button name="action_post" type="object" string="Pay" invisible="state != 'draft'"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    <record id="action_tms_hire_memo" model="ir.actions.act_window">
+        <field name="name">Hire memos</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('tms_is_hire_memo', '=', True)]</field>
+        <field name="context">{'default_tms_is_hire_memo': True}</field>
+    </record>
+    <record id="action_tms_hire_payables" model="ir.actions.act_window">
+        <field name="name">Hire payables</field>
+        <field name="res_model">account.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('move_type', '=', 'in_invoice'), ('tms_match_ids', '!=', False), ('payment_state', 'not in', ('paid', 'reversed'))]</field>
+    </record>
+</odoo>

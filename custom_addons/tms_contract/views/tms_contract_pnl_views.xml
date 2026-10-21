@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_contract_pnl_list" model="ir.ui.view">
+        <field name="name">tms.contract.pnl.list</field>
+        <field name="model">tms.contract.pnl</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="contract_id"/>
+                <field name="partner_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="state" widget="badge"/>
+                <field name="value" sum="Value"/>
+                <field name="extensions" sum="Extensions"/>
+                <field name="invoiced" sum="Invoiced"/>
+                <field name="reserved" sum="Reserved"/>
+                <field name="balance" sum="Balance" decoration-danger="balance &lt; 0"/>
+                <field name="utilisation" widget="progressbar"/>
+                <field name="revenue" sum="Revenue"/>
+                <field name="estimated_cost" sum="Estimated cost" optional="hide"/>
+                <field name="actual" sum="Actual cost"/>
+                <field name="standard_charge" sum="Standard charge" optional="hide"/>
+                <field name="contribution" sum="Contribution"/>
+                <field name="margin_pct"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_contract_pnl_pivot" model="ir.ui.view">
+        <field name="name">tms.contract.pnl.pivot</field>
+        <field name="model">tms.contract.pnl</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="partner_id" type="row"/>
+                <field name="value" type="measure"/>
+                <field name="invoiced" type="measure"/>
+                <field name="reserved" type="measure"/>
+                <field name="balance" type="measure"/>
+                <field name="revenue" type="measure"/>
+                <field name="contribution" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="tms_contract_pnl_search" model="ir.ui.view">
+        <field name="name">tms.contract.pnl.search</field>
+        <field name="model">tms.contract.pnl</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="contract_id"/>
+                <field name="partner_id"/>
+                <filter name="running" string="Running" domain="[('state', 'in', ('active', 'exhausted', 'expired'))]"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_partner" string="Customer" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_contract_pnl" model="ir.actions.act_window">
+        <field name="name">Contract P&amp;L</field>
+        <field name="res_model">tms.contract.pnl</field>
+        <field name="view_mode">list,pivot</field>
+    </record>
+</odoo>

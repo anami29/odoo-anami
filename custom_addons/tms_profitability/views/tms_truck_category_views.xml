@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_truck_category_list" model="ir.ui.view">
+        <field name="name">tms.truck.category.list</field>
+        <field name="model">tms.truck.category</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="cost_pool"/>
+                <field name="account_id"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_truck_category" model="ir.actions.act_window">
+        <field name="name">Truck cost categories</field>
+        <field name="res_model">tms.truck.category</field>
+        <field name="view_mode">list</field>
+    </record>
+    <record id="tms_category_form_pnl" model="ir.ui.view">
+        <field name="name">tms.category.form.pnl</field>
+        <field name="model">tms.category</field>
+        <field name="inherit_id" ref="tms_core.tms_category_list"/>
+        <field name="arch" type="xml">
+            <field name="default_cost_class" position="after">
+                <field name="truck_category_id" optional="show" invisible="default_cost_class not in ('truck_running', 'truck_fixed')"/>
+            </field>
+        </field>
+    </record>
+</odoo>

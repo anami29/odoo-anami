@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- BR-BRN-02: a contract is seen by its branch and by the branches allowed to release against it -->
+    <record id="rule_tms_contract_branch" model="ir.rule">
+        <field name="name">tms.contract: own or releasing branches</field>
+        <field name="model_id" ref="model_tms_contract"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('company_id', 'in', company_ids), ('branch_ids', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_contract_rate_branch" model="ir.rule">
+        <field name="name">tms.contract.rate: contract branches</field>
+        <field name="model_id" ref="model_tms_contract_rate"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('contract_id.company_id', 'in', company_ids), ('contract_id.branch_ids', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_contract_item_rate_branch" model="ir.rule">
+        <field name="name">tms.contract.item.rate: contract branches</field>
+        <field name="model_id" ref="model_tms_contract_item_rate"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', '|', ('contract_id', '=', False), ('contract_id.company_id', 'in', company_ids), ('contract_id.branch_ids', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_contract_extension_branch" model="ir.rule">
+        <field name="name">tms.contract.extension: contract branches</field>
+        <field name="model_id" ref="model_tms_contract_extension"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('contract_id.company_id', 'in', company_ids), ('contract_id.branch_ids', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_contract_excess_branch" model="ir.rule">
+        <field name="name">tms.contract.excess: contract branches</field>
+        <field name="model_id" ref="model_tms_contract_excess"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('contract_id.company_id', 'in', company_ids), ('contract_id.branch_ids', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_contract_reservation_branch" model="ir.rule">
+        <field name="name">tms.contract.reservation: contract branches</field>
+        <field name="model_id" ref="model_tms_contract_reservation"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('contract_id.company_id', 'in', company_ids), ('contract_id.branch_ids', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_contract_escalation_branch" model="ir.rule">
+        <field name="name">tms.contract.escalation: contract branches</field>
+        <field name="model_id" ref="model_tms_contract_escalation"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('contract_id.company_id', 'in', company_ids), ('contract_id.branch_ids', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_tms_contract_pnl_branch" model="ir.rule">
+        <field name="name">tms.contract.pnl: allowed branches</field>
+        <field name="model_id" ref="model_tms_contract_pnl"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>

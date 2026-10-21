@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_odc_permit_list" model="ir.ui.view">
+        <field name="name">tms.odc.permit.list</field>
+        <field name="model">tms.odc.permit</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="trip_id"/>
+                <field name="state_id"/>
+                <field name="name"/>
+                <field name="authority" optional="show"/>
+                <field name="valid_from"/>
+                <field name="valid_to"/>
+                <field name="puller_plate"/>
+                <field name="window_from" widget="float_time"/>
+                <field name="window_to" widget="float_time"/>
+                <field name="escort_required"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_odc_permit_form" model="ir.ui.view">
+        <field name="name">tms.odc.permit.form</field>
+        <field name="model">tms.odc.permit</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" placeholder="Permit number"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="trip_id"/>
+                            <field name="state_id" options="{'no_create': True}"/>
+                            <field name="authority"/>
+                            <field name="valid_from"/>
+                            <field name="valid_to"/>
+                        </group>
+                        <group>
+                            <field name="vehicle_id" options="{'no_create': True}"/>
+                            <field name="puller_plate"/>
+                            <label for="window_from" string="Movement window"/>
+                            <div class="d-flex gap-2"><field name="window_from" widget="float_time" class="oe_inline"/><span>to</span><field name="window_to" widget="float_time" class="oe_inline"/></div>
+                            <field name="escort_required"/>
+                            <field name="escort_count" invisible="not escort_required"/>
+                            <field name="file" filename="file_name"/>
+                            <field name="file_name" invisible="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="tms_odc_permit_search" model="ir.ui.view">
+        <field name="name">tms.odc.permit.search</field>
+        <field name="model">tms.odc.permit</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="trip_id"/>
+                <field name="state_id"/>
+                <field name="puller_plate"/>
+                <filter name="current" string="Valid today" domain="[('valid_from', '&lt;=', context_today().strftime('%Y-%m-%d')), ('valid_to', '&gt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="escort" string="Escort required" domain="[('escort_required', '=', True)]"/>
+                <group expand="0" string="Group by">
+                    <filter name="by_state" string="State" context="{'group_by': 'state_id'}"/>
+                    <filter name="by_trip" string="Trip" context="{'group_by': 'trip_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_odc_permit" model="ir.actions.act_window">
+        <field name="name">ODC permits</field>
+        <field name="res_model">tms.odc.permit</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="tms_trip_equipment_list" model="ir.ui.view">
+        <field name="name">tms.trip.equipment.list</field>
+        <field name="model">tms.trip.equipment</field>
+        <field name="arch" type="xml">
+            <list create="0" decoration-danger="not filled" decoration-warning="substituted and not approved_by_id">
+                <field name="trip_id"/>
+                <field name="kind"/>
+                <field name="required_count"/>
+                <field name="actual_kind"/>
+                <field name="actual_count"/>
+                <field name="source"/>
+                <field name="vehicle_id"/>
+                <field name="purchase_line_id"/>
+                <field name="registration"/>
+                <field name="filled"/>
+                <field name="substituted"/>
+                <field name="substitution_reason"/>
+                <field name="approved_by_id"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_trip_equipment" model="ir.actions.act_window">
+        <field name="name">ODC equipment</field>
+        <field name="res_model">tms.trip.equipment</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

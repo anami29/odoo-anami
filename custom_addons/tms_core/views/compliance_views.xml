@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_compliance_document_type_list" model="ir.ui.view">
+        <field name="name">tms.compliance.document.type.list</field>
+        <field name="model">tms.compliance.document.type</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="applies_to"/>
+                <field name="mandatory_for_start"/>
+                <field name="reminder_offsets"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_compliance_document_type" model="ir.actions.act_window">
+        <field name="name">Compliance document types</field>
+        <field name="res_model">tms.compliance.document.type</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="tms_compliance_document_list" model="ir.ui.view">
+        <field name="name">tms.compliance.document.list</field>
+        <field name="model">tms.compliance.document</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="state == 'expired'" decoration-warning="state == 'expiring'">
+                <field name="holder_name"/>
+                <field name="type_id"/>
+                <field name="number"/>
+                <field name="valid_from"/>
+                <field name="valid_until"/>
+                <field name="state"/>
+                <field name="verified_by_id"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_compliance_document_form" model="ir.ui.view">
+        <field name="name">tms.compliance.document.form</field>
+        <field name="model">tms.compliance.document</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_verify" type="object" string="Mark verified" class="btn-primary" invisible="verified_by_id"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="type_id"/>
+                            <field name="number"/>
+                            <field name="valid_from"/>
+                            <field name="valid_until"/>
+                            <field name="attachment" filename="attachment_name"/>
+                            <field name="attachment_name" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="vehicle_id"/>
+                            <field name="driver_id"/>
+                            <field name="market_vehicle_id"/>
+                            <field name="verified_by_id"/>
+                            <field name="verified_on"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="tms_compliance_document_search" model="ir.ui.view">
+        <field name="name">tms.compliance.document.search</field>
+        <field name="model">tms.compliance.document</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="holder_name"/>
+                <field name="number"/>
+                <field name="type_id"/>
+                <filter name="expiring" string="Expiring within 30 days" domain="[('state', '=', 'expiring')]"/>
+                <filter name="expired" string="Expired" domain="[('state', '=', 'expired')]"/>
+                <group expand="0" string="Group by">
+                    <filter name="by_type" string="Type" context="{'group_by': 'type_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_compliance_document" model="ir.actions.act_window">
+        <field name="name">Compliance documents</field>
+        <field name="res_model">tms.compliance.document</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="tms_vehicle_class_list" model="ir.ui.view">
+        <field name="name">tms.vehicle.class.list</field>
+        <field name="model">tms.vehicle.class</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="planned_annual_km"/>
+                <field name="payload_kg"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_vehicle_class" model="ir.actions.act_window">
+        <field name="name">Vehicle classes</field>
+        <field name="res_model">tms.vehicle.class</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

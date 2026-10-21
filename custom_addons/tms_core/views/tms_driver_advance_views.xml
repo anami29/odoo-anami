@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_driver_advance_list" model="ir.ui.view">
+        <field name="name">tms.driver.advance.list</field>
+        <field name="model">tms.driver.advance</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name" readonly="1"/>
+                <field name="trip_id" readonly="state != 'draft'"/>
+                <field name="driver_id" readonly="state != 'draft'"/>
+                <field name="date" readonly="state != 'draft'"/>
+                <field name="payment_mode" readonly="state != 'draft'"/>
+                <field name="amount" sum="Total" readonly="state != 'draft'"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="paid_by_id" readonly="1"/>
+                <field name="move_id" readonly="1"/>
+                <field name="state" readonly="1"/>
+                <button name="action_post" type="object" string="Post" invisible="state != 'draft'"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_driver_advance" model="ir.actions.act_window">
+        <field name="name">Driver advances</field>
+        <field name="res_model">tms.driver.advance</field>
+        <field name="view_mode">list</field>
+    </record>
+    <record id="tms_driver_settlement_form" model="ir.ui.view">
+        <field name="name">tms.driver.settlement.form</field>
+        <field name="model">tms.driver.settlement</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_done" type="object" string="Settle" class="btn-primary" invisible="state != 'draft'" groups="tms_core.group_branch_accountant"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="trip_id" readonly="1"/>
+                            <field name="driver_id" readonly="state != 'draft'"/>
+                            <field name="payment_mode"/>
+                        </group>
+                        <group string="S = advances − driver-cash expenses + recoveries (#23.3)">
+                            <field name="advance_total"/>
+                            <field name="cash_expense_total"/>
+                            <field name="recovery_total"/>
+                            <field name="balance"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="recovery_move_id"/>
+                            <field name="move_id"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_tms_driver_settlement" model="ir.actions.act_window">
+        <field name="name">Driver settlements</field>
+        <field name="res_model">tms.driver.settlement</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

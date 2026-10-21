@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_market_vehicle_list" model="ir.ui.view">
+        <field name="name">tms.market.vehicle.list</field>
+        <field name="model">tms.market.vehicle</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="blacklisted">
+                <field name="name"/>
+                <field name="owner_id"/>
+                <field name="broker_id"/>
+                <field name="tms_vehicle_class_id"/>
+                <field name="payload_kg"/>
+                <field name="blacklisted"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_market_vehicle_form" model="ir.ui.view">
+        <field name="name">tms.market.vehicle.form</field>
+        <field name="model">tms.market.vehicle</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Blacklisted" bg_color="text-bg-danger" invisible="not blacklisted"/>
+                    <div class="oe_title"><h1><field name="name" placeholder="MH 04 AB 1234"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="owner_id"/>
+                            <field name="broker_id"/>
+                            <field name="tms_vehicle_class_id"/>
+                            <field name="payload_kg"/>
+                        </group>
+                        <group>
+                            <field name="blacklisted"/>
+                            <field name="blacklist_reason" invisible="not blacklisted" required="blacklisted"/>
+                            <field name="vehicle_id"/>
+                        </group>
+                    </group>
+                    <separator string="Documents (BR-CMP-05)"/>
+                    <field name="compliance_document_ids" context="{'default_market_vehicle_id': id}">
+                        <list editable="bottom">
+                            <field name="type_id"/>
+                            <field name="number"/>
+                            <field name="valid_until"/>
+                            <field name="attachment" filename="attachment_name"/>
+                            <field name="attachment_name" column_invisible="1"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_tms_market_vehicle" model="ir.actions.act_window">
+        <field name="name">Market vehicles</field>
+        <field name="res_model">tms.market.vehicle</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

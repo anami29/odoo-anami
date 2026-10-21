@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-CFG-02: owned-fleet menus show only while a branch runs Hybrid mode -->
+    <record id="group_owned_fleet_menus" model="res.groups">
+        <field name="name">Owned-fleet menus (Hybrid mode)</field>
+        <field name="category_id" ref="base.module_category_hidden"/>
+    </record>
+    <record id="group_tms_staff" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_owned_fleet_menus'))]"/>
+    </record>
+    <record id="tms.menu_fleet_vehicle" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_owned_fleet_menus')])]"/>
+    </record>
+    <record id="tms.menu_tms_insurance" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_owned_fleet_menus')])]"/>
+    </record>
+    <record id="tms.menu_fleet_odometers" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_owned_fleet_menus')])]"/>
+    </record>
+    <record id="tms.menu_tms_driver" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_owned_fleet_menus')])]"/>
+    </record>
+    <record id="tms.menu_fleet_reporting_cost" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_owned_fleet_menus')])]"/>
+    </record>
+
+    <menuitem id="menu_tms_exception_dashboard" name="Exception dashboard" parent="tms.dashboard" action="action_tms_kpi_dashboard" sequence="1"/>
+
+    <menuitem id="menu_tms_lr" name="Consignment notes (LR)" parent="tms.operations" action="action_tms_consignment" sequence="1"/>
+    <menuitem id="menu_tms_pod" name="POD verification" parent="tms.operations" action="action_tms_pod" sequence="30"/>
+    <menuitem id="menu_tms_ewaybill" name="E-way bills" parent="tms.operations" action="action_tms_ewaybill" sequence="40"/>
+    <menuitem id="menu_tms_ewaybill_tasks" name="E-way bill tasks" parent="tms.operations" action="action_tms_ewaybill_update" sequence="41"/>
+    <menuitem id="menu_tms_dsr" name="DSR log" parent="tms.operations" action="action_tms_dsr_log" sequence="50"/>
+    <menuitem id="menu_tms_breakdown" name="Breakdowns" parent="tms.operations" action="action_tms_breakdown" sequence="60"/>
+    <menuitem id="menu_tms_incident" name="Incidents" parent="tms.operations" action="action_tms_incident" sequence="70"/>
+    <menuitem id="menu_tms_planning_board" name="Planning board" parent="tms.operations" action="action_tms_planning_board" sequence="80" groups="group_owned_fleet_menus"/>
+
+    <menuitem id="menu_tms_finance" name="Trip money" parent="tms.root" sequence="25"/>
+    <menuitem id="menu_tms_charge" name="Charges and recoveries" parent="menu_tms_finance" action="action_tms_charge" sequence="10"/>
+    <menuitem id="menu_tms_expense" name="Trip expenses" parent="menu_tms_finance" action="action_tms_expense" sequence="20"/>
+    <menuitem id="menu_tms_driver_advance" name="Driver advances" parent="menu_tms_finance" action="action_tms_driver_advance" sequence="30"/>
+    <menuitem id="menu_tms_driver_settlement" name="Driver settlements" parent="menu_tms_finance" action="action_tms_driver_settlement" sequence="40"/>
+    <menuitem id="menu_tms_hire_memo" name="Hire memos" parent="menu_tms_finance" action="action_tms_hire_memo" sequence="50"/>
+    <menuitem id="menu_tms_match" name="Three-way matches" parent="menu_tms_finance" action="action_tms_vendor_bill_match" sequence="60"/>
+    <menuitem id="menu_tms_claim" name="Claims" parent="menu_tms_finance" action="action_tms_claim" sequence="70"/>
+
+    <menuitem id="menu_tms_market_vehicle" name="Market vehicles" parent="tms.data" action="action_tms_market_vehicle" sequence="15"/>
+    <menuitem id="menu_tms_compliance_document" name="Compliance documents" parent="tms.data" action="action_tms_compliance_document" sequence="16"/>
+
+    <menuitem id="menu_tms_report_lr" name="LR register" parent="tms.reporting" action="action_tms_lr_register" sequence="1"/>
+    <menuitem id="menu_tms_report_dsr" name="DSR log" parent="tms.reporting" action="action_tms_dsr_log" sequence="5"/>
+    <menuitem id="menu_tms_report_compliance" name="Compliance expiry" parent="tms.reporting" action="action_tms_compliance_document" sequence="6"/>
+    <menuitem id="menu_tms_report_claims" name="Claims register" parent="tms.reporting" action="action_tms_claim" sequence="7"/>
+    <menuitem id="menu_tms_report_recovery" name="Recovery ageing" parent="tms.reporting" action="action_tms_recovery_ageing" sequence="8"/>
+    <menuitem id="menu_tms_report_hire_payables" name="Hire payables" parent="tms.reporting" action="action_tms_hire_payables" sequence="9"/>
+    <menuitem id="menu_tms_report_receivables" name="Receivables ageing" parent="tms.reporting" action="action_tms_receivables_ageing" sequence="11"/>
+    <menuitem id="menu_tms_report_override" name="Override log" parent="tms.reporting" action="action_tms_override_log" sequence="20"/>
+
+    <menuitem id="menu_tms_config_category" name="Incident, charge and expense types" parent="tms.config" action="action_tms_category" sequence="50"/>
+    <menuitem id="menu_tms_config_doc_type" name="Compliance document types" parent="tms.config" action="action_tms_compliance_document_type" sequence="51"/>
+    <menuitem id="menu_tms_config_vehicle_class" name="Vehicle classes" parent="tms.config" action="action_tms_vehicle_class" sequence="52"/>
+</odoo>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-EXE-01: code OCA's stages and add Started, In Transit and Delivered -->
+    <function model="tms.stage" name="_tms_seed_codes"/>
+    <!-- OCA reads these as integers; seed them so START never fails on a fresh database -->
+    <record id="icp_driver_security_days" model="ir.config_parameter" forcecreate="True">
+        <field name="key">tms.default_driver_license_security_days</field>
+        <field name="value">7</field>
+    </record>
+    <record id="icp_vehicle_security_days" model="ir.config_parameter" forcecreate="True">
+        <field name="key">tms.default_vehicle_insurance_security_days</field>
+        <field name="value">7</field>
+    </record>
+</odoo>

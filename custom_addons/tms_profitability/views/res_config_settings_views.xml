@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_tms_profitability" model="ir.ui.view">
+        <field name="name">res.config.settings.form.tms.profitability</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="tms_estimate.res_config_settings_view_form_tms_estimate"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@name='tms_estimate']" position="after">
+                <block title="Profitability (BR-CFG-14)" name="tms_profitability">
+                    <setting string="Capitalisation threshold" help="BR-PNL-11: a repair at or above it is spread over its useful life">
+                        <field name="tms_capitalisation_threshold"/>
+                    </setting>
+                    <setting string="Revenue dating basis" help="OP-14: dates revenue, trip direct cost and the standard charge">
+                        <field name="tms_revenue_dating"/>
+                    </setting>
+                    <setting string="Empty return counts in trip km" help="#18.3">
+                        <field name="tms_empty_return_in_km"/>
+                    </setting>
+                    <setting string="Rate review interval (months)" help="#18.3: the Finance Head reviews rates this often">
+                        <field name="tms_rate_review_months"/>
+                    </setting>
+                    <setting string="Review flag after adverse months" help="BR-PNL-21">
+                        <field name="tms_review_flag_months"/>
+                    </setting>
+                    <setting string="Trip margin target %" help="KPI-13: the kickoff target">
+                        <field name="tms_margin_target_pct"/>
+                    </setting>
+                    <setting string="Head office" help="BR-PNL-32: this company's overhead is head-office cost">
+                        <field name="tms_head_office"/>
+                    </setting>
+                    <setting string="Profitability accounts" help="Prepaid truck costs, accrued freight and accrued trip costs; created on first use when empty">
+                        <div class="d-flex flex-column gap-1">
+                            <field name="tms_prepaid_account_id" placeholder="Prepaid truck costs"/>
+                            <field name="tms_accrued_revenue_account_id" placeholder="Accrued freight"/>
+                            <field name="tms_accrued_cost_account_id" placeholder="Accrued trip costs"/>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

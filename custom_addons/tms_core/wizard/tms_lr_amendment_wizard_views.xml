@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_lr_amendment_wizard_form" model="ir.ui.view">
+        <field name="name">tms.lr.amendment.wizard.form</field>
+        <field name="model">tms.lr.amendment.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="consignment_id" readonly="1"/>
+                    <field name="reason"/>
+                    <field name="new_consignee_id"/>
+                    <field name="new_destination_id"/>
+                    <field name="is_diversion"/>
+                    <field name="diversion_km" invisible="not is_diversion"/>
+                    <field name="new_actual_weight"/>
+                    <field name="new_packages"/>
+                </group>
+                <footer>
+                    <button name="action_request" type="object" string="Request approval" class="btn-primary"/>
+                    <button special="cancel" string="Discard"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

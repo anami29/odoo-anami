@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PNL-22, BR-PNL-31, BR-PNL-36, #18.3: the month-end close -->
+    <record id="tms_pnl_close_list" model="ir.ui.view">
+        <field name="name">tms.pnl.close.list</field>
+        <field name="model">tms.pnl.close</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'closed'" decoration-danger="difference != 0">
+                <field name="name"/>
+                <field name="company_id" optional="show" groups="base.group_multi_company"/>
+                <field name="date_from"/>
+                <field name="run_count"/>
+                <field name="std_charge_total" sum="Charge"/>
+                <field name="recovery_variance" sum="Variance"/>
+                <field name="difference"/>
+                <field name="state" widget="badge"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_pnl_close_form" model="ir.ui.view">
+        <field name="name">tms.pnl.close.form</field>
+        <field name="model">tms.pnl.close</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_run" type="object" string="Run close" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_run" type="object" string="Re-run" invisible="state != 'computed'"/>
+                    <button name="action_close" type="object" string="Close period" class="btn-primary" invisible="state != 'computed'" groups="tms_core.group_finance_head" confirm="Closing freezes the period. Late lines will post to the next open period."/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_trucks" type="object" class="oe_stat_button" icon="fa-truck" string="Recovery statement"/>
+                    </div>
+                    <div class="alert alert-danger" role="alert" invisible="difference == 0">
+                        The customer view plus recovery variance differs from the truck view; the period cannot close
+                        until the difference is zero (BR-PNL-31).
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="not note"><field name="note"/></div>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="company_id" readonly="state != 'draft'"/>
+                            <field name="date_from" readonly="state != 'draft'"/>
+                            <field name="date_to"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="run_count"/>
+                            <field name="run_on"/>
+                            <field name="run_by_id"/>
+                            <field name="closed_on" invisible="state != 'closed'"/>
+                            <field name="closed_by_id" invisible="state != 'closed'"/>
+                        </group>
+                        <group string="Results">
+                            <field name="released_count"/>
+                            <field name="accrued_revenue"/>
+                            <field name="accrued_cost"/>
+                            <field name="std_charge_total"/>
+                            <field name="recovery_variance"/>
+                            <field name="difference"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Recovery statement" name="trucks">
+                            <field name="truck_ids" readonly="1">
+                                <list decoration-danger="variance &lt; 0">
+                                    <field name="vehicle_id"/>
+                                    <field name="cost_pool"/>
+                                    <field name="charged" sum="Charged"/>
+                                    <field name="actual" sum="Actual"/>
+                                    <field name="variance" sum="Variance"/>
+                                    <field name="volume_variance" sum="Volume"/>
+                                    <field name="spending_variance" sum="Spending"/>
+                                    <field name="other_variance" optional="hide"/>
+                                    <field name="planned_km"/>
+                                    <field name="charged_km"/>
+                                    <field name="odometer_km"/>
+                                    <field name="gap_km" decoration-warning="gap_km &gt; 0"/>
+                                    <field name="idle_days" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Reconciliation check" name="diff">
+                            <field name="diff_ids" readonly="1">
+                                <list>
+                                    <field name="reason"/>
+                                    <field name="kind"/>
+                                    <field name="trip_id"/>
+                                    <field name="move_line_id"/>
+                                    <field name="amount" sum="Difference"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Accruals" name="accruals">
+                            <field name="move_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="ref"/>
+                                    <field name="amount_total_signed"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Standard charge" name="std">
+                            <field name="std_line_ids" readonly="1">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="name"/>
+                                    <field name="tms_trip_id"/>
+                                    <field name="tms_vehicle_id"/>
+                                    <field name="tms_std_side"/>
+                                    <field name="tms_std_pool"/>
+                                    <field name="tms_km"/>
+                                    <field name="tms_rate"/>
+                                    <field name="amount" sum="Net"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_tms_pnl_close" model="ir.actions.act_window">
+        <field name="name">Month-end close</field>
+        <field name="res_model">tms.pnl.close</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

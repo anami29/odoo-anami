@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_reason_wizard_form" model="ir.ui.view">
+        <field name="name">tms.reason.wizard.form</field>
+        <field name="model">tms.reason.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="res_model" invisible="1"/>
+                <field name="res_ids" invisible="1"/>
+                <field name="method" invisible="1"/>
+                <field name="show_waive" invisible="1"/>
+                <group>
+                    <field name="reason" placeholder="Why? This is logged with your name and the time."/>
+                    <field name="waive" invisible="not show_waive"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Confirm" class="btn-primary"/>
+                    <button special="cancel" string="Discard"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

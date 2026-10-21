@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_contract_item_form" model="ir.ui.view">
+        <field name="name">sale.order.line.tms.contract.item.form</field>
+        <field name="model">sale.order.line</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <form string="Contract item">
+                <header>
+                    <button name="action_tms_open_release" type="object" string="Release" class="btn-primary"
+                            invisible="tms_release_state != 'draft' or not id"/>
+                    <button name="action_tms_request_excess" type="object" string="Request excess"
+                            invisible="not tms_held"/>
+                    <button name="action_tms_approve_markup" type="object" string="Approve below markup floor"
+                            invisible="tms_release_state != 'draft' or tms_markup_approved_by_id or not id"
+                            groups="tms_core.group_branch_manager"/>
+                    <button name="action_tms_open_amendment" type="object" string="Amend"
+                            invisible="tms_release_state != 'released'" groups="tms_core.group_operations_head"/>
+                    <button name="action_tms_invoice_supplementary" type="object" string="Invoice escalation"
+                            invisible="not tms_supplementary_amount" groups="tms_core.group_branch_accountant"/>
+                    <button name="action_tms_close_item" type="object" string="Close for billing"
+                            invisible="tms_release_state != 'released'" groups="tms_core.group_sales_executive,tms_core.group_branch_manager"/>
+                    <button name="action_tms_cancel_item" type="object" string="Cancel item"
+                            invisible="tms_release_state not in ('draft', 'released') or not id"
+                            confirm="Cancel this movement and return its reservation to the balance?"/>
+                    <field name="tms_release_state" widget="statusbar" statusbar_visible="draft,released,closed"/>
+                </header>
+                <div class="alert alert-warning" role="alert" invisible="not tms_held">
+                    Held (BR-CON-10): budget <field name="tms_budget" class="oe_inline"/> against a balance of
+                    <field name="tms_balance_available" class="oe_inline"/>; shortfall <field name="tms_shortfall" class="oe_inline"/>.
+                    Only a customer extension or an approved excess releases it.
+                </div>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Item <field name="tms_item_no" readonly="1" class="oe_inline"/></h1>
+                        <field name="tms_contract_id" readonly="1"/>
+                    </div>
+                    <group>
+                        <group string="Movement">
+                            <field name="name"/>
+                            <field name="tms_origin_id" readonly="tms_release_state != 'draft'"/>
+                            <field name="tms_destination_id" readonly="tms_release_state != 'draft'"/>
+                            <field name="tms_distance_km" readonly="tms_release_state != 'draft'"/>
+                            <field name="tms_vehicle_class_id" readonly="tms_release_state != 'draft'"/>
+                            <field name="tms_cargo_type" readonly="tms_release_state != 'draft'"/>
+                            <field name="tms_estimate_id" readonly="1"/>
+                            <field name="tms_is_movement" invisible="1"/>
+                        </group>
+                        <group string="Budget and reservation (#23.7)">
+                            <field name="tms_freight"/>
+                            <field name="tms_incidental_estimate"/>
+                            <field name="tms_budget"/>
+                            <field name="tms_budget_reserved" invisible="tms_release_state == 'draft'"/>
+                            <field name="tms_incidental_actual"/>
+                            <field name="tms_other_charges"/>
+                            <field name="tms_supplementary_amount" invisible="not tms_supplementary_amount"/>
+                            <field name="tms_expected"/>
+                            <field name="tms_item_invoiced"/>
+                            <field name="tms_open_reservation"/>
+                            <field name="tms_contribution"/>
+                            <field name="tms_contribution_pct"/>
+                            <field name="tms_released_on" invisible="not tms_released_on"/>
+                            <field name="tms_released_by_id" invisible="not tms_released_by_id"/>
+                            <field name="tms_markup_approved_by_id" invisible="not tms_markup_approved_by_id"/>
+                            <field name="tms_close_reason" invisible="not tms_close_reason"/>
+                            <field name="tms_held" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Rate lines used (BR-CON-05)" name="rates">
+                            <field name="tms_contract_rate_ids" readonly="tms_release_state != 'draft'"
+                                   context="{'default_sale_line_id': id}">
+                                <list editable="bottom">
+                                    <field name="rate_id" options="{'no_create': True}"/>
+                                    <field name="basis"/>
+                                    <field name="units"/>
+                                    <field name="km"/>
+                                    <field name="days" optional="hide"/>
+                                    <field name="states" optional="hide"/>
+                                    <field name="tonnes" optional="hide"/>
+                                    <field name="trips" optional="hide"/>
+                                    <field name="quantity"/>
+                                    <field name="rate"/>
+                                    <field name="amount" sum="Freight"/>
+                                    <field name="contract_id" column_invisible="1"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="LRs" name="lrs">
+                            <field name="tms_lr_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="billing_partner_id"/>
+                                    <field name="charged_weight"/>
+                                    <field name="freight_amount" sum="Freight"/>
+                                    <field name="freight_invoiced" sum="Invoiced"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Reservation lines" name="ledger">
+                            <field name="tms_reservation_ids" readonly="1">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="event"/>
+                                    <field name="amount" sum="Open reservation"/>
+                                    <field name="consignment_id"/>
+                                    <field name="trip_id"/>
+                                    <field name="source"/>
+                                    <field name="note"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Excess" name="excess">
+                            <field name="tms_excess_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="amount"/>
+                                    <field name="cover"/>
+                                    <field name="open_amount"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="tms_contract_item_list" model="ir.ui.view">
+        <field name="name">sale.order.line.tms.contract.item.list</field>
+        <field name="model">sale.order.line</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list string="Contract items" create="0">
+                <field name="tms_contract_id"/>
+                <field name="tms_item_no" string="Item"/>
+                <field name="order_partner_id" string="Customer"/>
+                <field name="tms_origin_id"/>
+                <field name="tms_destination_id"/>
+                <field name="tms_distance_km"/>
+                <field name="tms_release_state" widget="badge" decoration-success="tms_release_state == 'released'"/>
+                <field name="tms_held"/>
+                <field name="tms_freight" sum="Freight"/>
+                <field name="tms_budget_reserved" sum="Budget"/>
+                <field name="tms_shortfall" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="tms_contract_item_search" model="ir.ui.view">
+        <field name="name">sale.order.line.tms.contract.item.search</field>
+        <field name="model">sale.order.line</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="tms_contract_id"/>
+                <field name="order_partner_id"/>
+                <filter name="draft" string="Draft" domain="[('tms_release_state', '=', 'draft')]"/>
+                <filter name="released" string="Released" domain="[('tms_release_state', '=', 'released')]"/>
+                <filter name="closed" string="Closed" domain="[('tms_release_state', 'in', ('closed', 'cancel'))]"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_contract" string="Contract" context="{'group_by': 'tms_contract_id'}"/>
+                    <filter name="group_state" string="Release" context="{'group_by': 'tms_release_state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_tms_contract_item" model="ir.actions.act_window">
+        <field name="name">Contract items</field>
+        <field name="res_model">sale.order.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('tms_contract_id', '!=', False), ('tms_is_movement', '=', True)]</field>
+        <field name="context">{'create': False}</field>
+        <field name="search_view_id" ref="tms_contract_item_search"/>
+    </record>
+    <record id="action_tms_contract_item_list_view" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="tms_contract_item_list"/>
+        <field name="act_window_id" ref="action_tms_contract_item"/>
+    </record>
+    <record id="action_tms_contract_item_form_view" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="tms_contract_item_form"/>
+        <field name="act_window_id" ref="action_tms_contract_item"/>
+    </record>
+</odoo>

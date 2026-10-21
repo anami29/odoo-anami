@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PNL-13, BR-PNL-14: standard rates, maintained by the Finance Head only -->
+    <record id="tms_std_rate_list" model="ir.ui.view">
+        <field name="name">tms.std.rate.list</field>
+        <field name="model">tms.std.rate</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="vehicle_class_id"/>
+                <field name="company_id" optional="show" groups="base.group_multi_company"/>
+                <field name="date_from"/>
+                <field name="planned_km"/>
+                <field name="running_budget" sum="Running"/>
+                <field name="fixed_budget" sum="Fixed"/>
+                <field name="running_rate"/>
+                <field name="fixed_rate"/>
+                <field name="standard_rate"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_std_rate_form" model="ir.ui.view">
+        <field name="name">tms.std.rate.form</field>
+        <field name="model">tms.std.rate</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_tms_view_trips" type="object" class="oe_stat_button" icon="fa-truck" string="Trips"/>
+                    </div>
+                    <div class="alert alert-info" role="alert" invisible="not used">
+                        In use: record a new effective-dated rate instead of changing this one (BR-PNL-13).
+                    </div>
+                    <group>
+                        <group string="Class and period">
+                            <field name="vehicle_class_id" readonly="used"/>
+                            <field name="company_id" readonly="used" groups="base.group_multi_company"/>
+                            <field name="date_from" readonly="used"/>
+                            <field name="planned_km" readonly="used"/>
+                            <field name="used" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Annual budgets (BR-PNL-14)">
+                            <field name="running_budget" readonly="used"/>
+                            <field name="fixed_budget" readonly="used"/>
+                        </group>
+                        <group string="Rates per km">
+                            <field name="running_rate"/>
+                            <field name="fixed_rate"/>
+                            <field name="standard_rate"/>
+                        </group>
+                    </group>
+                    <field name="note" placeholder="Basis of the budgets"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="tms_std_rate_search" model="ir.ui.view">
+        <field name="name">tms.std.rate.search</field>
+        <field name="model">tms.std.rate</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="vehicle_class_id"/>
+                <field name="company_id"/>
+                <group expand="0" string="Group by">
+                    <filter name="group_class" string="Vehicle class" context="{'group_by': 'vehicle_class_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_std_rate" model="ir.actions.act_window">
+        <field name="name">Standard rates</field>
+        <field name="res_model">tms.std.rate</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Record the running and fixed rate per km of a vehicle class</p>
+            <p>Rate = the pool's annual budget / the class's planned annual km. A new rate never applies to trips
+               started before its effective date.</p>
+        </field>
+    </record>
+    <record id="tms_vehicle_class_list_pnl" model="ir.ui.view">
+        <field name="name">tms.vehicle.class.list.pnl</field>
+        <field name="model">tms.vehicle.class</field>
+        <field name="inherit_id" ref="tms_core.tms_vehicle_class_list"/>
+        <field name="arch" type="xml">
+            <field name="planned_annual_km" position="after">
+                <field name="current_running_rate" optional="show"/>
+                <field name="current_fixed_rate" optional="show"/>
+                <field name="current_standard_rate" optional="show"/>
+            </field>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_order_form_tms_odc" model="ir.ui.view">
+        <field name="name">tms.order.form.tms.odc</field>
+        <field name="model">tms.order</field>
+        <field name="inherit_id" ref="tms_core.tms_order_form_tms_core"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_title')]" position="after">
+                <div class="alert alert-warning" role="alert" invisible="tms_cargo_type != 'odc' or not odc_start_gaps">
+                    <strong>ODC gaps before START (BR-ODC-05, BR-ODC-06)</strong>
+                    <field name="odc_start_gaps" readonly="1" class="d-block"/>
+                </div>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="ODC" name="odc" invisible="tms_cargo_type != 'odc'">
+                    <div class="mb-2">
+                        <button name="action_load_odc_from_estimate" type="object" string="Load equipment and states from the estimate" class="btn-secondary" invisible="state_code != 'draft'"/>
+                    </div>
+                    <group>
+                        <group string="Route">
+                            <field name="odc_state_ids" widget="many2many_tags" readonly="state_code not in ('draft', 'confirmed')" options="{'no_create': True}"/>
+                            <field name="odc_puller_plate"/>
+                        </group>
+                        <group string="Route survey">
+                            <field name="survey_file" filename="survey_file_name" readonly="state_code not in ('draft', 'confirmed')"/>
+                            <field name="survey_file_name" invisible="1"/>
+                            <field name="survey_date" readonly="state_code not in ('draft', 'confirmed')"/>
+                            <field name="survey_by" readonly="state_code not in ('draft', 'confirmed')"/>
+                            <field name="survey_approved_by_id"/>
+                            <field name="survey_approved_on"/>
+                            <field name="survey_approved" invisible="1"/>
+                            <button name="action_approve_route_survey" type="object" string="Approve route survey" invisible="survey_approved or not survey_file or state_code not in ('draft', 'confirmed')" groups="tms_core.group_fleet_manager,tms_core.group_operations_head" colspan="2"/>
+                        </group>
+                    </group>
+                    <separator string="Equipment (BR-ODC-05)"/>
+                    <field name="equipment_ids" readonly="state_code not in ('draft', 'confirmed')" context="{'default_trip_id': id}">
+                        <list editable="bottom" decoration-danger="not filled" decoration-warning="substituted and not approved_by_id">
+                            <field name="sequence" widget="handle"/>
+                            <field name="kind" readonly="estimate_line_id"/>
+                            <field name="required_count"/>
+                            <field name="actual_kind"/>
+                            <field name="actual_count"/>
+                            <field name="source"/>
+                            <field name="vehicle_id" readonly="source != 'owned'" options="{'no_create': True}"/>
+                            <field name="asset_ref" readonly="source != 'owned'" optional="show"/>
+                            <field name="purchase_line_id" readonly="source != 'purchase'" options="{'no_create': True}"/>
+                            <field name="registration" optional="show"/>
+                            <field name="filled"/>
+                            <field name="substituted" optional="show"/>
+                            <field name="substitution_reason" required="substituted" optional="show"/>
+                            <field name="approved_by_id" optional="show"/>
+                            <field name="estimate_line_id" optional="hide"/>
+                            <field name="trip_state" column_invisible="1"/>
+                            <button name="action_approve_substitution" type="object" icon="fa-check" title="Approve substitution" invisible="not substituted or approved_by_id" groups="tms_core.group_operations_head"/>
+                        </list>
+                    </field>
+                    <separator string="Permits (BR-ODC-06)"/>
+                    <field name="permit_ids" readonly="state_code in ('done', 'cancel')" context="{'default_trip_id': id, 'default_puller_plate': odc_puller_plate}">
+                        <list editable="bottom">
+                            <field name="state_id" options="{'no_create': True}"/>
+                            <field name="name"/>
+                            <field name="authority" optional="show"/>
+                            <field name="valid_from"/>
+                            <field name="valid_to"/>
+                            <field name="vehicle_id" optional="hide" options="{'no_create': True}"/>
+                            <field name="puller_plate"/>
+                            <field name="window_from" widget="float_time"/>
+                            <field name="window_to" widget="float_time"/>
+                            <field name="escort_required"/>
+                            <field name="escort_count" invisible="not escort_required"/>
+                            <field name="file" filename="file_name" optional="show"/>
+                            <field name="file_name" column_invisible="1"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PRN-09, BR-EST-06, BR-EST-07, BR-NUM-04: numbered items with lane, Cargo Type, distance,
+         rate per km and amount; never cost or markup; the customer cost sheet when ticked -->
+    <template id="report_saleorder_document_tms" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//td[@name='td_name']" position="replace">
+            <td name="td_name">
+                <strong t-if="line.tms_item_no" t-out="'%s/%s ' % (doc.name, line.tms_item_no)"/>
+                <span t-field="line.name"/>
+                <div t-if="line.tms_is_movement" class="small text-muted">
+                    <span t-out="line.tms_origin_id.city or line.tms_origin_id.name"/> → <span t-out="line.tms_destination_id.city or line.tms_destination_id.name"/>
+                    · <span t-out="dict(line._fields['tms_cargo_type'].selection).get(line.tms_cargo_type)"/>
+                    · <span t-out="line.tms_distance_km"/> km
+                    · <span t-out="line.tms_rate_per_km" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/> per km
+                </div>
+            </td>
+        </xpath>
+        <xpath expr="//div[@name='total']" position="after">
+            <div t-if="doc.tms_attach_cost_sheet and doc.order_line.filtered('tms_estimate_id')" class="mt-4" style="page-break-before: always;">
+                <h4>Annexure: customer cost sheet</h4>
+                <t t-foreach="doc.order_line.filtered('tms_estimate_id')" t-as="item">
+                    <h6 class="mt-3">Item <span t-out="'%s/%s' % (doc.name, item.tms_item_no)"/>: <span t-out="item.name"/></h6>
+                    <table class="table table-sm">
+                        <thead><tr><th>Line</th><th>Description</th><th class="text-end">Quantity</th><th class="text-end">Amount</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="item.tms_estimate_id.line_ids" t-as="eline">
+                                <td t-out="'%02d' % eline.line_no"/>
+                                <td t-out="eline.name or eline.product_id.name"/>
+                                <td class="text-end"><span t-out="eline.quantity"/> <span t-out="eline.uom_label"/></td>
+                                <td class="text-end" t-out="eline.marked_up" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/>
+                            </tr>
+                            <tr t-if="item.tms_estimate_id.rounding_difference">
+                                <td/><td>Rounding</td><td/>
+                                <td class="text-end" t-out="item.tms_estimate_id.rounding_difference" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/>
+                            </tr>
+                            <tr class="fw-bold">
+                                <td/><td>Item amount</td><td/>
+                                <td class="text-end" t-out="item.price_subtotal / (item.product_uom_qty or 1)" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/>
+                            </tr>
+                        </tbody>
+                    </table>
+                </t>
+            </div>
+            <div t-if="doc.state in ('draft', 'sent')" class="mt-4 small">
+                <p>Valid until <span t-field="doc.validity_date"/>. GST as applicable to goods transport agency services.</p>
+                <p><strong>Acceptance:</strong> accepted on behalf of <span t-out="doc.partner_id.commercial_partner_id.name"/> ________________________ (signature, name, date)</p>
+            </div>
+        </xpath>
+    </template>
+</odoo>

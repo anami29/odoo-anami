@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BR-LED-01: trips, vehicles and branches are analytic accounts in their own plans -->
+<odoo noupdate="1">
+    <record id="analytic_plan_trips" model="account.analytic.plan">
+        <field name="name">Trips</field>
+        <field name="default_applicability">optional</field>
+        <field name="color">1</field>
+    </record>
+    <record id="analytic_plan_vehicles" model="account.analytic.plan">
+        <field name="name">Vehicles</field>
+        <field name="default_applicability">optional</field>
+        <field name="color">2</field>
+    </record>
+    <record id="analytic_plan_branch" model="account.analytic.plan">
+        <field name="name">Branch</field>
+        <field name="default_applicability">optional</field>
+        <field name="color">3</field>
+    </record>
+</odoo>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_tms_odc" model="ir.ui.view">
+        <field name="name">res.config.settings.form.tms.odc</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="tms.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@name='tms_core_mode']" position="after">
+                <block title="ODC (BR-CFG-13)" name="tms_odc">
+                    <setting string="ODC" help="Off until Operations confirm the thresholds (DC-25)."><field name="tms_odc_enabled"/></setting>
+                    <setting string="Piece thresholds" help="A piece above any of these is ODC (BR-ODC-02)." invisible="not tms_odc_enabled">
+                        <div class="d-flex flex-wrap gap-2">
+                            <span>Width</span><field name="tms_odc_max_width" class="oe_inline"/><span>m</span>
+                            <span>Height</span><field name="tms_odc_max_height" class="oe_inline"/><span>m</span>
+                            <span>Length</span><field name="tms_odc_max_length" class="oe_inline"/><span>m</span>
+                            <span>Weight</span><field name="tms_odc_max_weight" class="oe_inline"/><span>t</span>
+                        </div>
+                    </setting>
+                    <setting string="Planned ODC km per day" help="Drives days and every day-based line of an ODC estimate." invisible="not tms_odc_enabled"><field name="tms_odc_km_per_day"/></setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_tms_contract" model="ir.ui.view">
+        <field name="name">res.config.settings.form.tms.contract</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="tms.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@name='tms_core_mode']" position="after">
+                <block title="Contracts (BR-CFG-15)" name="tms_contract">
+                    <setting string="Contract series" help="This branch's contract numbers; created at the first activation if empty">
+                        <field name="tms_contract_sequence_id"/>
+                    </setting>
+                    <setting string="Utilisation alert %" help="Invoiced plus reserved as a share of value (BR-NTF-13)">
+                        <field name="tms_contract_util_alert"/>
+                    </setting>
+                    <setting string="Expiry alert (days)" help="Days before the end date (BR-NTF-15)">
+                        <field name="tms_contract_expiry_days"/>
+                    </setting>
+                    <setting string="Extension limit %" help="Above this share of the value the Operations Head approves the extension (BR-CON-13)">
+                        <field name="tms_contract_extension_limit"/>
+                    </setting>
+                    <setting string="Excess ceiling %" help="Above this share of the value a director approves the excess (OP-20)">
+                        <field name="tms_contract_excess_ceiling"/>
+                    </setting>
+                    <setting string="Run-on days" help="Released items book LRs this long after the end date (BR-CON-11)">
+                        <field name="tms_contract_runon_days"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

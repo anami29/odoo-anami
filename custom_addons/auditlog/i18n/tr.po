@@ -1,0 +1,625 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * auditlog
+#
+# Translators:
+# OCA Transbot <transbot@odoo-community.org>, 2017
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 11.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-12-06 03:40+0000\n"
+"PO-Revision-Date: 2026-04-27 00:45+0000\n"
+"Last-Translator: Ediz Duman <neps1192@gmail.com>\n"
+"Language-Team: Turkish (https://www.transifex.com/oca/teams/23907/tr/)\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Weblate 5.15.2\n"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__action_id
+msgid "Action"
+msgstr "Aksiyon"
+
+#. module: auditlog
+#: model:ir.ui.menu,name:auditlog.menu_audit
+msgid "Audit"
+msgstr "Denetim"
+
+#. module: auditlog
+#: model:ir.model,name:auditlog.model_auditlog_autovacuum
+msgid "Auditlog - Delete old logs"
+msgstr "Denetim Günlüğü - Eski günlükleri sil"
+
+#. module: auditlog
+#: model:ir.model,name:auditlog.model_auditlog_http_session
+msgid "Auditlog - HTTP User session log"
+msgstr "Denetim Günlüğü - HTTP kullanıcı oturum günlüğü"
+
+#. module: auditlog
+#: model:ir.model,name:auditlog.model_auditlog_http_request
+msgid "Auditlog - HTTP request log"
+msgstr "Denetim Günlüğü - HTTP istek günlüğü"
+
+#. module: auditlog
+#: model:ir.model,name:auditlog.model_auditlog_log
+msgid "Auditlog - Log"
+msgstr "Denetim Günlüğü - Günlük"
+
+#. module: auditlog
+#: model:ir.model,name:auditlog.model_auditlog_log_line
+#: model:ir.model,name:auditlog.model_auditlog_log_line_view
+msgid "Auditlog - Log details (fields updated)"
+msgstr "Denetim Günlüğü - Günlük detayları (güncellenen alanlar)"
+
+#. module: auditlog
+#: model:ir.model,name:auditlog.model_auditlog_rule
+msgid "Auditlog - Rule"
+msgstr "Denetim Günlüğü - Kural"
+
+#. module: auditlog
+#: model:res.groups,name:auditlog.group_auditlog_manager
+msgid "Auditlog Manager"
+msgstr "Denetim Günlüğü Yöneticisi"
+
+#. module: auditlog
+#: model:ir.module.category,name:auditlog.security_auditlog_groups
+msgid "Auditlog Rights"
+msgstr "Denetim Günlüğü Yetkileri"
+
+#. module: auditlog
+#: model:res.groups,name:auditlog.group_auditlog_user
+msgid "Auditlog User"
+msgstr "Denetim Günlüğü Kullanıcısı"
+
+#. module: auditlog
+#: model:ir.actions.server,name:auditlog.ir_cron_auditlog_autovacuum_ir_actions_server
+msgid "Auto-vacuum audit logs"
+msgstr "Denetim günlüklerini otomatik temizle"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__capture_record
+msgid "Capture Record"
+msgstr "Kaydı Yakala"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__user_context
+msgid "Context"
+msgstr "Bağlam"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_autovacuum__create_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__create_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_session__create_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__create_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__create_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__create_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__create_uid
+msgid "Created by"
+msgstr "Oluşturan"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_autovacuum__create_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__create_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_session__create_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__create_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__create_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__create_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__create_date
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_request_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_session_search
+msgid "Created on"
+msgstr "Oluşturulma"
+
+#. module: auditlog
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_line_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_search
+msgid "Date"
+msgstr "Tarih"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__field_description
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__field_description
+msgid "Description"
+msgstr "Açıklama"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_autovacuum__display_name
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__display_name
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__display_name
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__display_name
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__display_name
+msgid "Display Name"
+msgstr "Görünen Ad"
+
+#. module: auditlog
+#: model:ir.model.fields.selection,name:auditlog.selection__auditlog_rule__state__draft
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_rule_search
+msgid "Draft"
+msgstr "Taslak"
+
+#. module: auditlog
+#. odoo-python
+#: code:addons/auditlog/models/log.py:0
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_form
+msgid "Exported Records"
+msgstr "Dışa Aktarılan Kayıtlar"
+
+#. module: auditlog
+#: model:ir.model.fields.selection,name:auditlog.selection__auditlog_log__log_type__fast
+#: model:ir.model.fields.selection,name:auditlog.selection__auditlog_rule__log_type__fast
+msgid "Fast log"
+msgstr "Hızlı Günlük"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__field_id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__field_id
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_line_search
+msgid "Field"
+msgstr "Alan"
+
+#. module: auditlog
+#. odoo-python
+#: code:addons/auditlog/models/rule.py:0
+msgid "Field 'model_id' cannot be empty."
+msgstr "'model_id' alanı boş olamaz."
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__fields_to_exclude_ids
+msgid "Fields to Exclude"
+msgstr "Hariç Tutulacak Alanlar"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__line_ids
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_form
+msgid "Fields updated"
+msgstr "Güncellenen Alanlar"
+
+#. module: auditlog
+#: model:ir.model.fields.selection,name:auditlog.selection__auditlog_log__log_type__full
+#: model:ir.model.fields.selection,name:auditlog.selection__auditlog_rule__log_type__full
+msgid "Full log"
+msgstr "Tam Günlük"
+
+#. module: auditlog
+#: model:ir.model.fields,help:auditlog.field_auditlog_rule__log_type
+msgid ""
+"Full log: make a diff between the data before and after the operation (log "
+"more info like computed fields which were updated, but it is slower)\n"
+"Fast log: only log the changes made through the create and write operations "
+"(less information, but it is faster)"
+msgstr ""
+"Tam Günlük: İşlem öncesi ve sonrası veriler arasındaki farkı bulur "
+"(güncellenen hesaplanan alanlar gibi daha fazla bilgi kaydeder, ancak daha "
+"yavaştır)\n"
+"Hızlı Günlük: Yalnızca oluşturma ve yazma işlemleriyle yapılan "
+"değişiklikleri kaydeder (daha az bilgi, ancak daha hızlıdır)"
+
+#. module: auditlog
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_request_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_session_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_line_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_rule_search
+msgid "Group By..."
+msgstr "Gruplandır..."
+
+#. module: auditlog
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_form
+msgid "HTTP Context"
+msgstr "HTTP Bağlamı"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__http_request_id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__http_request_id
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_request_form
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_line_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_search
+msgid "HTTP Request"
+msgstr "HTTP İsteği"
+
+#. module: auditlog
+#: model:ir.actions.act_window,name:auditlog.action_auditlog_http_request_tree
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_session__http_request_ids
+#: model:ir.ui.menu,name:auditlog.menu_action_auditlog_http_request_tree
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_request_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_session_form
+msgid "HTTP Requests"
+msgstr "HTTP İstekleri"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_autovacuum__id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_session__id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__id
+msgid "ID"
+msgstr "ID"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_autovacuum__write_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__write_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_session__write_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__write_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__write_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__write_uid
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__write_uid
+msgid "Last Updated by"
+msgstr "Son Güncelleyen"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_autovacuum__write_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__write_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_session__write_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__write_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__write_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__write_date
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__write_date
+msgid "Last Updated on"
+msgstr "Son Güncelleme"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__log_id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__log_id
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_form
+msgid "Log"
+msgstr "Günlük"
+
+#. module: auditlog
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_form
+msgid "Log - Field updated"
+msgstr "Günlük - Güncellenen Alan"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__log_create
+msgid "Log Creates"
+msgstr "Oluşturmaları Günlükle"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__log_unlink
+msgid "Log Deletes"
+msgstr "Silmeleri Günlükle"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__log_export_data
+msgid "Log Exports"
+msgstr "Dışa Aktarma Günlükle"
+
+#. module: auditlog
+#: model:ir.actions.act_window,name:auditlog.action_auditlog_line
+#: model:ir.ui.menu,name:auditlog.menu_auditlog_line
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_line_search
+msgid "Log Lines"
+msgstr "Günlük Satırları"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__log_read
+msgid "Log Reads"
+msgstr "Okumaları Günlükle"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__log_write
+msgid "Log Writes"
+msgstr "Yazmaları Günlükle"
+
+#. module: auditlog
+#: model:ir.actions.act_window,name:auditlog.action_auditlog_log_tree
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__log_ids
+#: model:ir.ui.menu,name:auditlog.menu_audit_logs
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_request_form
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_search
+msgid "Logs"
+msgstr "Günlükler"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__method
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__method
+msgid "Method"
+msgstr "Yöntem"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__model_id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__model_id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__model_id
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_line_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_search
+msgid "Model"
+msgstr "Model"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__model_model
+msgid "Model Model"
+msgstr "Model Modeli"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__model_name
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__model_name
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__model_name
+msgid "Model Name"
+msgstr "Model Adı"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__display_name
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_session__display_name
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__name
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__name
+msgid "Name"
+msgstr "Ad"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__new_value
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__new_value
+msgid "New Value"
+msgstr "Yeni Değer"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__new_value_text
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__new_value_text
+msgid "New value Text"
+msgstr "Yeni Değer Metni"
+
+#. module: auditlog
+#. odoo-python
+#: code:addons/auditlog/models/log.py:0
+msgid "No field defined to create line."
+msgstr "Satır oluşturmak için alan tanımlanmadı."
+
+#. module: auditlog
+#. odoo-python
+#: code:addons/auditlog/models/rule.py:0
+msgid "No model defined to create line."
+msgstr "Satır oluşturmak için model tanımlanmadı."
+
+#. module: auditlog
+#. odoo-python
+#: code:addons/auditlog/models/log.py:0
+msgid "No model defined to create log."
+msgstr "Günlük oluşturmak için model tanımlanmadı."
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__old_value
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__old_value
+msgid "Old Value"
+msgstr "Eski Değer"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__old_value_text
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__old_value_text
+msgid "Old value Text"
+msgstr "Eski Değer Metni"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__name
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_request_search
+msgid "Path"
+msgstr "Yol"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__res_id
+msgid "Res"
+msgstr "Kaynak"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__res_id
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_line_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_search
+msgid "Resource ID"
+msgstr "Kaynak ID"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__res_ids
+msgid "Resource IDs"
+msgstr "Kaynak ID"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__name
+msgid "Resource Name"
+msgstr "Kaynak Adı"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__root_url
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_request_search
+msgid "Root URL"
+msgstr "Kök URL"
+
+#. module: auditlog
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_rule_form
+msgid "Rule"
+msgstr "Kural"
+
+#. module: auditlog
+#: model:ir.actions.act_window,name:auditlog.action_auditlog_rule_tree
+#: model:ir.ui.menu,name:auditlog.menu_action_auditlog_rule_tree
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_rule_search
+msgid "Rules"
+msgstr "Kurallar"
+
+#. module: auditlog
+#: model:ir.model.fields,help:auditlog.field_auditlog_rule__model_id
+msgid "Select model for which you want to generate log."
+msgstr "Günlük oluşturmak istediğiniz modeli seçin."
+
+#. module: auditlog
+#: model:ir.model.fields,help:auditlog.field_auditlog_rule__capture_record
+msgid "Select this if you want to keep track of Unlink Record"
+msgstr "Silinen kayıtları takip etmek istiyorsanız bunu seçin"
+
+#. module: auditlog
+#: model:ir.model.fields,help:auditlog.field_auditlog_rule__log_create
+msgid ""
+"Select this if you want to keep track of creation on any record of the model "
+"of this rule"
+msgstr ""
+"Bu kuralın modelinde oluşturulan kayıtları takip etmek istiyorsanız bunu "
+"seçin"
+
+#. module: auditlog
+#: model:ir.model.fields,help:auditlog.field_auditlog_rule__log_unlink
+msgid ""
+"Select this if you want to keep track of deletion on any record of the model "
+"of this rule"
+msgstr ""
+"Bu kuralın modelinde silinen kayıtları takip etmek istiyorsanız bunu seçin"
+
+#. module: auditlog
+#: model:ir.model.fields,help:auditlog.field_auditlog_rule__log_export_data
+msgid ""
+"Select this if you want to keep track of exports of the model of this rule"
+msgstr ""
+"Bu kuralın modelinin dışa aktarımlarını takip etmek istiyorsanız bunu seçin"
+
+#. module: auditlog
+#: model:ir.model.fields,help:auditlog.field_auditlog_rule__log_write
+msgid ""
+"Select this if you want to keep track of modification on any record of the "
+"model of this rule"
+msgstr ""
+"Bu kuralın modelinde değiştirilen kayıtları takip etmek istiyorsanız bunu "
+"seçin"
+
+#. module: auditlog
+#: model:ir.model.fields,help:auditlog.field_auditlog_rule__log_read
+msgid ""
+"Select this if you want to keep track of read/open on any record of the "
+"model of this rule"
+msgstr ""
+"Bu kuralın modelinde okunan/açılan kayıtları takip etmek istiyorsanız bunu "
+"seçin"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__http_session_id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__http_session_id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__http_session_id
+msgid "Session"
+msgstr "Oturum"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_session__name
+msgid "Session ID"
+msgstr "Oturum ID"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__state
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_rule_search
+msgid "State"
+msgstr "Durum"
+
+#. module: auditlog
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_rule_form
+msgid "Subscribe"
+msgstr "Abone Ol"
+
+#. module: auditlog
+#: model:ir.model.fields.selection,name:auditlog.selection__auditlog_rule__state__subscribed
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_rule_search
+msgid "Subscribed"
+msgstr "Abone Olundu"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__model_model
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__model_model
+msgid "Technical Model Name"
+msgstr "Teknik Model Adı"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line__field_name
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__field_name
+msgid "Technical name"
+msgstr "Teknik Ad"
+
+#. module: auditlog
+#. odoo-python
+#: code:addons/auditlog/models/log.py:0
+msgid "The field 'field_id' cannot be empty."
+msgstr "'field_id' alanı boş olamaz."
+
+#. module: auditlog
+#. odoo-python
+#: code:addons/auditlog/models/log.py:0
+msgid "The field 'model_id' cannot be empty."
+msgstr "'model_id' alanı boş olamaz."
+
+#. module: auditlog
+#: model:ir.model.constraint,message:auditlog.constraint_auditlog_rule_model_uniq
+msgid ""
+"There is already a rule defined on this model\n"
+"You cannot define another: please edit the existing one."
+msgstr ""
+"Bu model için zaten bir kural tanımlanmış.\n"
+"Başka bir kural tanımlayamazsınız: lütfen mevcut kuralı düzenleyin."
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__log_type
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__log_type
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__log_type
+msgid "Type"
+msgstr "Tür"
+
+#. module: auditlog
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_rule_form
+msgid "Unsubscribe"
+msgstr "Abonelikten Ayrıl"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_request__user_id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_http_session__user_id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log__user_id
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_log_line_view__user_id
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_request_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_session_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_line_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_search
+msgid "User"
+msgstr "Kullanıcı"
+
+#. module: auditlog
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_request_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_session_form
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_line_search
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_search
+msgid "User session"
+msgstr "Kullanıcı Oturumu"
+
+#. module: auditlog
+#: model:ir.actions.act_window,name:auditlog.action_auditlog_http_session_tree
+#: model:ir.ui.menu,name:auditlog.menu_action_auditlog_http_session_tree
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_http_session_search
+msgid "User sessions"
+msgstr "Kullanıcı Oturumları"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__user_ids
+msgid "Users"
+msgstr "Kullanıcılar"
+
+#. module: auditlog
+#: model:ir.model.fields,field_description:auditlog.field_auditlog_rule__users_to_exclude_ids
+msgid "Users to Exclude"
+msgstr "Hariç Tutulacak Kullanıcılar"
+
+#. module: auditlog
+#: model_terms:ir.ui.view,arch_db:auditlog.view_auditlog_log_form
+msgid "Values"
+msgstr "Değerler"
+
+#. module: auditlog
+#. odoo-python
+#: code:addons/auditlog/models/rule.py:0
+msgid "View logs"
+msgstr "Günlükleri Görüntüle"
+
+#. module: auditlog
+#: model:ir.model.fields,help:auditlog.field_auditlog_rule__user_ids
+msgid "if no user is added then it will applicable for all users"
+msgstr "Kullanıcı eklenmezse tüm kullanıcılar için geçerli olur"
+
+#~ msgid "Last Modified on"
+#~ msgstr "Son değişiklik"
+
+#~ msgid "if  User is not added then it will applicable for all users"
+#~ msgstr "Eğer kullanıcı eklenmediyse bütün kullanıcılar için geçerli olur"

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_estimate_form" model="ir.ui.view">
+        <field name="name">tms.estimate.form</field>
+        <field name="model">tms.estimate</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_request_amendment" type="object" string="Amend" invisible="state != 'locked'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group string="Lane">
+                            <field name="sale_line_id" readonly="1"/>
+                            <field name="partner_id"/>
+                            <field name="origin_id" readonly="state == 'locked'"/>
+                            <field name="destination_id" readonly="state == 'locked'"/>
+                            <field name="vehicle_class_id" readonly="state == 'locked'"/>
+                            <field name="equipment_note" readonly="state == 'locked'"/>
+                            <field name="tms_cargo_type"/>
+                            <field name="date" readonly="state == 'locked'"/>
+                        </group>
+                        <group string="Distance">
+                            <field name="distance_km" readonly="state == 'locked'"/>
+                            <field name="km_per_day" readonly="state == 'locked'"/>
+                            <field name="days" readonly="state == 'locked'"/>
+                            <field name="state_count" readonly="state == 'locked'"/>
+                            <field name="is_contract" readonly="1"/>
+                            <field name="version" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" context="{'default_estimate_id': id}">
+                        <list editable="bottom" decoration-info="unplanned" decoration-muted="locked">
+                            <field name="line_no" string="Line"/>
+                            <field name="product_id" readonly="locked"/>
+                            <field name="name" optional="show"/>
+                            <field name="basis" readonly="locked"/>
+                            <field name="units" readonly="locked"/>
+                            <field name="km" readonly="locked" optional="show"/>
+                            <field name="days" readonly="locked" optional="show"/>
+                            <field name="states" readonly="locked" optional="hide"/>
+                            <field name="quantity"/>
+                            <field name="uom_label" string="UoM"/>
+                            <field name="vendor_id" readonly="locked" optional="show"/>
+                            <field name="unit_cost" readonly="locked"/>
+                            <field name="computed_unit_cost" optional="hide"/>
+                            <field name="typed_cost_reason" optional="hide" readonly="locked"/>
+                            <field name="estimated_cost" sum="Estimated"/>
+                            <field name="markup_pct" readonly="locked"/>
+                            <field name="marked_up" sum="Marked-up"/>
+                            <field name="committed" optional="show" sum="Committed"/>
+                            <field name="actual" optional="show" sum="Actual"/>
+                            <field name="variance" optional="show" sum="Variance"/>
+                            <field name="variance_pct" optional="hide"/>
+                            <field name="document_count" optional="hide"/>
+                            <field name="locked" column_invisible="1"/>
+                            <field name="unplanned" column_invisible="1"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <button name="action_view_documents" type="object" icon="fa-file-text-o" title="Documents" invisible="not document_count"/>
+                        </list>
+                    </field>
+                    <group>
+                        <group string="Price (#9.1)">
+                            <field name="estimated_cost"/>
+                            <field name="marked_up_total"/>
+                            <field name="markup_pct"/>
+                            <field name="rate_per_km"/>
+                            <field name="amount"/>
+                            <field name="rounding_difference"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Actual">
+                            <field name="committed"/>
+                            <field name="actual"/>
+                            <field name="variance"/>
+                            <field name="contribution"/>
+                            <field name="baseline_amount" invisible="not baseline_amount"/>
+                            <field name="baseline_cost" invisible="not baseline_cost"/>
+                        </group>
+                    </group>
+                    <field name="amendment_ids" invisible="not amendment_ids">
+                        <list>
+                            <field name="create_date"/>
+                            <field name="reason"/>
+                            <field name="baseline_amount"/>
+                            <field name="new_amount"/>
+                            <field name="state"/>
+                            <field name="requested_by_id"/>
+                            <field name="approved_by_id"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <button name="action_submit" type="object" string="Submit" invisible="state != 'open'"/>
+                            <button name="action_approve" type="object" string="Approve" invisible="state != 'to_approve'" groups="tms_core.group_branch_manager"/>
+                            <button name="action_reject" type="object" string="Reject" invisible="state not in ('open', 'to_approve')"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="tms_estimate_list" model="ir.ui.view">
+        <field name="name">tms.estimate.list</field>
+        <field name="model">tms.estimate</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="origin_id"/>
+                <field name="destination_id"/>
+                <field name="distance_km"/>
+                <field name="estimated_cost" sum="Total"/>
+                <field name="amount" sum="Total"/>
+                <field name="markup_pct"/>
+                <field name="actual" optional="show"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_estimate" model="ir.actions.act_window">
+        <field name="name">Cost estimates</field>
+        <field name="res_model">tms.estimate</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="tms_estimate_line_list" model="ir.ui.view">
+        <field name="name">tms.estimate.line.list</field>
+        <field name="model">tms.estimate.line</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="display_name" string="Estimate line"/>
+                <field name="estimated_cost" sum="Total"/>
+                <field name="committed" sum="Total"/>
+                <field name="actual" sum="Total"/>
+                <field name="variance" sum="Total"/>
+            </list>
+        </field>
+    </record>
+</odoo>

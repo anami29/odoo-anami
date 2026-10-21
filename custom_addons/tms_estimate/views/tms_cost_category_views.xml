@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_cost_category_list" model="ir.ui.view">
+        <field name="name">tms.cost.category.list</field>
+        <field name="model">tms.cost.category</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="default_basis"/>
+                <field name="default_markup"/>
+                <field name="incidental"/>
+                <field name="charge_category_id" invisible="not incidental"/>
+                <field name="is_misc"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_tms_cost_category" model="ir.actions.act_window">
+        <field name="name">Cost categories</field>
+        <field name="res_model">tms.cost.category</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

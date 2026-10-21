@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_tms_estimate" model="ir.ui.view">
+        <field name="name">res.config.settings.form.tms.estimate</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="tms.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@name='tms_core_mode']" position="after">
+                <block title="Estimates (BR-CFG-12)" name="tms_estimate">
+                    <setting string="Item increment" help="Items are numbered 10, 20, 30 … (BR-NUM-01)"><field name="tms_item_increment"/></setting>
+                    <setting string="Markup floor %" help="Below it the Branch Manager approves (BR-EST-08)"><field name="tms_markup_floor"/></setting>
+                    <setting string="Item value limit" help="Above it the Operations Head approves"><field name="tms_value_limit"/></setting>
+                    <setting string="Estimate variance tolerance %" help="BR-ACT-06"><field name="tms_estimate_variance_tolerance"/></setting>
+                    <setting string="Quotation validity (days)"><field name="tms_quotation_validity_days"/></setting>
+                    <setting string="Cost pricelist" help="BR-MD-14"><field name="tms_cost_pricelist_id"/></setting>
+                    <setting string="Planned km per day"><field name="tms_default_km_per_day"/></setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

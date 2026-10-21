@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="sale_order_form_tms_estimate" model="ir.ui.view">
+        <field name="name">sale.order.form.tms.estimate</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- BR-QTN-10: sales orders never invoice -->
+            <xpath expr="//button[@id='create_invoice']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//button[@id='create_invoice_percentage']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button name="action_tms_copy_fresh" type="object" string="Copy with fresh costs" invisible="not tms_expired"/>
+                <button name="action_open_credit_override" type="object" string="Confirm over credit block" invisible="state not in ('draft', 'sent')" groups="tms_core.group_branch_manager,tms_core.group_finance_head"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_lrs" type="object" class="oe_stat_button" icon="fa-file-text" invisible="not tms_lr_count">
+                    <field name="tms_lr_count" widget="statinfo" string="LRs"/>
+                </button>
+            </xpath>
+            <xpath expr="//field[@name='payment_term_id']" position="after">
+                <field name="tms_attach_cost_sheet"/>
+                <field name="tms_acceptance_file" filename="tms_acceptance_name"/>
+                <field name="tms_acceptance_name" invisible="1"/>
+                <field name="tms_expired" invisible="1"/>
+                <field name="tms_needs_approval" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='sequence']" position="after">
+                <field name="tms_item_no" string="Item" readonly="id"/>
+                <field name="tms_is_movement" optional="show" string="Movement"/>
+                <field name="tms_origin_id" optional="show"/>
+                <field name="tms_destination_id" optional="show"/>
+                <field name="tms_vehicle_class_id" optional="hide"/>
+                <field name="tms_cargo_type" optional="show"/>
+                <field name="tms_distance_km" optional="show"/>
+                <field name="tms_rate_per_km" optional="show" readonly="1"/>
+                <!-- BR-QTN-04: cost and markup show beside the rate, never print -->
+                <field name="tms_estimated_cost" optional="show" groups="tms_core.group_sales_executive,tms_core.group_planner,tms_core.group_branch_manager,tms_core.group_operations_head,tms_core.group_finance_head,tms_core.group_branch_accountant"/>
+                <field name="tms_marked_up" optional="hide" groups="tms_core.group_sales_executive,tms_core.group_planner,tms_core.group_branch_manager,tms_core.group_operations_head,tms_core.group_finance_head,tms_core.group_branch_accountant"/>
+                <field name="tms_markup_pct" optional="show" groups="tms_core.group_sales_executive,tms_core.group_planner,tms_core.group_branch_manager,tms_core.group_operations_head,tms_core.group_finance_head,tms_core.group_branch_accountant"/>
+                <field name="tms_approval_state" optional="show" widget="badge" decoration-warning="tms_approval_state == 'to_approve'" decoration-success="tms_approval_state == 'approved'"/>
+                <field name="tms_estimate_id" column_invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list" position="inside">
+                <button name="action_tms_open_estimate" type="object" icon="fa-calculator" title="Estimate" invisible="not tms_is_movement"/>
+                <button name="action_tms_approve" type="object" icon="fa-check" title="Approve markup/value" invisible="tms_approval_state != 'to_approve'" groups="tms_core.group_branch_manager,tms_core.group_operations_head"/>
+                <field name="tms_lr_charged_weight" optional="hide"/>
+                <field name="tms_freight_invoiced" optional="hide"/>
+            </xpath>
+            <xpath expr="//field[@name='tax_totals']" position="after">
+                <field name="tms_estimated_cost" groups="tms_core.group_sales_executive,tms_core.group_planner,tms_core.group_branch_manager,tms_core.group_operations_head,tms_core.group_finance_head,tms_core.group_branch_accountant"/>
+                <field name="tms_markup_pct" groups="tms_core.group_sales_executive,tms_core.group_planner,tms_core.group_branch_manager,tms_core.group_operations_head,tms_core.group_finance_head,tms_core.group_branch_accountant"/>
+            </xpath>
+        </field>
+    </record>
+    <!-- BR-QTN-10: the Sales app hides its To Invoice menu -->
+    <record id="sale.menu_sale_invoicing" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_no_one')])]"/>
+    </record>
+</odoo>

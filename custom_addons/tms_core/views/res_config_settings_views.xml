@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_tms_core" model="ir.ui.view">
+        <field name="name">res.config.settings.form.tms.core</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="tms.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <!-- BR-CFG-11: OCA toggles for modules absent from 18.0 are hidden -->
+            <xpath expr="//field[@name='module_tms_account']/.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='module_tms_sale']/.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='module_tms_purchase']/.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='module_tms_expense']/.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='module_tms_account_asset']/.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//block[@name='general_settings_container']" position="before">
+                <block title="Operating mode and controls" name="tms_core_mode">
+                    <setting string="Operating mode" help="Hybrid and Broker in phase 1 (BR-CFG-01). Locks once confirmed LRs or trips exist.">
+                        <field name="tms_operation_mode" readonly="tms_mode_locked"/>
+                        <div class="text-warning" invisible="not tms_mode_locked">Locked: the TMS Administrator unlocks it from the branch form with a reason.</div>
+                    </setting>
+                    <setting string="Enforce compliance gate" help="BR-CFG-06: only the TMS Administrator changes it; each change is logged.">
+                        <field name="tms_enforce_compliance"/>
+                        <div class="mt-2">
+                            <field name="tms_enforce_reason" placeholder="Reason, required when you switch enforcement"/>
+                        </div>
+                    </setting>
+                    <setting string="Strict branch accounting" help="BR-CFG-07: post in the document branch's journals.">
+                        <field name="tms_strict_branch_accounting"/>
+                    </setting>
+                    <setting string="Hire variance tolerance" help="BR-CFG-08: the lower of the amount and the percent applies.">
+                        <div class="d-flex gap-2"><field name="tms_hire_tolerance_amount"/><span>or</span><field name="tms_hire_tolerance_percent"/><span>%</span></div>
+                    </setting>
+                    <setting string="DSR cadence and POD SLA (hours)" help="BR-CFG-09">
+                        <div class="d-flex gap-2"><field name="tms_dsr_cadence_hours"/><span>/</span><field name="tms_pod_sla_hours"/></div>
+                    </setting>
+                    <setting string="Document reminder offsets (days)" help="BR-CFG-09, BR-NTF-01">
+                        <field name="tms_reminder_offsets"/>
+                    </setting>
+                    <setting string="E-way bill threshold" help="BR-EWB-03">
+                        <field name="tms_ewaybill_threshold"/>
+                    </setting>
+                    <setting string="Charge self-approval limit" help="BR-CHG-04">
+                        <field name="tms_charge_self_approval_limit"/>
+                    </setting>
+                    <setting string="Maximum hire advance %" help="BR-HIR-04: never above 80%.">
+                        <field name="tms_max_advance_percent"/>
+                    </setting>
+                    <setting string="Godown demurrage per day" help="BR-POD-09">
+                        <field name="tms_godown_demurrage_per_day"/>
+                    </setting>
+                </block>
+                <block title="Credit and claims" name="tms_core_credit">
+                    <setting string="Overdue limit (days)" help="BR-CFG-16, BR-CRD-02">
+                        <field name="tms_overdue_limit_days"/>
+                    </setting>
+                    <setting string="Claim notice period (days)" help="BR-CLM-11 (OP-21)">
+                        <field name="tms_claim_notice_days"/>
+                    </setting>
+                    <setting string="Carrier liability limit" help="BR-CLM-10 (OP-21)">
+                        <field name="tms_carrier_liability_limit"/>
+                    </setting>
+                    <setting string="Branch Manager claim limit" help="BR-CLM-04">
+                        <field name="tms_claim_bm_limit"/>
+                    </setting>
+                </block>
+                <block title="Trip accounting" name="tms_core_accounts">
+                    <setting string="Driver advance account"><field name="tms_driver_advance_account_id"/></setting>
+                    <setting string="Trip expense journal"><field name="tms_expense_journal_id"/></setting>
+                    <setting string="Cash and bank journals"><div class="d-flex gap-2"><field name="tms_cash_journal_id"/><field name="tms_bank_journal_id"/></div></setting>
+                    <setting string="Fuel card and FASTag accounts" help="BR-EXP-09"><div class="d-flex gap-2"><field name="tms_fuel_card_account_id"/><field name="tms_fastag_account_id"/></div></setting>
+                    <setting string="Inter-branch clearing account" help="BR-BRN-06"><field name="tms_interbranch_account_id"/></setting>
+                    <setting string="Freight product"><field name="tms_freight_product_id"/></setting>
+                    <setting string="Customer TDS receivable" help="BR-INV-12"><field name="tms_tds_receivable_account_id"/></setting>
+                    <setting string="TDS on hire and commission" help="BR-HIR-10, BR-HIR-13 (OP-22); a vendor may carry its own hire TDS tax"><div class="d-flex gap-2"><field name="tms_hire_tds_tax_id"/><field name="tms_commission_tds_tax_id"/></div></setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

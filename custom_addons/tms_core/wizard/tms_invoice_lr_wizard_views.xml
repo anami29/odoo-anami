@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="tms_invoice_lr_wizard_form" model="ir.ui.view">
+        <field name="name">tms.invoice.lr.wizard.form</field>
+        <field name="model">tms.invoice.lr.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="invoice_date"/>
+                    <field name="consolidate"/>
+                </group>
+                <field name="consignment_ids"/>
+                <footer>
+                    <button name="action_create_invoices" type="object" string="Create invoices" class="btn-primary"/>
+                    <button special="cancel" string="Discard"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

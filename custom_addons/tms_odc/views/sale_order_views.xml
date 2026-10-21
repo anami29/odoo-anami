@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="sale_order_form_tms_odc" model="ir.ui.view">
+        <field name="name">sale.order.form.tms.odc</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="tms_estimate.sale_order_form_tms_estimate"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']/list/field[@name='tms_cargo_type']" position="attributes">
+                <attribute name="decoration-warning">tms_odc_suggested and tms_cargo_type == 'regular'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='tms_cargo_type']" position="after">
+                <field name="tms_odc_suggested" column_invisible="1"/>
+                <field name="tms_regular_reason" optional="show" invisible="not tms_odc_suggested or tms_cargo_type != 'regular'" required="tms_odc_suggested and tms_cargo_type == 'regular'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

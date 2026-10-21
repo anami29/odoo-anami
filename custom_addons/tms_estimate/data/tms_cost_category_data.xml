@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="cost_category_vehicle_hire" model="tms.cost.category">
+        <field name="name">Vehicle hire</field>
+        <field name="code">VEHICLE_HIRE</field>
+        <field name="sequence">10</field>
+        <field name="default_basis">unit_km</field>
+        <field name="default_markup">10</field>
+        <field name="incidental" eval="False"/>
+        <field name="is_misc" eval="False"/>
+    </record>
+    <record id="cost_category_owned_running" model="tms.cost.category">
+        <field name="name">Owned vehicle running</field>
+        <field name="code">OWNED_RUNNING</field>
+        <field name="sequence">20</field>
+        <field name="default_basis">km</field>
+        <field name="default_markup">15</field>
+        <field name="incidental" eval="False"/>
+        <field name="is_misc" eval="False"/>
+    </record>
+    <record id="cost_category_puller" model="tms.cost.category">
+        <field name="name">Puller</field>
+        <field name="code">PULLER</field>
+        <field name="sequence">30</field>
+        <field name="default_basis">unit_km</field>
+        <field name="default_markup">25</field>
+        <field name="incidental" eval="False"/>
+        <field name="is_misc" eval="False"/>
+    </record>
+    <record id="cost_category_axle" model="tms.cost.category">
+        <field name="name">Axle</field>
+        <field name="code">AXLE</field>
+        <field name="sequence">40</field>
+        <field name="default_basis">unit_km</field>
+        <field name="default_markup">25</field>
+        <field name="incidental" eval="False"/>
+        <field name="is_misc" eval="False"/>
+    </record>
+    <record id="cost_category_mobilisation" model="tms.cost.category">
+        <field name="name">Mobilisation</field>
+        <field name="code">MOBILISATION</field>
+        <field name="sequence">50</field>
+        <field name="default_basis">unit_km</field>
+        <field name="default_markup">25</field>
+        <field name="incidental" eval="False"/>
+        <field name="is_misc" eval="False"/>
+    </record>
+    <record id="cost_category_toll" model="tms.cost.category">
+        <field name="name">Toll</field>
+        <field name="code">TOLL</field>
+        <field name="sequence">60</field>
+        <field name="default_basis">lump</field>
+        <field name="default_markup">0</field>
+        <field name="incidental" eval="True"/>
+        <field name="is_misc" eval="False"/>
+        <field name="charge_category_id" ref="tms_core.tms_category_toll"/>
+    </record>
+    <record id="cost_category_state_charge" model="tms.cost.category">
+        <field name="name">State charge</field>
+        <field name="code">STATE_CHARGE</field>
+        <field name="sequence">70</field>
+        <field name="default_basis">state</field>
+        <field name="default_markup">0</field>
+        <field name="incidental" eval="True"/>
+        <field name="is_misc" eval="False"/>
+        <field name="charge_category_id" ref="tms_core.tms_category_state_charge"/>
+    </record>
+    <record id="cost_category_escort" model="tms.cost.category">
+        <field name="name">Escort and crew</field>
+        <field name="code">ESCORT</field>
+        <field name="sequence">80</field>
+        <field name="default_basis">unit_day</field>
+        <field name="default_markup">20</field>
+        <field name="incidental" eval="False"/>
+        <field name="is_misc" eval="False"/>
+    </record>
+    <record id="cost_category_site_work" model="tms.cost.category">
+        <field name="name">Site work</field>
+        <field name="code">SITE_WORK</field>
+        <field name="sequence">90</field>
+        <field name="default_basis">lump</field>
+        <field name="default_markup">15</field>
+        <field name="incidental" eval="False"/>
+        <field name="is_misc" eval="False"/>
+    </record>
+    <record id="cost_category_loading" model="tms.cost.category">
+        <field name="name">Loading and unloading</field>
+        <field name="code">LOADING</field>
+        <field name="sequence">100</field>
+        <field name="default_basis">lump</field>
+        <field name="default_markup">0</field>
+        <field name="incidental" eval="True"/>
+        <field name="is_misc" eval="False"/>
+        <field name="charge_category_id" ref="tms_core.tms_category_loading"/>
+    </record>
+    <record id="cost_category_misc" model="tms.cost.category">
+        <field name="name">Misc. and contingency</field>
+        <field name="code">MISC</field>
+        <field name="sequence">110</field>
+        <field name="default_basis">lump</field>
+        <field name="default_markup">0</field>
+        <field name="incidental" eval="False"/>
+        <field name="is_misc" eval="True"/>
+    </record>
+    <record id="cost_category_permit" model="tms.cost.category">
+        <field name="name">ODC permits</field>
+        <field name="code">PERMIT</field>
+        <field name="sequence">120</field>
+        <field name="default_basis">state</field>
+        <field name="default_markup">0</field>
+        <field name="incidental" eval="False"/>
+        <field name="is_misc" eval="False"/>
+    </record>
+    <record id="cost_category_survey" model="tms.cost.category">
+        <field name="name">Route survey</field>
+        <field name="code">SURVEY</field>
+        <field name="sequence">130</field>
+        <field name="default_basis">lump</field>
+        <field name="default_markup">30</field>
+        <field name="incidental" eval="False"/>
+        <field name="is_misc" eval="False"/>
+    </record>
+    <record id="product_cost_misc" model="product.product">
+        <field name="name">Misc. and contingency</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_misc"/>
+        <field name="tms_cost_basis">lump</field>
+        <field name="tms_default_markup">0</field>
+    </record>
+    <record id="product_cost_market_hire" model="product.product">
+        <field name="name">Market vehicle hire</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_vehicle_hire"/>
+        <field name="tms_cost_basis">lump</field>
+        <field name="tms_default_markup">10</field>
+        <field name="tms_equipment_kind">vehicle</field>
+    </record>
+    <record id="product_cost_owned_truck" model="product.product">
+        <field name="name">Owned truck running (standard rate)</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_owned_running"/>
+        <field name="tms_cost_basis">km</field>
+        <field name="tms_default_markup">15</field>
+        <field name="tms_equipment_kind">vehicle</field>
+        <field name="tms_owned_truck" eval="True"/>
+    </record>
+    <record id="product_cost_puller" model="product.product">
+        <field name="name">Puller</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_puller"/>
+        <field name="tms_cost_basis">unit_km</field>
+        <field name="tms_default_markup">25</field>
+        <field name="tms_equipment_kind">puller</field>
+    </record>
+    <record id="product_cost_axle_line" model="product.product">
+        <field name="name">Axle line</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_axle"/>
+        <field name="tms_cost_basis">unit_km</field>
+        <field name="tms_default_markup">25</field>
+        <field name="tms_equipment_kind">axle</field>
+        <field name="tms_rated_capacity">20</field>
+    </record>
+    <record id="product_cost_trailer_bed" model="product.product">
+        <field name="name">Trailer bed</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_axle"/>
+        <field name="tms_cost_basis">unit_km</field>
+        <field name="tms_default_markup">25</field>
+        <field name="tms_equipment_kind">trailer_bed</field>
+        <field name="tms_rated_capacity">20</field>
+    </record>
+    <record id="product_cost_pilot_escort" model="product.product">
+        <field name="name">Pilot escort vehicle</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_escort"/>
+        <field name="tms_cost_basis">unit_day</field>
+        <field name="tms_default_markup">20</field>
+        <field name="tms_equipment_kind">escort</field>
+    </record>
+    <record id="product_cost_crew" model="product.product">
+        <field name="name">Steersman and helpers</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_escort"/>
+        <field name="tms_cost_basis">unit_day</field>
+        <field name="tms_default_markup">20</field>
+    </record>
+    <record id="product_cost_toll" model="product.product">
+        <field name="name">Toll</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_toll"/>
+        <field name="tms_cost_basis">lump</field>
+        <field name="tms_default_markup">0</field>
+    </record>
+    <record id="product_cost_state_permit" model="product.product">
+        <field name="name">ODC permit fee</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_permit"/>
+        <field name="tms_cost_basis">state</field>
+        <field name="tms_default_markup">0</field>
+    </record>
+    <record id="product_cost_route_survey" model="product.product">
+        <field name="name">Route survey and report</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_survey"/>
+        <field name="tms_cost_basis">lump</field>
+        <field name="tms_default_markup">30</field>
+    </record>
+    <record id="product_cost_loading" model="product.product">
+        <field name="name">Loading and unloading</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_loading"/>
+        <field name="tms_cost_basis">lump</field>
+        <field name="tms_default_markup">0</field>
+    </record>
+    <record id="product_cost_mobilisation" model="product.product">
+        <field name="name">Mobilisation</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="True"/>
+        <field name="tms_cost_item" eval="True"/>
+        <field name="tms_cost_category_id" ref="cost_category_mobilisation"/>
+        <field name="tms_cost_basis">unit_km</field>
+        <field name="tms_default_markup">25</field>
+    </record>
+    <record id="product_movement" model="product.product">
+        <field name="name">Transport movement</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+        <field name="invoice_policy">order</field>
+        <field name="default_code">TMS-MOVE</field>
+        <field name="l10n_in_hsn_code">996791</field>
+    </record>
+</odoo>

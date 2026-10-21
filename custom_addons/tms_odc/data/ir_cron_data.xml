@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- BR-ODC-07, BR-NTF-04: an ODC trip's latest ETA within a day of the e-way bill's expiry -->
+    <record id="cron_odc_eta_alert" model="ir.cron">
+        <field name="name">TMS: ODC ETA against e-way bill expiry</field>
+        <field name="model_id" ref="tms.model_tms_order"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_odc_eta_alert()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+    </record>
+</odoo>

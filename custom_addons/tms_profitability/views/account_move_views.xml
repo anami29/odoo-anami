@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PNL-01..04, BR-PNL-10, BR-PNL-11: cost-class particulars on bill lines -->
+    <record id="account_move_form_tms_profitability" model="ir.ui.view">
+        <field name="name">account.move.form.tms.profitability</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="tms_core.account_move_form_tms_core"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='invoice_line_ids']/list/field[@name='tms_cost_class']" position="after">
+                <field name="vehicle_id" optional="show"/>
+                <field name="tms_replacement_vehicle_id" optional="hide"/>
+                <field name="tms_truck_category_id" optional="show" invisible="tms_cost_class not in ('truck_running', 'truck_fixed')"/>
+                <field name="tms_cover_from" optional="show" invisible="tms_cost_class != 'truck_fixed'"/>
+                <field name="tms_cover_to" optional="show" invisible="tms_cost_class != 'truck_fixed'"/>
+                <field name="tms_useful_life_months" optional="hide" invisible="tms_cost_class != 'truck_running'"/>
+                <field name="tms_pnl_late_date" optional="hide"/>
+                <field name="tms_prepaid_schedule_id" optional="hide"/>
+            </xpath>
+            <xpath expr="//field[@name='tms_is_accrual']" position="after">
+                <field name="tms_close_id" invisible="not tms_close_id"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_account_form_tms_profitability" model="ir.ui.view">
+        <field name="name">account.account.form.tms.profitability</field>
+        <field name="model">account.account</field>
+        <field name="inherit_id" ref="account.view_account_form"/>
+        <field name="arch" type="xml">
+            <field name="account_type" position="after">
+                <field name="tms_pnl_exclude"/>
+            </field>
+        </field>
+    </record>
+</odoo>

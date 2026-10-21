@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PRN-03: ODC trips add permits, escort and movement windows -->
+    <template id="report_trip_sheet_odc_section" inherit_id="tms_core.report_trip_sheet_odc">
+        <xpath expr="." position="inside">
+            <t t-if="trip.tms_cargo_type == 'odc'">
+                <h5>ODC permits</h5>
+                <table class="table table-sm table-bordered">
+                    <thead><tr><th>State</th><th>Permit</th><th>Valid</th><th>Puller</th><th>Movement window</th><th>Escort</th></tr></thead>
+                    <tbody>
+                        <tr t-foreach="trip.permit_ids.sorted(lambda p: (p.valid_from, p.id))" t-as="permit">
+                            <td t-out="permit.state_id.name"/>
+                            <td t-out="permit.name"/>
+                            <td><span t-out="permit.valid_from"/> → <span t-out="permit.valid_to"/></td>
+                            <td t-out="permit.puller_plate"/>
+                            <td t-out="permit._tms_window_label()"/>
+                            <td><t t-if="permit.escort_required"><span t-out="permit.escort_count"/> required</t><t t-else="">-</t></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <h5>ODC equipment and escort</h5>
+                <table class="table table-sm table-bordered">
+                    <thead><tr><th>Type</th><th class="text-end">Count</th><th>Asset or PO item</th><th>Registration</th></tr></thead>
+                    <tbody>
+                        <tr t-foreach="trip.equipment_ids" t-as="equip">
+                            <td t-out="dict(equip._fields['actual_kind'].selection).get(equip.actual_kind or equip.kind)"/>
+                            <td class="text-end" t-out="equip.actual_count"/>
+                            <td t-out="equip.vehicle_id.display_name or equip.asset_ref or equip.purchase_line_id.order_id.name or ''"/>
+                            <td t-out="equip.registration or ''"/>
+                        </tr>
+                    </tbody>
+                </table>
+                <p><strong>Route survey</strong> approved by <span t-out="trip.survey_approved_by_id.name or '-'"/> on <span t-out="trip.survey_approved_on or '-'"/></p>
+            </t>
+        </xpath>
+    </template>
+</odoo>

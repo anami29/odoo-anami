@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BR-PRN-03 -->
+    <record id="action_report_trip_sheet" model="ir.actions.report">
+        <field name="name">Trip sheet</field>
+        <field name="model">tms.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms_core.report_trip_sheet</field>
+        <field name="report_file">tms_core.report_trip_sheet</field>
+        <field name="binding_model_id" ref="tms.model_tms_order"/>
+        <field name="paperformat_id" ref="paperformat_tms_a4"/>
+    </record>
+    <template id="report_trip_sheet">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="trip">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h3>Trip sheet <span t-out="trip.name"/></h3>
+                        <table class="table table-sm table-bordered">
+                            <tr><td><strong>Vehicle</strong> <span t-out="trip.open_assignment_id.vehicle_number or trip.planned_vehicle_id.license_plate or trip.planned_market_vehicle_id.name"/></td>
+                                <td><strong>Driver</strong> <span t-out="trip.open_assignment_id.driver_id.name or trip.open_assignment_id.market_driver_name or trip.planned_driver_id.name or trip.market_driver_name"/></td></tr>
+                            <tr><td><strong>Route</strong> <span t-out="trip.route_id.name or ''"/> <span t-out="trip.origin_id.display_name or trip.route_origin"/> → <span t-out="trip.destination_id.display_name or trip.route_destination"/></td>
+                                <td><strong>Scheduled</strong> <span t-out="trip.scheduled_date_start"/> → <span t-out="trip.scheduled_date_end"/></td></tr>
+                            <tr><td><strong>Advance paid</strong> <span t-out="sum(trip.advance_ids.filtered(lambda a: a.state == 'posted').mapped('amount'))" t-options="{'widget': 'monetary', 'display_currency': trip.currency_id}"/></td>
+                                <td><strong>Consolidated e-way bill</strong> <span t-out="trip.consolidated_ewaybill or '-'"/></td></tr>
+                        </table>
+                        <h5>LRs in drop order</h5>
+                        <table class="table table-sm table-bordered">
+                            <thead><tr><th>#</th><th>LR</th><th>Consignee</th><th>Destination</th><th class="text-end">Pkgs</th><th class="text-end">kg</th><th>E-way bills (valid until)</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="trip.consignment_link_ids.filtered(lambda x: x.state != 'cancel').sorted('drop_sequence')" t-as="link">
+                                    <td t-out="link_index + 1"/>
+                                    <td t-out="link.consignment_id.name"/>
+                                    <td t-out="link.consignment_id.consignee_id.name"/>
+                                    <td t-out="link.consignment_id.destination_id.display_name"/>
+                                    <td class="text-end" t-out="link.packages"/>
+                                    <td class="text-end" t-out="link.weight"/>
+                                    <td><t t-foreach="link.consignment_id.ewaybill_ids" t-as="bill"><span t-out="bill.name"/> (<span t-out="bill.valid_until"/>)<br/></t></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <t t-call="tms_core.report_trip_sheet_odc"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+    <!-- tms_odc adds permits, escort and movement windows -->
+    <template id="report_trip_sheet_odc"></template>
+</odoo>

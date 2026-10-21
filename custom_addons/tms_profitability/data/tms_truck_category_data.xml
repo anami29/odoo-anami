@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BR-MD-15, #18.2: truck cost categories and their pool -->
+<odoo noupdate="1">
+    <record id="truck_category_service" model="tms.truck.category">
+        <field name="name">Service</field><field name="code">SERVICE</field><field name="cost_pool">running</field>
+        <field name="sequence">1</field>
+    </record>
+    <record id="truck_category_tyres" model="tms.truck.category">
+        <field name="name">Tyres</field><field name="code">TYRES</field><field name="cost_pool">running</field>
+        <field name="sequence">2</field>
+    </record>
+    <record id="truck_category_batteries" model="tms.truck.category">
+        <field name="name">Batteries</field><field name="code">BATTERY</field><field name="cost_pool">running</field>
+        <field name="sequence">3</field>
+    </record>
+    <record id="truck_category_repairs" model="tms.truck.category">
+        <field name="name">Repairs</field><field name="code">REPAIR</field><field name="cost_pool">running</field>
+        <field name="sequence">4</field>
+    </record>
+    <record id="truck_category_lubricants" model="tms.truck.category">
+        <field name="name">Lubricants</field><field name="code">LUBE</field><field name="cost_pool">running</field>
+        <field name="sequence">5</field>
+    </record>
+    <record id="truck_category_overhaul" model="tms.truck.category">
+        <field name="name">Overhaul</field><field name="code">OVERHAUL</field><field name="cost_pool">running</field>
+        <field name="sequence">6</field>
+    </record>
+    <record id="truck_category_insurance" model="tms.truck.category">
+        <field name="name">Insurance</field><field name="code">INSURANCE</field><field name="cost_pool">fixed</field>
+        <field name="sequence">1</field>
+    </record>
+    <record id="truck_category_road_tax" model="tms.truck.category">
+        <field name="name">Road tax</field><field name="code">ROADTAX</field><field name="cost_pool">fixed</field>
+        <field name="sequence">2</field>
+    </record>
+    <record id="truck_category_permits" model="tms.truck.category">
+        <field name="name">Permits</field><field name="code">PERMIT</field><field name="cost_pool">fixed</field>
+        <field name="sequence">3</field>
+    </record>
+    <record id="truck_category_fitness" model="tms.truck.category">
+        <field name="name">Fitness</field><field name="code">FITNESS</field><field name="cost_pool">fixed</field>
+        <field name="sequence">4</field>
+    </record>
+    <record id="truck_category_driver_salary" model="tms.truck.category">
+        <field name="name">Driver salary</field><field name="code">SALARY</field><field name="cost_pool">fixed</field>
+        <field name="sequence">5</field>
+    </record>
+    <!-- BR-PNL-08: parts and labour to repair the truck are truck running -->
+    <record id="tms_core.tms_category_roadside_repair" model="tms.category">
+        <field name="truck_category_id" ref="truck_category_repairs"/>
+    </record>
+</odoo>

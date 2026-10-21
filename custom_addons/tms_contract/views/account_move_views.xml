@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="account_move_form_tms_contract" model="ir.ui.view">
+        <field name="name">account.move.form.tms.contract</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_tms_open_partial_post" type="object" string="Post lines that fit"
+                        invisible="not tms_contract_awaiting" groups="tms_core.group_branch_accountant"/>
+                <button name="action_tms_request_excess" type="object" string="Request excess"
+                        invisible="not tms_contract_awaiting"/>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-warning mb-0" role="alert" invisible="not tms_contract_awaiting">
+                    Awaiting extension (BR-CON-12): this invoice exceeds its contract's balance plus the item's own
+                    reservation by <field name="tms_contract_shortfall" class="oe_inline"/>. It posts once an extension or
+                    an approved excess covers it; the Branch Accountant may post the lines that fit
+                    (<field name="tms_contract_fit_amount" class="oe_inline"/>).
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='invoice_line_ids']/list/field[@name='name']" position="after">
+                <field name="tms_contract_item_id" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="account_move_list_tms_contract" model="ir.ui.view">
+        <field name="name">account.move.list.tms.contract</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_invoice_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="tms_contract_awaiting" optional="hide" string="Awaiting extension"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

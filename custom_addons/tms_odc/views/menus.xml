@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_tms_odc" name="ODC" parent="tms.operations" sequence="90"/>
+    <menuitem id="menu_tms_odc_permit" name="Permits" parent="menu_tms_odc" action="action_tms_odc_permit" sequence="10"/>
+    <menuitem id="menu_tms_odc_equipment" name="Equipment" parent="menu_tms_odc" action="action_tms_trip_equipment" sequence="20"/>
+</odoo>

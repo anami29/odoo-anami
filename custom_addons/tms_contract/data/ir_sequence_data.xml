@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_tms_contract_excess" model="ir.sequence">
+        <field name="name">Contract excess approval</field>
+        <field name="code">tms.contract.excess</field>
+        <field name="prefix">EXC/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

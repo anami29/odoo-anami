@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_tms_trip_charge" model="ir.sequence">
+        <field name="name">Trip charge</field>
+        <field name="code">tms.trip.charge</field>
+        <field name="prefix">CHG/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_tms_trip_expense" model="ir.sequence">
+        <field name="name">Trip expense</field>
+        <field name="code">tms.trip.expense</field>
+        <field name="prefix">EXP/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_tms_driver_advance" model="ir.sequence">
+        <field name="name">Driver advance</field>
+        <field name="code">tms.driver.advance</field>
+        <field name="prefix">ADV/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_tms_driver_settlement" model="ir.sequence">
+        <field name="name">Driver settlement</field>
+        <field name="code">tms.driver.settlement</field>
+        <field name="prefix">DST/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_tms_damage_claim" model="ir.sequence">
+        <field name="name">Damage claim</field>
+        <field name="code">tms.damage.claim</field>
+        <field name="prefix">CLM/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

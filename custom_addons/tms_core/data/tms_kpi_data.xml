@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="kpi_01" model="tms.kpi">
+        <field name="code">KPI-01</field>
+        <field name="name">Trips started without gate</field>
+        <field name="sequence">10</field>
+        <field name="definition">Trips started while compliance enforcement was off</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">compliance</field>
+    </record>
+    <record id="kpi_02" model="tms.kpi">
+        <field name="code">KPI-02</field>
+        <field name="name">Documents expiring soon</field>
+        <field name="sequence">20</field>
+        <field name="definition">Mandatory documents on active vehicles and drivers expiring within 30 days</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">compliance</field>
+    </record>
+    <record id="kpi_03" model="tms.kpi">
+        <field name="code">KPI-03</field>
+        <field name="name">Active breakdowns</field>
+        <field name="sequence">30</field>
+        <field name="definition">Breakdowns with no resumed-at time</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">exception</field>
+    </record>
+    <record id="kpi_04" model="tms.kpi">
+        <field name="code">KPI-04</field>
+        <field name="name">Vehicle replacements</field>
+        <field name="sequence">40</field>
+        <field name="definition">Assignments opened for Breakdown or Accident in the period</field>
+        <field name="alert_rule">Trend only</field>
+        <field name="group">exception</field>
+    </record>
+    <record id="kpi_05" model="tms.kpi">
+        <field name="code">KPI-05</field>
+        <field name="name">Overdue DSRs</field>
+        <field name="sequence">50</field>
+        <field name="definition">Active trips whose last DSR is older than the cadence</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">exception</field>
+    </record>
+    <record id="kpi_06" model="tms.kpi">
+        <field name="code">KPI-06</field>
+        <field name="name">PODs past SLA</field>
+        <field name="sequence">60</field>
+        <field name="definition">Delivered links whose POD is not Verified within the SLA</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">exception</field>
+    </record>
+    <record id="kpi_07" model="tms.kpi">
+        <field name="code">KPI-07</field>
+        <field name="name">Delivery to POD verification</field>
+        <field name="sequence">70</field>
+        <field name="definition">Average hours from delivered at to verified at</field>
+        <field name="alert_rule">Above the kickoff target</field>
+        <field name="group">exception</field>
+    </record>
+    <record id="kpi_08" model="tms.kpi">
+        <field name="code">KPI-08</field>
+        <field name="name">Open claims</field>
+        <field name="sequence">80</field>
+        <field name="definition">Count and amount of claims neither Settled nor Rejected</field>
+        <field name="alert_rule">Older than the kickoff target</field>
+        <field name="group">exception</field>
+    </record>
+    <record id="kpi_09" model="tms.kpi">
+        <field name="code">KPI-09</field>
+        <field name="name">Unbilled approved charges</field>
+        <field name="sequence">90</field>
+        <field name="definition">Approved customer charges with no invoice line</field>
+        <field name="alert_rule">Any at cycle close</field>
+        <field name="group">exception</field>
+    </record>
+    <record id="kpi_10" model="tms.kpi">
+        <field name="code">KPI-10</field>
+        <field name="name">Pending recoveries</field>
+        <field name="sequence">100</field>
+        <field name="definition">Approved vendor, driver and third-party recoveries not yet deducted or invoiced</field>
+        <field name="alert_rule">Older than one billing cycle</field>
+        <field name="group">exception</field>
+    </record>
+    <record id="kpi_11" model="tms.kpi">
+        <field name="code">KPI-11</field>
+        <field name="name">Blocked hire bills</field>
+        <field name="sequence">110</field>
+        <field name="definition">Count and amount of hire bills the match blocks</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">exception</field>
+    </record>
+    <record id="kpi_12" model="tms.kpi">
+        <field name="code">KPI-12</field>
+        <field name="name">Hire paid outside control</field>
+        <field name="sequence">120</field>
+        <field name="definition">Hire bills posted without verified PODs, or over tolerance without an override</field>
+        <field name="alert_rule">Any; the target is zero</field>
+        <field name="group">exception</field>
+    </record>
+    <record id="kpi_13" model="tms.kpi">
+        <field name="code">KPI-13</field>
+        <field name="name">Trip margin</field>
+        <field name="sequence">130</field>
+        <field name="definition">Sum of trip margin over delivered trips, and as a share of trip revenue</field>
+        <field name="alert_rule">Below the kickoff target</field>
+        <field name="group">margin</field>
+    </record>
+    <record id="kpi_14" model="tms.kpi">
+        <field name="code">KPI-14</field>
+        <field name="name">Loss-making trips</field>
+        <field name="sequence">140</field>
+        <field name="definition">Delivered trips with a negative trip margin</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">margin</field>
+    </record>
+    <record id="kpi_15" model="tms.kpi">
+        <field name="code">KPI-15</field>
+        <field name="name">Fuel efficiency gap</field>
+        <field name="sequence">150</field>
+        <field name="definition">Owned vehicles whose km per litre in the period falls below their norm</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">margin</field>
+    </record>
+    <record id="kpi_16" model="tms.kpi">
+        <field name="code">KPI-16</field>
+        <field name="name">Quotation win rate</field>
+        <field name="sequence">160</field>
+        <field name="definition">Confirmed quotations as a share of quotations sent</field>
+        <field name="alert_rule">Below the kickoff target</field>
+        <field name="group">sales</field>
+    </record>
+    <record id="kpi_17" model="tms.kpi">
+        <field name="code">KPI-17</field>
+        <field name="name">Sales order cost variance</field>
+        <field name="sequence">170</field>
+        <field name="definition">Orders whose actual cost exceeds estimate by more than the variance tolerance</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">sales</field>
+    </record>
+    <record id="kpi_18" model="tms.kpi">
+        <field name="code">KPI-18</field>
+        <field name="name">Truck recovery</field>
+        <field name="sequence">180</field>
+        <field name="definition">Standard charge as a share of actual truck cost</field>
+        <field name="alert_rule">Below 90% for the period</field>
+        <field name="group">margin</field>
+    </record>
+    <record id="kpi_19" model="tms.kpi">
+        <field name="code">KPI-19</field>
+        <field name="name">Unassigned cost</field>
+        <field name="sequence">190</field>
+        <field name="definition">Cost lines marked overhead instead of an estimate line</field>
+        <field name="alert_rule">Above the kickoff target</field>
+        <field name="group">margin</field>
+    </record>
+    <record id="kpi_20" model="tms.kpi">
+        <field name="code">KPI-20</field>
+        <field name="name">Contract utilisation</field>
+        <field name="sequence">200</field>
+        <field name="definition">Invoiced plus open reservations as a share of value plus extensions, per Active contract</field>
+        <field name="alert_rule">At or above the utilisation alert</field>
+        <field name="group">contract</field>
+    </record>
+    <record id="kpi_21" model="tms.kpi">
+        <field name="code">KPI-21</field>
+        <field name="name">Waiting on extension</field>
+        <field name="sequence">210</field>
+        <field name="definition">Count and amount of refused movements and invoices Awaiting extension</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">contract</field>
+    </record>
+    <record id="kpi_22" model="tms.kpi">
+        <field name="code">KPI-22</field>
+        <field name="name">Over-contract exposure</field>
+        <field name="sequence">220</field>
+        <field name="definition">Approved excess reserved or invoiced above value plus extensions</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">contract</field>
+    </record>
+    <record id="kpi_23" model="tms.kpi">
+        <field name="code">KPI-23</field>
+        <field name="name">Unbilled delivered LRs</field>
+        <field name="sequence">230</field>
+        <field name="definition">To-Be-Billed LRs with a verified POD not invoiced within the billing party's cycle</field>
+        <field name="alert_rule">Any</field>
+        <field name="group">exception</field>
+    </record>
+    <record id="kpi_24" model="tms.kpi">
+        <field name="code">KPI-24</field>
+        <field name="name">Credit overrides</field>
+        <field name="sequence">240</field>
+        <field name="definition">Credit blocks overridden in the period</field>
+        <field name="alert_rule">Above the kickoff target</field>
+        <field name="group">exception</field>
+    </record>
+</odoo>
