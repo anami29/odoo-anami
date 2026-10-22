@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t
+        t-name="spreadsheet_oca_collab.SpreadsheetRenderer"
+        t-inherit="spreadsheet_oca.SpreadsheetRenderer"
+        t-inherit-mode="extension"
+    >
+        <xpath expr="//SpreadsheetComponent" position="before">
+            <CollabStatus
+                t-if="collabState"
+                collab="collabState"
+                onJump="(client) => this.collabJump(client)"
+                onHistory="() => this.collabOpenHistory()"
+            />
+        </xpath>
+    </t>
+
+    <t t-name="spreadsheet_oca_collab.CollabStatus">
+        <div class="o-sscollab">
+            <span
+                t-if="props.collab.filter.active"
+                class="o-sscollab-filter"
+                t-att-title="'Filter mode'"
+            >
+                <i class="fa fa-filter" />
+                <t t-esc="props.collab.filter.visible" /> of <t t-esc="props.collab.filter.total" /> records
+            </span>
+            <span class="o-sscollab-status" t-att-class="'o-sscollab-' + status.cls" t-att-title="status.text">
+                <i class="fa" t-att-class="status.icon" />
+                <span class="o-sscollab-text" t-esc="status.text" />
+            </span>
+            <div class="o-sscollab-people" t-if="clients.length">
+                <t t-foreach="shown" t-as="client" t-key="client.id">
+                    <button
+                        class="o-sscollab-avatar"
+                        t-att-style="'--o-sscollab-c:' + client.color"
+                        t-att-title="title(client)"
+                        t-on-click="() => props.onJump(client)"
+                    >
+                        <img t-if="client.userId" t-att-src="avatarUrl(client)" t-att-alt="client.name" />
+                        <span t-else="" t-esc="initials(client.name)" />
+                    </button>
+                </t>
+                <button
+                    t-if="overflow.length"
+                    class="o-sscollab-avatar o-sscollab-more"
+                    t-on-click="toggleList"
+                    t-att-title="overflow.length + ' more'"
+                >+<t t-esc="overflow.length" /></button>
+                <div t-if="ui.open" class="o-sscollab-list" t-on-click.stop="() => {}">
+                    <t t-foreach="clients" t-as="client" t-key="client.id">
+                        <button class="o-sscollab-list-row" t-on-click="() => props.onJump(client)">
+                            <span class="o-sscollab-dot" t-att-style="'background:' + client.color" />
+                            <span t-esc="client.name" />
+                            <small t-if="client.sheetName" class="text-muted ms-auto" t-esc="client.sheetName" />
+                        </button>
+                    </t>
+                </div>
+            </div>
+            <button
+                t-if="props.collab.hasVersions"
+                class="o-sscollab-history"
+                title="Version history"
+                t-on-click="() => props.onHistory()"
+            >
+                <i class="fa fa-history" />
+            </button>
+        </div>
+    </t>
+
+    <t t-name="spreadsheet_oca_collab.NameVersionDialog">
+        <Dialog title="title" size="'md'">
+            <p class="text-muted">Named versions are kept permanently in the version history.</p>
+            <input
+                t-ref="name"
+                class="form-control"
+                placeholder="e.g. Budget approved by finance"
+                t-model="state.name"
+                t-on-keydown="onKeydown"
+            />
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-on-click="confirm" t-att-disabled="!state.name.trim()">Save version</button>
+                <button class="btn btn-secondary" t-on-click="props.close">Cancel</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

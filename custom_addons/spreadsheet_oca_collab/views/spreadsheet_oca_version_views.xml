@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="spreadsheet_oca_version_list_view" model="ir.ui.view">
+        <field name="name">spreadsheet.oca.version.list</field>
+        <field name="model">spreadsheet.oca.version</field>
+        <field name="arch" type="xml">
+            <list
+                editable="top"
+                create="0"
+                delete="0"
+                decoration-bf="is_current"
+                decoration-muted="kind == 'replace'"
+            >
+                <field name="create_date" string="When" readonly="1" widget="datetime" />
+                <field name="name" placeholder="Name this version to keep it" />
+                <field name="kind" readonly="1" widget="badge"
+                    decoration-info="kind == 'checkpoint'"
+                    decoration-success="kind == 'restore'" />
+                <field name="user_id" readonly="1" widget="many2one_avatar_user" />
+                <field name="revision_count" readonly="1" string="Edits" />
+                <field name="is_current" column_invisible="1" />
+                <field name="spreadsheet_id" column_invisible="1" />
+                <button
+                    name="action_restore"
+                    type="object"
+                    string="Restore"
+                    icon="fa-history"
+                    invisible="is_current"
+                    confirm="Restore this version for everyone? People editing the sheet will be reloaded onto it. The current state stays in this history."
+                />
+                <button
+                    name="action_open_sheet_at_version"
+                    type="object"
+                    string="Download"
+                    icon="fa-download"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="spreadsheet_oca_version_search_view" model="ir.ui.view">
+        <field name="name">spreadsheet.oca.version.search</field>
+        <field name="model">spreadsheet.oca.version</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="user_id" />
+                <filter name="named" string="Named versions" domain="[('name', '!=', False)]" />
+                <filter name="by_user" string="Saved by people" domain="[('kind', '=', 'checkpoint')]" />
+                <group expand="0" string="Group By">
+                    <filter name="group_user" string="By" context="{'group_by': 'user_id'}" />
+                    <filter name="group_day" string="Day" context="{'group_by': 'create_date:day'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="spreadsheet_oca_version_act_window" model="ir.actions.act_window">
+        <field name="name">Version history</field>
+        <field name="res_model">spreadsheet.oca.version</field>
+        <field name="view_mode">list</field>
+        <field name="target">new</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No versions yet</p>
+            <p>A version is stored each time the sheet is saved with Ctrl+S, when
+               the last person leaves, and automatically every hundred edits.</p>
+        </field>
+    </record>
+</odoo>

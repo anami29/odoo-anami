@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record id="param_snapshot_threshold" model="ir.config_parameter">
+        <field name="key">spreadsheet_oca_collab.snapshot_threshold</field>
+        <field name="value">100</field>
+    </record>
+    <record id="param_version_keep" model="ir.config_parameter">
+        <field name="key">spreadsheet_oca_collab.version_keep</field>
+        <field name="value">30</field>
+    </record>
+    <record id="param_presence_timeout" model="ir.config_parameter">
+        <field name="key">spreadsheet_oca_collab.presence_timeout</field>
+        <field name="value">90</field>
+    </record>
+    <record id="param_archived_revision_days" model="ir.config_parameter">
+        <field name="key">spreadsheet_oca_collab.archived_revision_days</field>
+        <field name="value">90</field>
+    </record>
+</odoo>

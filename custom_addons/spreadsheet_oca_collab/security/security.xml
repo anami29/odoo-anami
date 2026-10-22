@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Versions follow the access of their sheet: read for readers, rename for editors. -->
+<odoo>
+    <record model="ir.rule" id="spreadsheet_oca_version_read_rule">
+        <field name="name">Spreadsheet version: sheets I can open</field>
+        <field name="model_id" ref="model_spreadsheet_oca_version" />
+        <field name="groups" eval="[(4, ref('spreadsheet_oca.group_user'))]" />
+        <field name="domain_force">['|', '|', '|', '|',
+            ('spreadsheet_id.owner_id', '=', user.id),
+            ('spreadsheet_id.contributor_ids', 'in', [user.id]),
+            ('spreadsheet_id.contributor_group_ids', 'in', user.groups_id.ids),
+            ('spreadsheet_id.reader_ids', 'in', [user.id]),
+            ('spreadsheet_id.reader_group_ids', 'in', user.groups_id.ids)]</field>
+        <field name="perm_write" eval="False" />
+        <field name="perm_create" eval="False" />
+        <field name="perm_unlink" eval="False" />
+    </record>
+    <record model="ir.rule" id="spreadsheet_oca_version_write_rule">
+        <field name="name">Spreadsheet version: sheets I can edit</field>
+        <field name="model_id" ref="model_spreadsheet_oca_version" />
+        <field name="groups" eval="[(4, ref('spreadsheet_oca.group_user'))]" />
+        <field name="domain_force">['|', '|',
+            ('spreadsheet_id.owner_id', '=', user.id),
+            ('spreadsheet_id.contributor_ids', 'in', [user.id]),
+            ('spreadsheet_id.contributor_group_ids', 'in', user.groups_id.ids)]</field>
+        <field name="perm_read" eval="False" />
+        <field name="perm_create" eval="False" />
+        <field name="perm_unlink" eval="False" />
+    </record>
+    <record model="ir.rule" id="spreadsheet_oca_version_manager_rule">
+        <field name="name">Spreadsheet version: manager</field>
+        <field name="model_id" ref="model_spreadsheet_oca_version" />
+        <field name="groups" eval="[(4, ref('spreadsheet_oca.group_manager'))]" />
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+</odoo>

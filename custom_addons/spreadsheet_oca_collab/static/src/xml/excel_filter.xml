@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="spreadsheet_oca_collab.XlBox">
+        <span class="o-xlf-box" t-att-class="'o-xlf-box-' + box" />
+    </t>
+
+    <t t-name="spreadsheet_oca_collab.ExcelFilterMenu">
+        <div class="o-xlf" t-on-keydown="onPanelKeydown">
+            <t t-if="!ctx">
+                <div class="o-xlf-empty">No filter here.</div>
+            </t>
+
+            <!-- ============ main list ============ -->
+            <t t-elif="state.mode === 'list'">
+                <t t-if="isSortable">
+                    <button class="o-xlf-row" t-on-click="() => this.sort(false)">
+                        <i class="fa fa-sort-amount-asc" /><span t-esc="sortLabels[0]" />
+                    </button>
+                    <button class="o-xlf-row" t-on-click="() => this.sort(true)">
+                        <i class="fa fa-sort-amount-desc" /><span t-esc="sortLabels[1]" />
+                    </button>
+                    <button class="o-xlf-row" t-on-click="openCustomSort">
+                        <i class="fa fa-list-ol" /><span>Custom Sort…</span>
+                    </button>
+                    <div class="o-xlf-sep" />
+                </t>
+                <button
+                    class="o-xlf-row"
+                    t-att-disabled="!isActive"
+                    t-on-click="clearFilter"
+                >
+                    <i class="fa fa-filter o-xlf-strike" /><span>Clear Filter From “<t t-esc="headerLabel" />”</span>
+                </button>
+                <div
+                    class="o-xlf-row o-xlf-has-sub"
+                    t-att-class="{'o-xlf-open': state.submenu}"
+                    t-on-click="() => this.state.submenu = !this.state.submenu"
+                >
+                    <i class="fa fa-check o-xlf-mark" t-att-class="{'invisible': !(existing and existing.type !== 'values')}" />
+                    <span t-esc="kindFiltersLabel" />
+                    <i class="fa fa-caret-right ms-auto" />
+                </div>
+                <div t-if="state.submenu" class="o-xlf-submenu">
+                    <t t-foreach="submenuEntries" t-as="entry" t-key="entry_index">
+                        <div t-if="entry.sep" class="o-xlf-sep" />
+                        <button
+                            t-else=""
+                            class="o-xlf-row"
+                            t-on-click.stop="() => this.onSubmenu(entry)"
+                            t-esc="entry.label"
+                        />
+                    </t>
+                </div>
+                <div t-if="criteriaText" class="o-xlf-criteria" t-att-title="criteriaText">
+                    <i class="fa fa-filter" /> <t t-esc="criteriaText" />
+                </div>
+
+                <div class="o-xlf-search">
+                    <input
+                        t-ref="search"
+                        type="search"
+                        class="o-xlf-input"
+                        placeholder="Search"
+                        t-att-value="state.search"
+                        t-on-input="onSearchInput"
+                        t-on-keydown="onSearchKeydown"
+                    />
+                    <i class="fa fa-search" />
+                </div>
+
+                <div class="o-xlf-list" role="tree">
+                    <label class="o-xlf-item o-xlf-all" t-on-click.prevent="() => this.toggleItems(visibleItems)">
+                        <t t-call="spreadsheet_oca_collab.XlBox"><t t-set="box" t-value="selectAllState" /></t>
+                        <span t-if="searching">(Select All Search Results)</span>
+                        <span t-else="">(Select All)</span>
+                    </label>
+                    <label t-if="searching" class="o-xlf-item" t-on-click.prevent="() => this.state.addToFilter = !this.state.addToFilter">
+                        <t t-call="spreadsheet_oca_collab.XlBox"><t t-set="box" t-value="state.addToFilter ? 'on' : 'off'" /></t>
+                        <span>Add current selection to filter</span>
+                    </label>
+
+                    <t t-if="showTree">
+                        <t t-foreach="tree" t-as="year" t-key="year.year">
+                            <div class="o-xlf-item">
+                                <i class="fa o-xlf-twisty" t-att-class="state.expanded['y' + year.year] ? 'fa-minus-square-o' : 'fa-plus-square-o'" t-on-click="() => this.toggleExpand('y' + year.year)" />
+                                <label class="o-xlf-label" t-on-click.prevent="() => this.toggleItems(yearItems(year))">
+                                    <t t-call="spreadsheet_oca_collab.XlBox"><t t-set="box" t-value="boxState(yearItems(year))" /></t>
+                                    <span t-esc="year.label" />
+                                </label>
+                            </div>
+                            <t t-if="state.expanded['y' + year.year]">
+                                <t t-foreach="year.months" t-as="month" t-key="month.month">
+                                    <t t-set="mkey" t-value="'m' + year.year + '-' + month.month" />
+                                    <div class="o-xlf-item o-xlf-lvl1">
+                                        <i class="fa o-xlf-twisty" t-att-class="state.expanded[mkey] ? 'fa-minus-square-o' : 'fa-plus-square-o'" t-on-click="() => this.toggleExpand(mkey)" />
+                                        <label class="o-xlf-label" t-on-click.prevent="() => this.toggleItems(month.days)">
+                                            <t t-call="spreadsheet_oca_collab.XlBox"><t t-set="box" t-value="boxState(month.days)" /></t>
+                                            <span t-esc="month.label" />
+                                        </label>
+                                    </div>
+                                    <t t-if="state.expanded[mkey]">
+                                        <t t-foreach="month.days" t-as="day" t-key="day.key">
+                                            <label class="o-xlf-item o-xlf-lvl2" t-att-title="day.label" t-on-click.prevent="() => this.toggleItem(day)">
+                                                <t t-call="spreadsheet_oca_collab.XlBox"><t t-set="box" t-value="isChecked(day) ? 'on' : 'off'" /></t>
+                                                <span t-esc="dayLabel(day)" />
+                                            </label>
+                                        </t>
+                                    </t>
+                                </t>
+                            </t>
+                        </t>
+                        <t t-foreach="blankAndOtherItems" t-as="item" t-key="item.key">
+                            <label class="o-xlf-item" t-on-click.prevent="() => this.toggleItem(item)">
+                                <t t-call="spreadsheet_oca_collab.XlBox"><t t-set="box" t-value="isChecked(item) ? 'on' : 'off'" /></t>
+                                <span t-esc="itemLabel(item)" />
+                            </label>
+                        </t>
+                    </t>
+                    <t t-else="">
+                        <t t-foreach="visibleItems" t-as="item" t-key="item.key">
+                            <label class="o-xlf-item" t-on-click.prevent="() => this.toggleItem(item)">
+                                <t t-call="spreadsheet_oca_collab.XlBox"><t t-set="box" t-value="isChecked(item) ? 'on' : 'off'" /></t>
+                                <span t-esc="itemLabel(item)" />
+                            </label>
+                        </t>
+                        <div t-if="!visibleItems.length" class="o-xlf-empty">No matches</div>
+                    </t>
+                </div>
+                <div t-if="state.error" class="o-xlf-error" t-esc="state.error" />
+                <div class="o-xlf-foot">
+                    <button class="o-xlf-btn o-xlf-primary" t-on-click="confirm">OK</button>
+                    <button class="o-xlf-btn" t-on-click="close">Cancel</button>
+                </div>
+            </t>
+
+            <!-- ============ Custom AutoFilter ============ -->
+            <t t-elif="state.mode === 'condition'">
+                <div class="o-xlf-title">Custom AutoFilter</div>
+                <div class="o-xlf-sub">Show rows where: <b t-esc="headerLabel" /></div>
+                <div class="o-xlf-cond">
+                    <select class="o-xlf-select" t-model="state.cond.op1">
+                        <t t-foreach="operators" t-as="op" t-key="op[0]">
+                            <option t-att-value="op[0]" t-esc="op[1]" />
+                        </t>
+                    </select>
+                    <input t-ref="firstInput" class="o-xlf-input" list="o-xlf-suggest" t-model="state.cond.v1" />
+                </div>
+                <div class="o-xlf-join">
+                    <label><input type="radio" value="and" t-model="state.cond.join" /> And</label>
+                    <label><input type="radio" value="or" t-model="state.cond.join" /> Or</label>
+                </div>
+                <div class="o-xlf-cond">
+                    <select class="o-xlf-select" t-model="state.cond.op2">
+                        <option value="" />
+                        <t t-foreach="operators" t-as="op" t-key="op[0]">
+                            <option t-att-value="op[0]" t-esc="op[1]" />
+                        </t>
+                    </select>
+                    <input class="o-xlf-input" list="o-xlf-suggest" t-model="state.cond.v2" t-att-disabled="!state.cond.op2" />
+                </div>
+                <datalist id="o-xlf-suggest">
+                    <t t-foreach="suggestions" t-as="s" t-key="s_index"><option t-att-value="s" /></t>
+                </datalist>
+                <div t-if="kind === 'text'" class="o-xlf-hint">Use ? for any single character, * for any series of characters, ~ before ? or * to find them literally.</div>
+                <div t-if="state.error" class="o-xlf-error" t-esc="state.error" />
+                <div class="o-xlf-foot">
+                    <button class="o-xlf-btn o-xlf-primary" t-on-click="confirmCondition">OK</button>
+                    <button class="o-xlf-btn" t-on-click="() => this.state.mode = 'list'">Cancel</button>
+                </div>
+            </t>
+
+            <!-- ============ Top 10 ============ -->
+            <t t-elif="state.mode === 'top'">
+                <div class="o-xlf-title">Top 10 AutoFilter</div>
+                <div class="o-xlf-cond o-xlf-top">
+                    <select class="o-xlf-select" t-on-change="(ev) => this.state.top.top = ev.target.value === 'top'">
+                        <option value="top" t-att-selected="state.top.top">Top</option>
+                        <option value="bottom" t-att-selected="!state.top.top">Bottom</option>
+                    </select>
+                    <input class="o-xlf-input o-xlf-num" type="number" min="1" t-model.number="state.top.n" />
+                    <select class="o-xlf-select" t-on-change="(ev) => this.state.top.percent = ev.target.value === 'percent'">
+                        <option value="items" t-att-selected="!state.top.percent">Items</option>
+                        <option value="percent" t-att-selected="state.top.percent">Percent</option>
+                    </select>
+                </div>
+                <div t-if="state.error" class="o-xlf-error" t-esc="state.error" />
+                <div class="o-xlf-foot">
+                    <button class="o-xlf-btn o-xlf-primary" t-on-click="confirmTop">OK</button>
+                    <button class="o-xlf-btn" t-on-click="() => this.state.mode = 'list'">Cancel</button>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <!-- ============ Custom Sort side panel ============ -->
+    <t t-name="spreadsheet_oca_collab.XlSortPanel">
+        <div class="o-xls">
+            <div class="o-xls-range">
+                <span>Range</span>
+                <code t-esc="rangeLabel" />
+            </div>
+            <label class="o-xls-check">
+                <input type="checkbox" t-model="state.hasHeaders" t-on-change="refreshColumns" />
+                My data has headers
+            </label>
+            <div class="o-xls-levels">
+                <t t-foreach="state.levels" t-as="level" t-key="level.id">
+                    <div class="o-xls-level" t-att-class="{'o-xls-selected': state.selected === level_index}" t-on-click="() => this.state.selected = level_index">
+                        <span class="o-xls-lbl" t-esc="level_first ? 'Sort by' : 'Then by'" />
+                        <select class="o-xlf-select" t-on-change="(ev) => this.setLevelCol(level, ev.target.value)">
+                            <t t-foreach="columns" t-as="col" t-key="col.col">
+                                <option t-att-value="col.col" t-att-selected="col.col === level.col" t-esc="col.label" />
+                            </t>
+                        </select>
+                        <select class="o-xlf-select" t-on-change="(ev) => level.descending = ev.target.value === 'desc'">
+                            <option value="asc" t-att-selected="!level.descending" t-esc="orderLabels(level.col)[0]" />
+                            <option value="desc" t-att-selected="level.descending" t-esc="orderLabels(level.col)[1]" />
+                        </select>
+                    </div>
+                </t>
+            </div>
+            <div class="o-xls-tools">
+                <button class="o-xlf-btn" t-on-click="addLevel" t-att-disabled="state.levels.length >= 64"><i class="fa fa-plus" /> Add Level</button>
+                <button class="o-xlf-btn" t-on-click="deleteLevel" t-att-disabled="state.levels.length &lt;= 1"><i class="fa fa-times" /> Delete Level</button>
+                <button class="o-xlf-btn" t-on-click="copyLevel"><i class="fa fa-copy" /> Copy Level</button>
+                <button class="o-xlf-btn" t-on-click="() => this.moveLevel(-1)" title="Move up"><i class="fa fa-arrow-up" /></button>
+                <button class="o-xlf-btn" t-on-click="() => this.moveLevel(1)" title="Move down"><i class="fa fa-arrow-down" /></button>
+            </div>
+            <label class="o-xls-check">
+                <input type="checkbox" t-model="state.caseSensitive" /> Case sensitive
+            </label>
+            <div t-if="state.error" class="o-xlf-error" t-esc="state.error" />
+            <div class="o-xlf-foot">
+                <button class="o-xlf-btn o-xlf-primary" t-on-click="apply">Sort</button>
+                <button class="o-xlf-btn" t-on-click="() => this.props.onCloseSidePanel()">Close</button>
+            </div>
+        </div>
+    </t>
+</templates>
