@@ -25,7 +25,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  *  - interception of COLLAB_RESET (restore/replace) and presence liveness.
  *
  * @param {Object} transport SpreadsheetTransportService instance
- * @param {Object} opts {model, resId, getSession, onReset, onChange}
+ * @param {Object} opts {model, resId, onReset, onChange, onLocks}
  */
 export function upgradeTransport(transport, opts) {
     const state = {
@@ -44,6 +44,10 @@ export function upgradeTransport(transport, opts) {
         }
         if (payload.type === "COLLAB_RESET") {
             opts.onReset(payload);
+            return;
+        }
+        if (payload.type === "CELL_LOCKS") {
+            opts.onLocks?.(payload.locks || []);
             return;
         }
         const now = Date.now();
@@ -124,9 +128,12 @@ export function upgradeTransport(transport, opts) {
                     [[opts.resId], message]
                 );
                 if (ok) {
+                    if (ok.locks) {
+                        opts.onLocks?.(ok.locks);
+                    }
                     deliver(message);
                 }
-                return ok;
+                return Boolean(ok);
             } catch {
                 return false;
             }

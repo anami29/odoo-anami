@@ -26,6 +26,14 @@
                 <i class="fa fa-filter" />
                 <t t-esc="props.collab.filter.visible" /> of <t t-esc="props.collab.filter.total" /> records
             </span>
+            <span
+                t-if="lock"
+                class="o-sscollab-lock"
+                t-att-title="lock.cell + ' is read-only for you while ' + lock.name + ' is typing in it'"
+            >
+                <i class="fa fa-lock" />
+                <t t-esc="lock.cell" /> · <t t-esc="lock.name" /> is typing
+            </span>
             <span class="o-sscollab-status" t-att-class="'o-sscollab-' + status.cls" t-att-title="status.text">
                 <i class="fa" t-att-class="status.icon" />
                 <span class="o-sscollab-text" t-esc="status.text" />
@@ -84,5 +92,24 @@
                 <button class="btn btn-secondary" t-on-click="props.close">Cancel</button>
             </t>
         </Dialog>
+    </t>
+
+    <t t-name="spreadsheet_oca_collab.TypingTag">
+        <t t-if="visible">
+            <div class="o-typing-cell" t-att-style="cellStyle" />
+            <div class="o-typing-tag" t-att-style="style">
+                <i class="fa fa-pencil" /> <t t-esc="props.tag.name" /> is typing<span class="o-typing-dots"><span>.</span><span>.</span><span>.</span></span>
+            </div>
+        </t>
+    </t>
+
+    <t t-inherit="o-spreadsheet-Grid" t-inherit-mode="extension">
+        <xpath expr="//ClientTag/.." position="after">
+            <t t-if="env.collabTypingTags">
+                <t t-foreach="env.collabTypingTags()" t-as="tag" t-key="tag.clientId">
+                    <TypingTag tag="tag" />
+                </t>
+            </t>
+        </xpath>
     </t>
 </templates>

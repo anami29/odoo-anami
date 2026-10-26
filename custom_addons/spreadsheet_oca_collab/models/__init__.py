@@ -4,4 +4,5 @@ from . import (
     spreadsheet_oca_version,
     spreadsheet_spreadsheet,
     spreadsheet_oca_user_filter,
+    spreadsheet_oca_cell_lock,
 )

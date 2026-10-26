@@ -41,6 +41,10 @@ export class CollabStatus extends Component {
     get overflow() {
         return this.clients.slice(MAX_AVATARS);
     }
+    get lock() {
+        void this.props.collab.tick;
+        return this.props.collab.lock;
+    }
     get status() {
         const c = this.props.collab;
         if (c.readonly) {

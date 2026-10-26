@@ -2,3 +2,4 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_spreadsheet_oca_version_user,spreadsheet.oca.version user,model_spreadsheet_oca_version,spreadsheet_oca.group_user,1,1,0,0
 access_spreadsheet_oca_version_manager,spreadsheet.oca.version manager,model_spreadsheet_oca_version,spreadsheet_oca.group_manager,1,1,1,1
 access_spreadsheet_oca_user_filter_none,spreadsheet.oca.user.filter system,model_spreadsheet_oca_user_filter,base.group_system,1,1,1,1
+access_spreadsheet_oca_cell_lock_system,spreadsheet.oca.cell.lock system,model_spreadsheet_oca_cell_lock,base.group_system,1,1,1,1

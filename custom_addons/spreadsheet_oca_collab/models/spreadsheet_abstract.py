@@ -13,9 +13,11 @@ import json
 import uuid
 
 from odoo import api, fields, models
+from odoo.exceptions import AccessError
 from odoo.tools import SQL
 
 ORDERED_TYPES = ("REMOTE_REVISION", "REVISION_UNDONE", "REVISION_REDONE")
+PRESENCE_TYPES = ("CLIENT_JOINED", "CLIENT_MOVED", "CLIENT_LEFT")
 DEFAULT_REVISION_ID = "START_REVISION"
 MESSAGE_VERSION = 1
 
@@ -138,7 +140,30 @@ class SpreadsheetAbstract(models.AbstractModel):
         if message_type == "SNAPSHOT":
             self._check_access_spreadsheet("write")
             return self._collab_snapshot(message)
-        return super().send_spreadsheet_message(message, access_token=access_token)
+        result = super().send_spreadsheet_message(message, access_token=access_token)
+        if result and message_type in PRESENCE_TYPES:
+            holders = self.env["spreadsheet.oca.cell.lock"]._on_presence(self, message)
+            if holders is not None:
+                return {"locks": holders}
+        return result
+
+    def collab_cell_typing(self, client_id, position=False):
+        """Called when this client starts typing in a cell (position) or stops
+        (False). Returns {"ok", "holder", "locks"}; ok is False when someone
+        else is already typing in that cell."""
+        self.ensure_one()
+        self._check_access_spreadsheet("read")
+        return self.env["spreadsheet.oca.cell.lock"]._claim(
+            self, str(client_id)[:64], position or False
+        )
+
+    def _collab_can_write(self):
+        self.ensure_one()
+        try:
+            self.check_access("write")
+        except AccessError:
+            return False
+        return True
 
     def _collab_snapshot(self, message):
         """Consolidate the live chain into the stored sheet.
@@ -299,6 +324,8 @@ class SpreadsheetAbstract(models.AbstractModel):
             "can_restore": result.get("mode") == "normal",
             "has_versions": self._collab_has_versions(),
             "user_filters": self.env["spreadsheet.oca.user.filter"]._get_entries(self),
+            "cell_lock": self.env["spreadsheet.oca.cell.lock"]._enabled(),
+            "locks": self.env["spreadsheet.oca.cell.lock"]._holders(self),
         }
         return result
 

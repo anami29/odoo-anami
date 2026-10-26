@@ -16,4 +16,8 @@
         <field name="key">spreadsheet_oca_collab.archived_revision_days</field>
         <field name="value">90</field>
     </record>
+    <record id="param_cell_lock" model="ir.config_parameter">
+        <field name="key">spreadsheet_oca_collab.cell_lock</field>
+        <field name="value">1</field>
+    </record>
 </odoo>

@@ -14,6 +14,7 @@ import {patch} from "@web/core/utils/patch";
 import {SpreadsheetRenderer} from "@spreadsheet_oca/spreadsheet/bundle/spreadsheet_renderer.esm";
 import {CollabStatus} from "./collab_status.esm";
 import {XL_FILTER_TOOL} from "./excel_filter/excel_keys.esm";
+import {initLockState, installLockGuard, lockedBy, setLocks, typingTags} from "./cell_lock.esm";
 import {upgradeTransport} from "./collab_transport.esm";
 import {
     exportCriteria,
@@ -23,6 +24,8 @@ import {
 } from "./excel_filter/filter_state.esm";
 
 const uuidGenerator = new spreadsheet.helpers.UuidGenerator();
+const {CellComposerStore} = spreadsheet.stores;
+const {toXC} = spreadsheet.helpers;
 const MESSAGE_VERSION = 1;
 
 SpreadsheetRenderer.components = {...SpreadsheetRenderer.components, CollabStatus};
@@ -47,12 +50,39 @@ patch(SpreadsheetRenderer.prototype, {
             clients: [],
             hasVersions: info.has_versions,
             filter: {active: 0, total: 0, visible: 0},
+            lock: null,
         });
+        // Cell locking: first editor on a cell edits, others read until they leave.
+        let lastBlockedToast = 0;
+        initLockState(model, {
+            // Readers see who is typing; they never claim a cell themselves.
+            enabled: info.cell_lock,
+            me: () => session.clientId,
+            locks: info.locks,
+            notifyBlocked: (holder) => {
+                this._collabTriedCell = `${holder.sheetId}|${holder.col}|${holder.row}`;
+                if (Date.now() - lastBlockedToast < 2500) {
+                    return;
+                }
+                lastBlockedToast = Date.now();
+                this.notifications.add(
+                    _t(
+                        "%(name)s is typing in %(cell)s. You can edit it when they finish.",
+                        {cell: toXC(holder.col, holder.row), name: holder.name}
+                    ),
+                    {type: "warning"}
+                );
+            },
+            onComposer: () => this.collabSyncTyping(),
+        });
+        installLockGuard(model);
+        useSubEnv({collabTypingTags: () => typingTags(model.getters)});
         this.collabTransport = upgradeTransport(session.transportService, {
             model: this.props.model,
             resId: this.props.res_id,
             onReset: (payload) => this.collabOnReset(payload),
             onChange: () => this.collabRefresh(),
+            onLocks: (locks) => this.collabOnLocks(locks),
         });
         model.on("update", this, () => this.collabRefresh());
         model.on("unexpected-revision-id", this, () => {
@@ -127,6 +157,7 @@ patch(SpreadsheetRenderer.prototype, {
         });
 
         onMounted(() => {
+            this._collabMounted = true;
             try {
                 importCriteria(model, info.user_filters || []);
             } catch (error) {
@@ -200,7 +231,115 @@ patch(SpreadsheetRenderer.prototype, {
         }
         s.clients = clients;
         s.filter = filterStats(model, getters.getActiveSheetId());
+        this.collabSyncTyping();
+        const active = getters.getActivePosition();
+        const holder = lockedBy(getters, active.sheetId, active.col, active.row);
+        s.lock = holder ? {cell: toXC(holder.col, holder.row), name: holder.name} : null;
         s.tick++;
+    },
+
+    /**
+     * Claim the cell when this person starts typing and release it when they
+     * stop. The release waits until the typed value has reached the server, so
+     * whoever types next starts from it. Calls run one after another; a call
+     * made obsolete by a later change is skipped.
+     */
+    collabSyncTyping() {
+        if (
+            !this._collabMounted ||
+            !this.collabTransport ||
+            this.props.record.mode === "readonly"
+        ) {
+            return; // the store container only has the model once mounted
+        }
+        const composer = this.stores.get(CellComposerStore);
+        const editing = composer.editionMode !== "inactive";
+        const key = editing ? `${composer.sheetId}|${composer.col}|${composer.row}` : null;
+        if (key === (this._typingKey ?? null)) {
+            return;
+        }
+        this._typingKey = key;
+        const session = this.spreadsheet_model.session;
+        const position = editing
+            ? {sheetId: composer.sheetId, col: composer.col, row: composer.row}
+            : false;
+        this._typingChain = (this._typingChain || Promise.resolve())
+            .then(async () => {
+                if (!position) {
+                    await this.collabTransport.waitSynced(session, 5000);
+                    if (this._typingKey !== null) {
+                        return; // already typing elsewhere: that claim releases this one
+                    }
+                } else if (this._typingKey !== key) {
+                    return;
+                }
+                const res = await this.orm.call(this.props.model, "collab_cell_typing", [
+                    [this.props.res_id],
+                    session.clientId,
+                    position,
+                ]);
+                this.collabOnLocks(res.locks || []);
+                if (position && !res.ok && this._typingKey === key) {
+                    const editor = this.stores.get(CellComposerStore);
+                    if (editor.editionMode !== "inactive") {
+                        editor.cancelEdition();
+                        this.stores.trigger("store-updated");
+                    }
+                    this.notifications.add(
+                        _t("%(name)s started typing in %(cell)s first. It is read-only for you until they finish.", {
+                            name: res.holder?.name || _t("Someone"),
+                            cell: toXC(position.col, position.row),
+                        }),
+                        {type: "warning"}
+                    );
+                }
+            })
+            .catch(() => undefined);
+    },
+
+    collabOnLocks(locks) {
+        const model = this.spreadsheet_model;
+        const getters = model.getters;
+        const active = getters.getActivePosition();
+        const tried = this._collabTriedCell ? this._collabTriedCell.split("|") : null;
+        const triedLock = () =>
+            tried ? lockedBy(getters, tried[0], Number(tried[1]), Number(tried[2])) : null;
+        const before = triedLock();
+        setLocks(model, locks);
+        const after = lockedBy(getters, active.sheetId, active.col, active.row);
+        if (after && this._collabMounted) {
+            // Arrived at the same moment as someone else and the server put
+            // them first: close an editor opened in the meantime.
+            const composer = this.stores.get(CellComposerStore);
+            if (
+                composer.editionMode !== "inactive" &&
+                composer.col === after.col &&
+                composer.row === after.row
+            ) {
+                composer.cancelEdition();
+                this.stores.trigger("store-updated");
+                this.notifications.add(
+                    _t("%(name)s started typing in %(cell)s first. It is read-only for you until they finish.", {
+                        name: after.name,
+                        cell: toXC(after.col, after.row),
+                    }),
+                    {type: "warning"}
+                );
+            }
+        }
+        if (before && !triedLock()) {
+            // Only for a cell this person actually tried to edit.
+            this._collabTriedCell = null;
+            this.notifications.add(
+                _t("%(name)s finished typing in %(cell)s. You can edit it now.", {
+                    name: before.name,
+                    cell: toXC(before.col, before.row),
+                }),
+                {type: "success"}
+            );
+        }
+        model.trigger("update");
+        this.collabRefresh();
     },
 
     collabJump(client) {

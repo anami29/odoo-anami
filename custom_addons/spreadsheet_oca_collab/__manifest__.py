@@ -4,7 +4,7 @@
     "name": "Spreadsheet OCA - Collaboration and Excel Filters",
     "summary": "Google-Sheets-style multi-user editing and Excel-style "
     "filtering and sorting for spreadsheet_oca",
-    "version": "18.0.1.0.1",
+    "version": "18.0.1.2.0",
     "category": "Productivity",
     "license": "AGPL-3",
     "author": "RLFB",
@@ -26,6 +26,7 @@
             "spreadsheet_oca_collab/static/src/js/excel_filter/filter_menu.esm.js",
             "spreadsheet_oca_collab/static/src/js/excel_filter/sort_panel.esm.js",
             "spreadsheet_oca_collab/static/src/js/excel_filter/excel_keys.esm.js",
+            "spreadsheet_oca_collab/static/src/js/cell_lock.esm.js",
             "spreadsheet_oca_collab/static/src/js/collab_transport.esm.js",
             "spreadsheet_oca_collab/static/src/js/collab_status.esm.js",
             "spreadsheet_oca_collab/static/src/js/renderer_patch.esm.js",
