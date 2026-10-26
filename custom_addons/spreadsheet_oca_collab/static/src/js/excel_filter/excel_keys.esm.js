@@ -12,7 +12,13 @@
 import * as spreadsheet from "@odoo/o-spreadsheet";
 import {_t} from "@web/core/l10n/translation";
 import {patch} from "@web/core/utils/patch";
-import {applyCriteria, clearAll, getFilterContext, reapplyAll} from "./filter_state.esm";
+import {
+    applyCriteria,
+    autoFilterZone,
+    clearAll,
+    getFilterContext,
+    reapplyAll,
+} from "./filter_state.esm";
 
 const {Grid} = spreadsheet.components;
 const {topbarMenuRegistry} = spreadsheet.registries;
@@ -72,10 +78,7 @@ export function toggleAutoFilter(env) {
         });
         return;
     }
-    let zone = getters.getSelectedZone();
-    if (zone.left === zone.right && zone.top === zone.bottom) {
-        zone = getters.getContiguousZone(sheetId, zone);
-    }
+    const zone = autoFilterZone(getters, sheetId, getters.getSelectedZone());
     if (zone.top === zone.bottom) {
         env.raiseError?.(_t("Select a range with a header row and at least one row of data."));
         return;
@@ -102,7 +105,7 @@ patch(Grid.prototype, {
                 const getters = env.model.getters;
                 const pos = getters.getActivePosition();
                 const filter = getters.getFilter(pos);
-                if (filter && filter.rangeWithHeaders.zone.top === pos.row) {
+                if (filter && getters.isFilterHeader(pos)) {
                     this.cellPopovers.open({col: pos.col, row: pos.row}, "FilterMenu");
                 }
             },
@@ -111,6 +114,19 @@ patch(Grid.prototype, {
 });
 
 /* ------------------------------- menus ------------------------------- */
+const hasFilters = (env) =>
+    Boolean(env.model.getters.getFirstTableInSelection()?.config.hasFilters);
+
+/** Toolbar funnel button (o-spreadsheet's own one ignores the Excel range rules). */
+export const XL_FILTER_TOOL = {
+    name: (env) => (hasFilters(env) ? _t("Remove filter") : _t("Filter")),
+    description: "Ctrl+Shift+L",
+    isActive: hasFilters,
+    isEnabled: (env) => !env.model.getters.isReadonly(),
+    execute: (env) => toggleAutoFilter(env),
+    icon: "o-spreadsheet-Icon.FILTER_ICON_ACTIVE",
+};
+
 topbarMenuRegistry.addChild(
     "add_remove_data_filter",
     ["data"],

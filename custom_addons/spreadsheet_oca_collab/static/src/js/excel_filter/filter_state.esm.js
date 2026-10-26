@@ -223,3 +223,57 @@ export function importCriteria(model, entries) {
     }
     notify(model);
 }
+
+/* ---------------- AutoFilter range, as Excel picks it ---------------- */
+
+/**
+ * Range an AutoFilter should cover for a selection.
+ *  - one cell: the current region around it;
+ *  - one row (several cells): those columns, from that row down to the end
+ *    of the data below (selecting only the header row is the common case);
+ *  - anything taller: the selection itself.
+ */
+export function autoFilterZone(getters, sheetId, selection) {
+    if (selection.left === selection.right && selection.top === selection.bottom) {
+        return getters.getContiguousZone(sheetId, selection);
+    }
+    if (selection.top === selection.bottom) {
+        const region = getters.getContiguousZone(sheetId, selection);
+        return {...selection, bottom: Math.max(selection.bottom, region.bottom)};
+    }
+    return selection;
+}
+
+/**
+ * Excel re-detects an AutoFilter's range from the data. A filter made on a
+ * header row only (o-spreadsheet's "Add filters" with the header row
+ * selected) has nothing under it, so its list is empty: extend it over the
+ * data below. Only static tables that are AutoFilters (no style) or have no
+ * data row at all are touched; styled tables keep their size, as in Excel.
+ * @returns {boolean} whether the range changed
+ */
+export function extendFilterToData(model, sheetId, table) {
+    const getters = model.getters;
+    if (!table || getters.isReadonly()) {
+        return false;
+    }
+    const core = getters.getCoreTableMatchingTopLeft(sheetId, table.range.zone);
+    if (!core || core.type === "dynamic") {
+        return false;
+    }
+    const zone = table.range.zone;
+    const headerOnly = zone.bottom - zone.top + 1 <= (table.config.numberOfHeaders || 0);
+    if (!headerOnly && table.config.styleId !== "None") {
+        return false;
+    }
+    const region = getters.getContiguousZone(sheetId, zone);
+    if (region.bottom <= zone.bottom) {
+        return false;
+    }
+    const result = model.dispatch("UPDATE_TABLE", {
+        sheetId,
+        zone,
+        newTableRange: getters.getRangeDataFromZone(sheetId, {...zone, bottom: region.bottom}),
+    });
+    return result.isSuccessful;
+}

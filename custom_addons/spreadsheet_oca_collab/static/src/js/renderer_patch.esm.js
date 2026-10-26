@@ -13,6 +13,7 @@ import {browser} from "@web/core/browser/browser";
 import {patch} from "@web/core/utils/patch";
 import {SpreadsheetRenderer} from "@spreadsheet_oca/spreadsheet/bundle/spreadsheet_renderer.esm";
 import {CollabStatus} from "./collab_status.esm";
+import {XL_FILTER_TOOL} from "./excel_filter/excel_keys.esm";
 import {upgradeTransport} from "./collab_transport.esm";
 import {
     exportCriteria,
@@ -29,6 +30,7 @@ SpreadsheetRenderer.components = {...SpreadsheetRenderer.components, CollabStatu
 patch(SpreadsheetRenderer.prototype, {
     setup() {
         super.setup(...arguments);
+        useSubEnv({xlFilterTool: XL_FILTER_TOOL});
         const info = this.props.record.collab;
         if (!info) {
             return; // Server side not upgraded: keep stock behaviour.

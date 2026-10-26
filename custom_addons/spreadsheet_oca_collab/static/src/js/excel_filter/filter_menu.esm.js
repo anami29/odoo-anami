@@ -21,7 +21,13 @@ import {
     searchMatches,
     serialToDate,
 } from "./criteria.esm";
-import {applyCriteria, columnCells, getCriteria, getFilterContext} from "./filter_state.esm";
+import {
+    applyCriteria,
+    columnCells,
+    extendFilterToData,
+    getCriteria,
+    getFilterContext,
+} from "./filter_state.esm";
 
 const {cellPopoverRegistry} = spreadsheet.registries;
 const {toNumber} = spreadsheet.helpers;
@@ -48,6 +54,10 @@ export class ExcelFilterMenu extends Component {
         this.searchRef = useRef("search");
         this.firstInputRef = useRef("firstInput");
         const model = this.env.model;
+        const first = getFilterContext(model, this.props.filterPosition);
+        if (first && extendFilterToData(model, first.sheetId, first.table)) {
+            this.extended = true;
+        }
         this.ctx = getFilterContext(model, this.props.filterPosition);
         const existing = this.ctx
             ? getCriteria(model, this.ctx.sheetId, this.ctx.filter.id)

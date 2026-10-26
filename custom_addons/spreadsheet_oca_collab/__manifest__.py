@@ -4,7 +4,7 @@
     "name": "Spreadsheet OCA - Collaboration and Excel Filters",
     "summary": "Google-Sheets-style multi-user editing and Excel-style "
     "filtering and sorting for spreadsheet_oca",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "category": "Productivity",
     "license": "AGPL-3",
     "author": "RLFB",

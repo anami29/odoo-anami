@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <templates xml:space="preserve">
 
+    <!-- Toolbar funnel: use the Excel AutoFilter action (range rules, no table style). -->
+    <t t-inherit="o-spreadsheet-TopBar" t-inherit-mode="extension">
+        <xpath expr="//ActionButton[@action='DATA.createRemoveFilterTool']" position="attributes">
+            <attribute name="action">env.xlFilterTool or DATA.createRemoveFilterTool</attribute>
+        </xpath>
+    </t>
+
     <t t-name="spreadsheet_oca_collab.XlBox">
         <span class="o-xlf-box" t-att-class="'o-xlf-box-' + box" />
     </t>
@@ -124,7 +131,7 @@
                                 <span t-esc="itemLabel(item)" />
                             </label>
                         </t>
-                        <div t-if="!visibleItems.length" class="o-xlf-empty">No matches</div>
+                        <div t-if="!visibleItems.length" class="o-xlf-empty"><t t-if="searching">No matches</t><t t-else="">No data under this header</t></div>
                     </t>
                 </div>
                 <div t-if="state.error" class="o-xlf-error" t-esc="state.error" />
