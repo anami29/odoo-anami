@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Versions follow the access of their sheet: read for readers, rename for editors. -->
 <odoo>
+    <!-- Restoring rolls the sheet back for everybody at once, so it is kept
+         separate from editing: a contributor may change cells all day without
+         being able to discard everyone else's work. -->
+    <record id="group_version_restore" model="res.groups">
+        <field name="name">Restore button</field>
+        <field name="category_id" ref="base.module_category_usability" />
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]" />
+        <field
+            name="comment"
+        >Shows the Restore button in a spreadsheet's Version history. Without this right a person can still open the history, read it and download a version, but cannot roll the sheet back.</field>
+    </record>
     <record model="ir.rule" id="spreadsheet_oca_version_read_rule">
         <field name="name">Spreadsheet version: sheets I can open</field>
         <field name="model_id" ref="model_spreadsheet_oca_version" />

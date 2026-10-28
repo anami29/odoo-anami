@@ -25,6 +25,7 @@
                     type="object"
                     string="Restore"
                     icon="fa-history"
+                    groups="spreadsheet_oca_collab.group_version_restore"
                     invisible="is_current"
                     confirm="Restore this version for everyone? People editing the sheet will be reloaded onto it. The current state stays in this history."
                 />

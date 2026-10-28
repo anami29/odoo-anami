@@ -4,7 +4,7 @@ import base64
 import json
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 
 class SpreadsheetOcaVersion(models.Model):
@@ -68,6 +68,17 @@ class SpreadsheetOcaVersion(models.Model):
     def action_restore(self):
         """Make this version the current sheet for everyone."""
         self.ensure_one()
+        # The button is hidden without this right, but hiding a button is not a
+        # permission: the method is still reachable over RPC.
+        if not self.env.user.has_group(
+            "spreadsheet_oca_collab.group_version_restore"
+        ):
+            raise AccessError(
+                _(
+                    "Restoring a version is limited to people holding the "
+                    "Restore button right. Ask an administrator for it."
+                )
+            )
         sheet = self.spreadsheet_id
         sheet.check_access("write")
         if not self.data:

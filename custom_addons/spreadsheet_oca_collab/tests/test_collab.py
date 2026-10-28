@@ -26,7 +26,12 @@ class TestSpreadsheetCollab(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         groups = "base.group_user,spreadsheet_oca.group_user"
-        cls.alice = new_test_user(cls.env, "alice_t", groups=groups)
+        # Alice may roll the sheet back; Bob edits it but holds no such right.
+        cls.alice = new_test_user(
+            cls.env,
+            "alice_t",
+            groups=groups + ",spreadsheet_oca_collab.group_version_restore",
+        )
         cls.bob = new_test_user(cls.env, "bob_t", groups=groups)
         cls.sheet = (
             cls.env["spreadsheet.spreadsheet"]
@@ -104,6 +109,20 @@ class TestSpreadsheetCollab(TransactionCase):
         version.with_user(self.alice).action_restore()
         self.assertNotEqual(self._head(), "s1")
         self.assertFalse(self.sheet.spreadsheet_revision_ids)
+
+    def test_restore_without_the_right_is_refused(self):
+        """Editing a sheet is not the same as discarding everyone's work."""
+        head = self._head()
+        a = _rev(head, "a")
+        self.sheet.with_user(self.alice).send_spreadsheet_message(a)
+        self.sheet.with_user(self.alice).send_spreadsheet_message(
+            {"type": "SNAPSHOT", "serverRevisionId": a["nextRevisionId"],
+             "nextRevisionId": "s1", "data": {"version": 1, "sheets": []}})
+        version = self.sheet.collab_version_ids[:1]
+        # Bob is a contributor, so he can write to the sheet, and the button is
+        # hidden for him - the method must refuse him anyway.
+        with self.assertRaises(AccessError):
+            version.with_user(self.bob).action_restore()
 
     def test_user_filters_roundtrip(self):
         entries = [{"sheetId": "sheet1", "col": 1, "row": 0,
