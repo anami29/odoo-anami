@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Posted on a ticket when its stage changes. Internal: customers are
+         told through the stage's own e-mail template, not through this. -->
+    <record id="hlp_tck_stage" model="mail.message.subtype">
+        <field name="name">Stage Changed</field>
+        <field name="res_model">helpdesk.ticket</field>
+        <field name="description">Stage changed</field>
+        <field name="default" eval="True" />
+        <field name="internal" eval="True" />
+        <field name="sequence">20</field>
+    </record>
+
+    <!-- On the team: following a team with this ticked subscribes you to the
+         "Stage Changed" subtype of every new ticket in that team. -->
+    <record id="hlp_tck_team_stage" model="mail.message.subtype">
+        <field name="name">Ticket Stage Changed</field>
+        <field name="res_model">helpdesk.ticket.team</field>
+        <field name="default" eval="True" />
+        <field name="internal" eval="True" />
+        <field name="parent_id" ref="hlp_tck_stage" />
+        <field name="relation_field">team_id</field>
+        <field name="sequence">20</field>
+    </record>
+</odoo>
