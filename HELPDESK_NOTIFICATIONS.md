@@ -97,6 +97,20 @@ setting to choose for "both" is **Handle in Odoo**.
 This applies to every ticket notification such a user receives: ticket
 created, stage changed, assigned to you, and messages on the ticket.
 
+**Renamed option (version 18.0.1.2.0).** To make this obvious, the add-on
+renames the option. In My Profile → Preferences → Notification, and on each
+user's form in Settings, the two choices now read:
+
+- **Handle by Emails** (unchanged)
+- **Handle in Odoo and by Email (Helpdesk)**, formerly "Handle in Odoo"
+
+It is the same setting with a clearer name: anyone who had "Handle in Odoo"
+now sees the new label, with nothing to re-select. "(Helpdesk)" is in the
+name because the email copy is only added for helpdesk tickets; in other
+apps this option still means Odoo inbox and pop-up only. In the rest of this
+document, "Handle in Odoo" means this option. The file is
+`models/res_users.py`.
+
 ### How the email part works (technical)
 
 Odoo's own email step (`_notify_thread_by_email`) only emails people set to
@@ -148,6 +162,7 @@ follows the summary. Notifications from other apps are unchanged.
 | `data/mail_message_subtype_data.xml` | The two new subtypes: "Stage Changed" (ticket) and "Ticket Stage Changed" (team, linked by `team_id`). |
 | `models/helpdesk_ticket.py` | `_track_subtype`: posts stage changes with the new subtype. `_notify_thread_by_email` and `_notify_inbox_users_by_email`: the extra email for "Handle in Odoo" users. `_notify_by_web_push_prepare_payload`: title and body of the pop-up sent while Odoo is closed. |
 | `static/src/js/out_of_focus_patch.esm.js` | Title and body of the pop-up the Odoo page shows while it's open in the background. |
+| `models/res_users.py` | Renames the "Handle in Odoo" option to "Handle in Odoo and by Email (Helpdesk)", and its help text. |
 | `hooks.py` | On install, adds the new subtypes to internal users who already follow teams or tickets. |
 
 ---
@@ -172,8 +187,9 @@ Each person who should be notified does this once, on their own login.
 1. **Email address on the user.** Settings → Users → open the user → Email
    Address. Without one the user cannot even create a ticket ("Unable to
    send message, please configure the sender's email address").
-2. **Notification: Handle in Odoo.** Avatar (top right) → **My Profile** →
-   **Preferences** → Notification → **Handle in Odoo** → save.
+2. **Notification: Handle in Odoo and by Email.** Avatar (top right) →
+   **My Profile** → **Preferences** → Notification → **Handle in Odoo and
+   by Email (Helpdesk)** → save.
 3. **Follow the team.** Helpdesk → Configuration → Teams → open the team →
    **Follow**. Then click the person icon next to *Following* → pencil next
    to your name → check that **Helpdesk Ticket Created** and **Ticket Stage

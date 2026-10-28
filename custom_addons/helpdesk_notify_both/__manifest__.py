@@ -22,7 +22,7 @@ Two additions to helpdesk_mgmt:
 
 See HELPDESK_NOTIFICATIONS.md at the root of the repository.
 """,
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.2.0",
     "category": "After-Sales",
     "license": "AGPL-3",
     "author": "RLFB",
