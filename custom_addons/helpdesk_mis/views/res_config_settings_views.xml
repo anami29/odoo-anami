@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form_mis" model="ir.ui.view">
+        <field name="name">res.config.settings.helpdesk.mis</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app
+                    data-string="Helpdesk MIS"
+                    string="Helpdesk MIS"
+                    name="helpdesk_mis"
+                    groups="helpdesk_mis.group_helpdesk_mis_manager"
+                >
+                    <block title="How a ticket is measured"
+                        help="These choices decide what every MIS figure means. They take effect on the next refresh - nothing needs rebuilding.">
+                        <setting
+                            string="Handling time basis"
+                            help="Elapsed counts creation to closure and includes waiting time. Assignment counts only time a person or team held the ticket. Active work needs a timesheet source and reports nothing without one."
+                        >
+                            <field name="hd_mis_handling_basis" />
+                        </setting>
+                        <setting
+                            string="Closure counting"
+                            help="Whether a ticket closed, reopened and closed again counts once or twice."
+                        >
+                            <field name="hd_mis_reopen_counting" />
+                        </setting>
+                        <setting
+                            string="Measure in working hours"
+                            help="Off: durations include nights, weekends and holidays. On: only hours inside the calendar below count."
+                        >
+                            <field name="hd_mis_working_hours" />
+                            <div class="content-group mt16" invisible="not hd_mis_working_hours">
+                                <field name="hd_mis_calendar_id" class="o_light_label" />
+                            </div>
+                        </setting>
+                    </block>
+
+                    <block title="Who a ticket counts towards"
+                        help="Every attribution is always available as its own column; this picks the default used by the dashboards.">
+                        <setting string="Team attribution">
+                            <field name="hd_mis_team_attribution" />
+                        </setting>
+                        <setting string="Person attribution">
+                            <field name="hd_mis_person_attribution" />
+                        </setting>
+                    </block>
+
+                    <block title="Period and timezone"
+                        help="Tickets created in a period and tickets closed in that period are different sets. The dashboards always say which one a figure refers to.">
+                        <setting string="Default date basis">
+                            <field name="hd_mis_date_basis" />
+                        </setting>
+                        <setting string="Open dashboard date basis">
+                            <field name="hd_mis_open_date_basis" />
+                        </setting>
+                        <setting
+                            string="Reporting timezone"
+                            help="Governs day, week and month boundaries. Empty uses each reader's own timezone."
+                        >
+                            <field name="hd_mis_timezone" />
+                        </setting>
+                    </block>
+
+                    <block title="Ageing thresholds"
+                        help="When an open ticket starts counting as ageing, overdue and critical.">
+                        <setting string="Ageing (hours)">
+                            <field name="hd_mis_threshold_warn_hours" />
+                        </setting>
+                        <setting string="Overdue (hours)">
+                            <field name="hd_mis_threshold_high_hours" />
+                        </setting>
+                        <setting string="Critical (hours)">
+                            <field name="hd_mis_threshold_critical_hours" />
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+</odoo>

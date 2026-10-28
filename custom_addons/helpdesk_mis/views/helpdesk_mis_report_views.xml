@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- ================= Ticket performance report ================= -->
+    <record id="helpdesk_mis_report_view_pivot" model="ir.ui.view">
+        <field name="name">helpdesk.mis.report.pivot</field>
+        <field name="model">helpdesk.mis.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Ticket Performance MIS" sample="1">
+                <field name="attributed_team_id" type="row" />
+                <field name="opened_count" type="measure" />
+                <field name="closed_count" type="measure" />
+                <field name="open_count" type="measure" />
+                <field name="handling_hours" type="measure" widget="float_time" />
+                <field name="total_elapsed_hours_max" type="measure" widget="float_time" />
+                <field name="reassigned_ticket_count" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="helpdesk_mis_report_view_graph" model="ir.ui.view">
+        <field name="name">helpdesk.mis.report.graph</field>
+        <field name="model">helpdesk.mis.report</field>
+        <field name="arch" type="xml">
+            <graph string="Ticket Performance MIS" type="bar" sample="1">
+                <field name="attributed_team_id" />
+                <field name="ticket_count" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="helpdesk_mis_report_view_list" model="ir.ui.view">
+        <field name="name">helpdesk.mis.report.list</field>
+        <field name="model">helpdesk.mis.report</field>
+        <field name="arch" type="xml">
+            <list
+                string="Ticket Performance MIS"
+                create="0"
+                delete="0"
+                edit="0"
+                default_order="total_elapsed_hours desc"
+            >
+                <field name="number" />
+                <field name="name" />
+                <field name="partner_id" optional="show" />
+                <field name="category_id" optional="show" />
+                <field name="priority" optional="show" widget="priority" />
+                <field name="stage_id" optional="show" />
+                <field name="create_date" optional="show" />
+                <field name="first_closed_date" optional="hide" />
+                <field name="closed_date" optional="show" />
+                <field name="team_id" optional="show" />
+                <field name="user_id" optional="show" groups="helpdesk_mis.group_helpdesk_mis_person_data" />
+                <field name="create_team_id" optional="hide" />
+                <field name="close_team_id" optional="hide" />
+                <field name="close_user_id" optional="hide" groups="helpdesk_mis.group_helpdesk_mis_person_data" />
+                <field name="total_elapsed_hours" widget="float_time" optional="show" sum="Total" />
+                <field name="handling_hours" widget="float_time" optional="show" />
+                <field name="resolution_hours" widget="float_time" optional="hide" />
+                <field name="first_resolution_hours" widget="float_time" optional="hide" />
+                <field name="open_age_hours" widget="float_time" optional="hide" />
+                <field name="max_assignment_hours" widget="float_time" optional="hide" />
+                <field name="current_assignment_hours" widget="float_time" optional="hide" />
+                <field name="reassignment_count" optional="show" sum="Total" />
+                <field name="reopen_count" optional="hide" sum="Total" />
+                <field name="closure_event_count" optional="hide" sum="Total" />
+                <field name="assignee_count" optional="hide" />
+                <field name="age_band" optional="hide" />
+                <field name="hours_beyond_threshold" widget="float_time" optional="hide" />
+                <field name="is_unassigned" optional="hide" />
+                <field name="company_id" column_invisible="1" />
+                <field name="ticket_id" column_invisible="1" />
+            </list>
+        </field>
+    </record>
+
+    <!-- Every filter BRD section 6 asks for. -->
+    <record id="helpdesk_mis_report_view_search" model="ir.ui.view">
+        <field name="name">helpdesk.mis.report.search</field>
+        <field name="model">helpdesk.mis.report</field>
+        <field name="arch" type="xml">
+            <search string="Ticket Performance MIS">
+                <field name="number" string="Ticket" />
+                <field name="name" string="Subject" />
+                <field name="partner_id" string="Customer" />
+                <field name="attributed_team_id" string="Team" />
+                <field name="category_id" string="Category" />
+                <field
+                    name="attributed_user_id"
+                    string="Person"
+                    groups="helpdesk_mis.group_helpdesk_mis_person_data"
+                />
+                <field name="stage_id" string="Status" />
+
+                <filter name="f_open" string="Open" domain="[('is_open', '=', True)]" />
+                <filter name="f_closed" string="Closed" domain="[('is_closed', '=', True)]" />
+                <filter
+                    name="f_unassigned"
+                    string="Unassigned"
+                    domain="[('is_unassigned', '=', True)]"
+                />
+                <filter
+                    name="f_reassigned"
+                    string="Reassigned"
+                    domain="[('is_reassigned', '=', True)]"
+                />
+                <filter
+                    name="f_reopened"
+                    string="Reopened"
+                    domain="[('reopen_count', '&gt;', 0)]"
+                />
+                <separator />
+                <filter
+                    name="f_past_threshold"
+                    string="Past ageing threshold"
+                    domain="[('past_threshold', '=', True)]"
+                />
+                <filter
+                    name="f_critical"
+                    string="Critical ageing"
+                    domain="[('age_band', '=', 'critical')]"
+                />
+                <separator />
+                <filter name="p_low" string="Low priority" domain="[('priority', '=', '0')]" />
+                <filter name="p_high" string="High priority" domain="[('priority', '=', '2')]" />
+                <filter
+                    name="p_urgent"
+                    string="Very high priority"
+                    domain="[('priority', '=', '3')]"
+                />
+
+                <!-- Date basis: the BRD insists the two are never mixed. -->
+                <separator />
+                <filter
+                    name="basis_created"
+                    string="Created in period"
+                    date="create_date"
+                    default_period="month"
+                />
+                <filter
+                    name="basis_closed"
+                    string="Closed in period"
+                    date="closed_date"
+                />
+                <filter
+                    name="basis_assigned"
+                    string="Assigned in period"
+                    date="last_assignment_date"
+                />
+
+                <group expand="0" string="Group By">
+                    <filter name="g_team" string="Team" context="{'group_by': 'attributed_team_id'}" />
+                    <filter
+                        name="g_origin_team"
+                        string="Originating team"
+                        context="{'group_by': 'create_team_id'}"
+                    />
+                    <filter
+                        name="g_close_team"
+                        string="Closing team"
+                        context="{'group_by': 'close_team_id'}"
+                    />
+                    <filter name="g_category" string="Category" context="{'group_by': 'category_id'}" />
+                    <filter
+                        name="g_person"
+                        string="Person"
+                        context="{'group_by': 'attributed_user_id'}"
+                        groups="helpdesk_mis.group_helpdesk_mis_person_data"
+                    />
+                    <filter name="g_stage" string="Status" context="{'group_by': 'stage_id'}" />
+                    <filter name="g_priority" string="Priority" context="{'group_by': 'priority'}" />
+                    <filter name="g_band" string="Ageing band" context="{'group_by': 'age_band'}" />
+                    <filter name="g_customer" string="Customer" context="{'group_by': 'partner_id'}" />
+                    <filter
+                        name="g_created_month"
+                        string="Created: month"
+                        context="{'group_by': 'create_date:month'}"
+                    />
+                    <filter
+                        name="g_closed_month"
+                        string="Closed: month"
+                        context="{'group_by': 'closed_date:month'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ===================== Actions ===================== -->
+    <record id="action_helpdesk_mis_report" model="ir.actions.act_window">
+        <field name="name">Ticket Performance</field>
+        <field name="res_model">helpdesk.mis.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="helpdesk_mis_report_view_search" />
+        <field name="context">{'search_default_basis_created': 1, 'search_default_g_team': 1}</field>
+    </record>
+
+    <record id="action_helpdesk_mis_a1_team" model="ir.actions.act_window">
+        <field name="name">A1 - Tickets by Team</field>
+        <field name="res_model">helpdesk.mis.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="helpdesk_mis_report_view_search" />
+        <field name="context">{'search_default_basis_created': 1, 'search_default_g_team': 1}</field>
+    </record>
+
+    <record id="action_helpdesk_mis_a2_category" model="ir.actions.act_window">
+        <field name="name">A2 - Tickets by Category</field>
+        <field name="res_model">helpdesk.mis.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="helpdesk_mis_report_view_search" />
+        <field name="context">{'search_default_basis_created': 1, 'search_default_g_category': 1}</field>
+    </record>
+
+    <record id="action_helpdesk_mis_a3_person" model="ir.actions.act_window">
+        <field name="name">A3 - Tickets by Person</field>
+        <field name="res_model">helpdesk.mis.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="helpdesk_mis_report_view_search" />
+        <field name="context">{'search_default_basis_created': 1, 'search_default_g_person': 1}</field>
+    </record>
+
+    <record id="action_helpdesk_mis_a4_longest" model="ir.actions.act_window">
+        <field name="name">A4 - Longest Running Tickets</field>
+        <field name="res_model">helpdesk.mis.report</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="helpdesk_mis_report_view_search" />
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nothing to investigate</p>
+            <p>The longest-running tickets appear here, newest selection first.</p>
+        </field>
+    </record>
+
+    <!-- ===================== Open tickets (Dashboard B) ============ -->
+    <record id="action_helpdesk_mis_open" model="ir.actions.act_window">
+        <field name="name">Open Tickets MIS</field>
+        <field name="res_model">helpdesk.mis.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="helpdesk_mis_report_view_search" />
+        <field name="domain">[('is_open', '=', True)]</field>
+        <field name="context">{'search_default_g_team': 1}</field>
+    </record>
+
+    <record id="action_helpdesk_mis_b1_team" model="ir.actions.act_window">
+        <field name="name">B1 - Open Tickets by Team</field>
+        <field name="res_model">helpdesk.mis.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="helpdesk_mis_report_view_search" />
+        <field name="domain">[('is_open', '=', True)]</field>
+        <field name="context">{'search_default_g_team': 1}</field>
+    </record>
+
+    <record id="action_helpdesk_mis_b2_category" model="ir.actions.act_window">
+        <field name="name">B2 - Open Tickets by Category</field>
+        <field name="res_model">helpdesk.mis.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="helpdesk_mis_report_view_search" />
+        <field name="domain">[('is_open', '=', True)]</field>
+        <field name="context">{'search_default_g_category': 1}</field>
+    </record>
+
+    <record id="action_helpdesk_mis_b3_person" model="ir.actions.act_window">
+        <field name="name">B3 - Open Tickets by Person</field>
+        <field name="res_model">helpdesk.mis.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="helpdesk_mis_report_view_search" />
+        <field name="domain">[('is_open', '=', True)]</field>
+        <field name="context">{'search_default_g_person': 1}</field>
+    </record>
+
+    <record id="action_helpdesk_mis_b4_detail" model="ir.actions.act_window">
+        <field name="name">B4 - Open Ticket Detail</field>
+        <field name="res_model">helpdesk.mis.report</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="helpdesk_mis_report_view_search" />
+        <field name="domain">[('is_open', '=', True)]</field>
+    </record>
+</odoo>

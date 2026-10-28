@@ -1,0 +1,8 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_helpdesk_mis_report_user,helpdesk.mis.report.user,model_helpdesk_mis_report,group_helpdesk_mis_user,1,0,0,0
+access_helpdesk_mis_report_manager,helpdesk.mis.report.manager,model_helpdesk_mis_report,group_helpdesk_mis_manager,1,0,0,0
+access_helpdesk_mis_assignment_user,helpdesk.mis.assignment.report.user,model_helpdesk_mis_assignment_report,group_helpdesk_mis_user,1,0,0,0
+access_helpdesk_mis_assignment_manager,helpdesk.mis.assignment.report.manager,model_helpdesk_mis_assignment_report,group_helpdesk_mis_manager,1,0,0,0
+access_helpdesk_closure_event_user,helpdesk.ticket.closure.event.user,model_helpdesk_ticket_closure_event,base.group_user,1,0,0,0
+access_helpdesk_closure_event_manager,helpdesk.ticket.closure.event.manager,model_helpdesk_ticket_closure_event,helpdesk_mgmt.group_helpdesk_manager,1,1,1,1
+access_helpdesk_closure_event_portal,helpdesk.ticket.closure.event.portal,model_helpdesk_ticket_closure_event,base.group_portal,1,0,0,0

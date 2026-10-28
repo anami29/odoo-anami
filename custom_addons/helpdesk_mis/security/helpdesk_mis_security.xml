@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <data noupdate="0">
+        <record id="module_category_helpdesk_mis" model="ir.module.category">
+            <field name="name">Helpdesk MIS</field>
+            <field name="description">Who may read management reporting, and
+                whether they may see figures about named individuals.</field>
+            <field name="sequence">16</field>
+        </record>
+
+        <!-- Four independent rights, so they render as checkboxes rather than
+             one dropdown: reading reports, managing them, seeing person-level
+             performance, and exporting. BRD section 4 and 18.10. -->
+        <record id="group_helpdesk_mis_user" model="res.groups">
+            <field name="name">MIS: read reports</field>
+            <field name="category_id" ref="module_category_helpdesk_mis" />
+            <!-- A floor, so that a ticket record rule always matches this user
+                 and aggregated reporting can never show more than the person
+                 is allowed to open (BRD section 4). -->
+            <field
+                name="implied_ids"
+                eval="[(4, ref('helpdesk_mgmt.group_helpdesk_user_own'))]"
+            />
+            <field
+                name="comment"
+            >Opens the two MIS dashboards and the MIS reports. What the reports contain still follows the person's Helpdesk right: personal, team, or all tickets.</field>
+        </record>
+
+        <record id="group_helpdesk_mis_manager" model="res.groups">
+            <field name="name">MIS: manage reporting</field>
+            <field name="category_id" ref="module_category_helpdesk_mis" />
+            <field
+                name="implied_ids"
+                eval="[(4, ref('group_helpdesk_mis_user')), (4, ref('helpdesk_mgmt.group_helpdesk_user'))]"
+            />
+            <field
+                name="comment"
+            >Reads MIS across every team and changes the reporting rules in Settings.</field>
+        </record>
+
+        <record id="group_helpdesk_mis_person_data" model="res.groups">
+            <field name="name">MIS: see person-level figures</field>
+            <field name="category_id" ref="module_category_helpdesk_mis" />
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]" />
+            <field
+                name="comment"
+            >Shows the by-person reports and charts: tickets per agent, time held, reassignments in and out. Without it the dashboards show teams and categories only.</field>
+        </record>
+
+        <record id="group_helpdesk_mis_export" model="res.groups">
+            <field name="name">MIS: export</field>
+            <field name="category_id" ref="module_category_helpdesk_mis" />
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]" />
+            <field
+                name="comment"
+            >Allows exporting MIS report data to Excel or CSV.</field>
+        </record>
+    </data>
+
+    <data noupdate="0">
+        <!-- Visibility mirrors helpdesk_mgmt's own ticket rules exactly, so a
+             summary row can never be built from a ticket the reader is not
+             allowed to open (BRD section 4). -->
+        <record id="helpdesk_mis_report_personal_rule" model="ir.rule">
+            <field name="name">MIS: personal tickets</field>
+            <field name="model_id" ref="model_helpdesk_mis_report" />
+            <field name="domain_force">[('user_id', '=', user.id)]</field>
+            <field
+                name="groups"
+                eval="[(4, ref('helpdesk_mgmt.group_helpdesk_user_own'))]"
+            />
+        </record>
+        <record id="helpdesk_mis_report_team_rule" model="ir.rule">
+            <field name="name">MIS: team tickets</field>
+            <field name="model_id" ref="model_helpdesk_mis_report" />
+            <field
+                name="domain_force"
+            >['|', ('team_id', 'in', user.helpdesk_team_ids.ids), ('user_id', '=', user.id)]</field>
+            <field
+                name="groups"
+                eval="[(4, ref('helpdesk_mgmt.group_helpdesk_user_team'))]"
+            />
+        </record>
+        <record id="helpdesk_mis_report_all_rule" model="ir.rule">
+            <field name="name">MIS: all tickets</field>
+            <field name="model_id" ref="model_helpdesk_mis_report" />
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field
+                name="groups"
+                eval="[(4, ref('helpdesk_mgmt.group_helpdesk_user'))]"
+            />
+        </record>
+        <record id="helpdesk_mis_report_company_rule" model="ir.rule">
+            <field name="name">MIS report company rule</field>
+            <field name="model_id" ref="model_helpdesk_mis_report" />
+            <field name="global" eval="True" />
+            <field
+                name="domain_force"
+            >[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+
+        <record id="helpdesk_mis_assignment_personal_rule" model="ir.rule">
+            <field name="name">MIS assignments: personal tickets</field>
+            <field name="model_id" ref="model_helpdesk_mis_assignment_report" />
+            <field
+                name="domain_force"
+            >[('ticket_id.user_id', '=', user.id)]</field>
+            <field
+                name="groups"
+                eval="[(4, ref('helpdesk_mgmt.group_helpdesk_user_own'))]"
+            />
+        </record>
+        <record id="helpdesk_mis_assignment_team_rule" model="ir.rule">
+            <field name="name">MIS assignments: team tickets</field>
+            <field name="model_id" ref="model_helpdesk_mis_assignment_report" />
+            <field
+                name="domain_force"
+            >['|', ('ticket_id.team_id', 'in', user.helpdesk_team_ids.ids), ('ticket_id.user_id', '=', user.id)]</field>
+            <field
+                name="groups"
+                eval="[(4, ref('helpdesk_mgmt.group_helpdesk_user_team'))]"
+            />
+        </record>
+        <record id="helpdesk_mis_assignment_all_rule" model="ir.rule">
+            <field name="name">MIS assignments: all tickets</field>
+            <field name="model_id" ref="model_helpdesk_mis_assignment_report" />
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field
+                name="groups"
+                eval="[(4, ref('helpdesk_mgmt.group_helpdesk_user'))]"
+            />
+        </record>
+        <record id="helpdesk_mis_assignment_company_rule" model="ir.rule">
+            <field name="name">MIS assignment company rule</field>
+            <field name="model_id" ref="model_helpdesk_mis_assignment_report" />
+            <field name="global" eval="True" />
+            <field
+                name="domain_force"
+            >[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+
+        <record id="helpdesk_mis_closure_event_company_rule" model="ir.rule">
+            <field name="name">Closure event company rule</field>
+            <field name="model_id" ref="model_helpdesk_ticket_closure_event" />
+            <field name="global" eval="True" />
+            <field
+                name="domain_force"
+            >[('company_id', 'in', company_ids + [False])]</field>
+        </record>
+    </data>
+</odoo>

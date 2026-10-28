@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <menuitem
+        id="menu_helpdesk_mis_root"
+        name="MIS"
+        parent="helpdesk_mgmt.helpdesk_ticket_reporting_menu"
+        sequence="1"
+        groups="helpdesk_mis.group_helpdesk_mis_user"
+    />
+
+    <menuitem
+        id="menu_mis_dashboard_performance"
+        name="Ticket Performance MIS"
+        parent="menu_helpdesk_mis_root"
+        action="action_mis_dashboard_performance"
+        sequence="1"
+        groups="helpdesk_mis.group_helpdesk_mis_user"
+    />
+    <menuitem
+        id="menu_mis_dashboard_open"
+        name="Open Tickets MIS"
+        parent="menu_helpdesk_mis_root"
+        action="action_mis_dashboard_open"
+        sequence="2"
+        groups="helpdesk_mis.group_helpdesk_mis_user"
+    />
+
+    <menuitem
+        id="menu_mis_reports"
+        name="Detailed reports"
+        parent="menu_helpdesk_mis_root"
+        sequence="10"
+        groups="helpdesk_mis.group_helpdesk_mis_user"
+    />
+    <menuitem
+        id="menu_mis_a1"
+        name="A1 - Tickets by Team"
+        parent="menu_mis_reports"
+        action="action_helpdesk_mis_a1_team"
+        sequence="1"
+    />
+    <menuitem
+        id="menu_mis_a2"
+        name="A2 - Tickets by Category"
+        parent="menu_mis_reports"
+        action="action_helpdesk_mis_a2_category"
+        sequence="2"
+    />
+    <menuitem
+        id="menu_mis_a3"
+        name="A3 - Tickets by Person"
+        parent="menu_mis_reports"
+        action="action_helpdesk_mis_a3_person"
+        sequence="3"
+        groups="helpdesk_mis.group_helpdesk_mis_person_data"
+    />
+    <menuitem
+        id="menu_mis_a4"
+        name="A4 - Longest Running Tickets"
+        parent="menu_mis_reports"
+        action="action_helpdesk_mis_a4_longest"
+        sequence="4"
+    />
+    <menuitem
+        id="menu_mis_a5"
+        name="A5 - Time Held by Each Person"
+        parent="menu_mis_reports"
+        action="action_helpdesk_mis_a5_time_held"
+        sequence="5"
+        groups="helpdesk_mis.group_helpdesk_mis_person_data"
+    />
+    <menuitem
+        id="menu_mis_b1"
+        name="B1 - Open by Team"
+        parent="menu_mis_reports"
+        action="action_helpdesk_mis_b1_team"
+        sequence="11"
+    />
+    <menuitem
+        id="menu_mis_b2"
+        name="B2 - Open by Category"
+        parent="menu_mis_reports"
+        action="action_helpdesk_mis_b2_category"
+        sequence="12"
+    />
+    <menuitem
+        id="menu_mis_b3"
+        name="B3 - Open by Person"
+        parent="menu_mis_reports"
+        action="action_helpdesk_mis_b3_person"
+        sequence="13"
+        groups="helpdesk_mis.group_helpdesk_mis_person_data"
+    />
+    <menuitem
+        id="menu_mis_b4"
+        name="B4 - Open Ticket Detail"
+        parent="menu_mis_reports"
+        action="action_helpdesk_mis_b4_detail"
+        sequence="14"
+    />
+    <menuitem
+        id="menu_mis_closure_events"
+        name="Closure &amp; Reopen Events"
+        parent="menu_mis_reports"
+        action="action_helpdesk_closure_events"
+        sequence="20"
+    />
+</odoo>

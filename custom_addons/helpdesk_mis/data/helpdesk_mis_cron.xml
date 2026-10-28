@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Elapsed durations are calculated live inside the SQL views, so this
+         job exists only for the working-hours figures, which need the
+         resource calendar and therefore cannot be worked out in SQL. -->
+    <record id="ir_cron_helpdesk_mis_refresh" model="ir.cron">
+        <field name="name">Helpdesk MIS: refresh working-hour durations</field>
+        <field name="model_id" ref="helpdesk_mgmt.model_helpdesk_ticket" />
+        <field name="state">code</field>
+        <field name="code">model._mis_refresh_live_durations()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="True" />
+    </record>
+</odoo>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="action_mis_dashboard_performance" model="ir.actions.client">
+        <field name="name">Ticket Performance MIS</field>
+        <field name="tag">helpdesk_mis_dashboard</field>
+        <field name="context">{'mis_dashboard': 'performance'}</field>
+    </record>
+
+    <record id="action_mis_dashboard_open" model="ir.actions.client">
+        <field name="name">Open Tickets MIS</field>
+        <field name="tag">helpdesk_mis_dashboard</field>
+        <field name="context">{'mis_dashboard': 'open'}</field>
+    </record>
+</odoo>

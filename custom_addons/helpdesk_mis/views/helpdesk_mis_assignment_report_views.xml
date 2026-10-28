@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- BRD report A5: one row per assignment interval. -->
+    <record id="helpdesk_mis_assignment_view_list" model="ir.ui.view">
+        <field name="name">helpdesk.mis.assignment.report.list</field>
+        <field name="model">helpdesk.mis.assignment.report</field>
+        <field name="arch" type="xml">
+            <list
+                string="Time Held by Person"
+                create="0"
+                delete="0"
+                edit="0"
+                default_order="time_held_hours desc"
+                decoration-info="is_active"
+            >
+                <field name="ticket_number" string="Ticket" />
+                <field name="ticket_name" string="Subject" optional="show" />
+                <field name="category_id" optional="show" />
+                <field name="priority" widget="priority" optional="hide" />
+                <field name="team_id" optional="show" />
+                <field name="user_id" string="Person" optional="show" />
+                <field name="assigned_date" string="From" optional="show" />
+                <field name="unassigned_date" string="To" optional="show" />
+                <field name="time_held_hours" widget="float_time" sum="Total" />
+                <field name="time_held_working_hours" widget="float_time" optional="hide" sum="Total" />
+                <field name="cumulative_user_hours" widget="float_time" optional="hide" />
+                <field name="end_event" string="Ended by" optional="show" />
+                <field name="next_user_id" optional="show" />
+                <field name="prev_user_id" optional="hide" />
+                <field name="ticket_closed_date" optional="hide" />
+                <field name="ticket_reassignment_total" string="Reassignments" optional="show" />
+                <field name="interval_count" sum="Intervals" optional="hide" />
+                <field name="ticket_count" sum="Distinct tickets" optional="hide" />
+                <field name="ticket_user_count" sum="Tickets touched" optional="hide" />
+                <field name="is_active" column_invisible="1" />
+                <field name="company_id" column_invisible="1" />
+            </list>
+        </field>
+    </record>
+
+    <record id="helpdesk_mis_assignment_view_pivot" model="ir.ui.view">
+        <field name="name">helpdesk.mis.assignment.report.pivot</field>
+        <field name="model">helpdesk.mis.assignment.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Time Held by Person" sample="1">
+                <field name="user_id" type="row" />
+                <field name="time_held_total" type="measure" widget="float_time" />
+                <field name="time_held_hours" type="measure" widget="float_time" />
+                <field name="time_held_hours_max" type="measure" widget="float_time" />
+                <field name="ticket_user_count" type="measure" />
+                <field name="interval_count" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="helpdesk_mis_assignment_view_graph" model="ir.ui.view">
+        <field name="name">helpdesk.mis.assignment.report.graph</field>
+        <field name="model">helpdesk.mis.assignment.report</field>
+        <field name="arch" type="xml">
+            <graph string="Time Held by Person" type="bar" sample="1">
+                <field name="user_id" />
+                <field name="time_held_total" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <record id="helpdesk_mis_assignment_view_search" model="ir.ui.view">
+        <field name="name">helpdesk.mis.assignment.report.search</field>
+        <field name="model">helpdesk.mis.assignment.report</field>
+        <field name="arch" type="xml">
+            <search string="Time Held">
+                <field name="ticket_number" string="Ticket" />
+                <field name="ticket_name" string="Subject" />
+                <field name="user_id" string="Person" />
+                <field name="team_id" string="Team" />
+                <field name="category_id" string="Category" />
+                <field name="partner_id" string="Customer" />
+                <filter name="a_active" string="Still assigned" domain="[('is_active', '=', True)]" />
+                <filter
+                    name="a_transfer"
+                    string="Transferred away"
+                    domain="[('end_event', '=', 'transfer')]"
+                />
+                <filter
+                    name="a_closed"
+                    string="Ended by closure"
+                    domain="[('end_event', '=', 'closed')]"
+                />
+                <separator />
+                <filter
+                    name="a_open_tickets"
+                    string="Open tickets only"
+                    domain="[('ticket_is_closed', '=', False)]"
+                />
+                <separator />
+                <filter
+                    name="a_assigned"
+                    string="Assigned in period"
+                    date="assigned_date"
+                    default_period="month"
+                />
+                <filter
+                    name="a_ticket_created"
+                    string="Ticket created in period"
+                    date="ticket_create_date"
+                />
+                <filter
+                    name="a_ticket_closed"
+                    string="Ticket closed in period"
+                    date="ticket_closed_date"
+                />
+                <group expand="0" string="Group By">
+                    <filter name="ga_person" string="Person" context="{'group_by': 'user_id'}" />
+                    <filter name="ga_team" string="Team" context="{'group_by': 'team_id'}" />
+                    <filter name="ga_ticket" string="Ticket" context="{'group_by': 'ticket_id'}" />
+                    <filter name="ga_category" string="Category" context="{'group_by': 'category_id'}" />
+                    <filter name="ga_event" string="Ended by" context="{'group_by': 'end_event'}" />
+                    <filter
+                        name="ga_month"
+                        string="Assigned: month"
+                        context="{'group_by': 'assigned_date:month'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_helpdesk_mis_a5_time_held" model="ir.actions.act_window">
+        <field name="name">A5 - Time Held by Each Person</field>
+        <field name="res_model">helpdesk.mis.assignment.report</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="helpdesk_mis_assignment_view_search" />
+        <field name="context">{'search_default_ga_person': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No assignment history yet</p>
+            <p>Each row is one period during which a single person held a
+               ticket. A ticket that changed hands three times has three rows.</p>
+        </field>
+    </record>
+</odoo>

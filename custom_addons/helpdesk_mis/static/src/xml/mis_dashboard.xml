@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="helpdesk_mis.Chart">
+        <div class="o_mis_chart_canvas">
+            <canvas t-ref="canvas" />
+        </div>
+    </t>
+
+    <t t-name="helpdesk_mis.Dashboard">
+        <div class="o_mis_dashboard o_action">
+            <div class="o_mis_header">
+                <h2 class="o_mis_title" t-esc="title" />
+                <button
+                    class="btn btn-secondary btn-sm"
+                    t-on-click="() => this.load()"
+                >Refresh</button>
+            </div>
+
+            <!-- Filter bar: every control BRD section 6 lists. -->
+            <div class="o_mis_filters">
+                <label>From
+                    <input
+                        type="date"
+                        t-att-value="state.filters.date_from"
+                        t-on-change="(ev) => this.onFilterChange('date_from', ev)"
+                    />
+                </label>
+                <label>To
+                    <input
+                        type="date"
+                        t-att-value="state.filters.date_to"
+                        t-on-change="(ev) => this.onFilterChange('date_to', ev)"
+                    />
+                </label>
+                <label t-if="!isOpenDashboard">Date basis
+                    <select t-on-change="(ev) => this.onFilterChange('date_basis', ev)">
+                        <option value="create"
+                            t-att-selected="state.filters.date_basis === 'create'"
+                        >Created in period</option>
+                        <option value="close"
+                            t-att-selected="state.filters.date_basis === 'close'"
+                        >Closed in period</option>
+                        <option value="open"
+                            t-att-selected="state.filters.date_basis === 'open'"
+                        >Currently open</option>
+                    </select>
+                </label>
+                <label>Team
+                    <select
+                        multiple="multiple"
+                        size="3"
+                        t-on-change="(ev) => this.onFilterChange('team_ids', ev)"
+                    >
+                        <t t-foreach="state.options.teams" t-as="team" t-key="team.id">
+                            <option t-att-value="team.id" t-esc="team.display_name" />
+                        </t>
+                    </select>
+                </label>
+                <label>Category
+                    <select
+                        multiple="multiple"
+                        size="3"
+                        t-on-change="(ev) => this.onFilterChange('category_ids', ev)"
+                    >
+                        <t t-foreach="state.options.categories" t-as="cat" t-key="cat.id">
+                            <option t-att-value="cat.id" t-esc="cat.display_name" />
+                        </t>
+                    </select>
+                </label>
+                <label t-if="state.data and state.data.may_see_people">Person
+                    <select
+                        multiple="multiple"
+                        size="3"
+                        t-on-change="(ev) => this.onFilterChange('user_ids', ev)"
+                    >
+                        <t t-foreach="state.options.users" t-as="usr" t-key="usr.id">
+                            <option t-att-value="usr.id" t-esc="usr.display_name" />
+                        </t>
+                    </select>
+                </label>
+                <label>Priority
+                    <select
+                        multiple="multiple"
+                        size="3"
+                        t-on-change="(ev) => this.onFilterChange('priorities', ev)"
+                    >
+                        <option value="0">Low</option>
+                        <option value="1">Medium</option>
+                        <option value="2">High</option>
+                        <option value="3">Very High</option>
+                    </select>
+                </label>
+                <label>Status
+                    <select t-on-change="(ev) => this.onFilterChange('state', ev)">
+                        <option value="all">All</option>
+                        <option value="open">Open</option>
+                        <option value="closed">Closed</option>
+                        <option value="unassigned">Unassigned</option>
+                    </select>
+                </label>
+                <label t-if="!isOpenDashboard">Trend by
+                    <select t-on-change="(ev) => this.onFilterChange('granularity', ev)">
+                        <option value="day">Day</option>
+                        <option value="week">Week</option>
+                        <option value="month">Month</option>
+                    </select>
+                </label>
+                <button
+                    class="btn btn-link btn-sm"
+                    t-on-click="() => this.resetFilters()"
+                >Reset filters</button>
+            </div>
+
+            <!-- Loading and error states. -->
+            <div t-if="state.loading" class="o_mis_state">Loading…</div>
+            <div t-elif="state.error" class="o_mis_state alert alert-danger" t-esc="state.error" />
+
+            <t t-elif="state.data">
+                <!-- Says out loud which rules produced these numbers. -->
+                <div class="o_mis_banner">
+                    <span>Handling time: <b t-esc="state.data.settings.handling_basis" /></span>
+                    <span>Team attribution: <b t-esc="state.data.settings.team_attribution" /></span>
+                    <span>Person attribution: <b t-esc="state.data.settings.person_attribution" /></span>
+                    <span>Closures: <b t-esc="state.data.settings.closure_counting" /></span>
+                    <span t-if="state.data.settings.working_hours">
+                        <b>Working hours only</b>
+                    </span>
+                    <span>Timezone: <b t-esc="state.data.settings.timezone" /></span>
+                </div>
+
+                <!-- KPI cards, per BRD 7.1 and 8.2. -->
+                <div class="o_mis_kpis">
+                    <t t-foreach="state.data.kpis" t-as="kpi" t-key="kpi.key">
+                        <div
+                            class="o_mis_kpi"
+                            t-on-click="() => this.onKpiClick(kpi)"
+                        >
+                            <div class="o_mis_kpi_value" t-esc="formatKpi(kpi)" />
+                            <div class="o_mis_kpi_label" t-esc="kpi.label" />
+                            <div class="o_mis_kpi_basis" t-esc="kpi.basis" />
+                        </div>
+                    </t>
+                </div>
+
+                <!-- Charts from BRD section 13. -->
+                <div class="o_mis_charts">
+                    <t t-foreach="chartList(state.data.charts)" t-as="entry" t-key="entry[0]">
+                        <div class="o_mis_chart">
+                            <h5 t-esc="entry[1].title" />
+                            <MisChart spec="entry[1]" />
+                        </div>
+                    </t>
+                </div>
+
+                <!-- Detail tables A1 to A5 and B1 to B4. -->
+                <t t-foreach="tableList(state.data.tables)" t-as="entry" t-key="entry[0]">
+                    <div class="o_mis_table_block">
+                        <div class="o_mis_table_head">
+                            <h5 t-esc="entry[1].title" />
+                            <button
+                                class="btn btn-sm btn-secondary"
+                                t-on-click="() => this.openTable(entry[1])"
+                            >Open full list / export</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover o_mis_table">
+                                <thead>
+                                    <tr>
+                                        <t t-foreach="entry[1].columns" t-as="col" t-key="col.name">
+                                            <th t-esc="col.label" />
+                                        </t>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="entry[1].rows" t-as="row" t-key="row_index">
+                                        <tr t-on-click="() => this.onRowClick(entry[1], row)">
+                                            <t t-foreach="entry[1].columns" t-as="col" t-key="col.name">
+                                                <td t-esc="formatValue(row[col.name], col.type)" />
+                                            </t>
+                                        </tr>
+                                    </t>
+                                    <tr t-if="!entry[1].rows.length">
+                                        <td t-att-colspan="entry[1].columns.length">
+                                            Nothing matches these filters.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </div>
+    </t>
+</templates>

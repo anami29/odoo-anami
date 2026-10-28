@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="ticket_view_form_mis" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.mis</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk_mgmt.ticket_view_form" />
+        <field name="arch" type="xml">
+            <!-- Working hours sit beside the elapsed figure already shown. -->
+            <xpath
+                expr="//field[@name='assignment_history_ids']/list/field[@name='duration']"
+                position="after"
+            >
+                <field
+                    name="duration_working"
+                    sum="Total Working Hours"
+                    optional="show"
+                />
+            </xpath>
+
+            <xpath expr="//page[@name='assignment_history']" position="after">
+                <page string="Closure History" name="mis_closure_history">
+                    <group>
+                        <group string="Resolution">
+                            <field name="mis_first_closed_date" />
+                            <field name="mis_first_resolution_hours" widget="float_time" />
+                            <field name="closed_date" string="Final closure" readonly="1" />
+                            <field name="mis_closure_count" />
+                            <field name="mis_reopen_count" />
+                        </group>
+                        <group string="Handling">
+                            <field name="mis_reassignment_count" />
+                            <field name="mis_assignee_count" />
+                            <field name="mis_total_held_hours" widget="float_time" />
+                            <field name="mis_resolution_working_hours" widget="float_time" />
+                            <field name="mis_active_work_hours" widget="float_time" />
+                        </group>
+                    </group>
+                    <field name="mis_closure_event_ids" readonly="1" nolabel="1">
+                        <list default_order="event_date asc">
+                            <field name="event_date" />
+                            <field name="event_type" widget="badge"
+                                decoration-success="event_type == 'close'"
+                                decoration-warning="event_type == 'reopen'" />
+                            <field name="occurrence" />
+                            <field name="from_stage_id" />
+                            <field name="stage_id" />
+                            <field name="team_id" />
+                            <field name="user_id" widget="many2one_avatar_user" />
+                            <field name="changed_by_id" widget="many2one_avatar_user" />
+                            <field name="hours_from_create" widget="float_time" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
