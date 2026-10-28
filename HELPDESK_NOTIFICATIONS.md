@@ -30,7 +30,9 @@ Notification**:
 | **Handle in Odoo** | Odoo inbox (💬 icon) and desktop pop-up. **No email.** |
 
 Odoo stores exactly one notification per message per person, so it can only
-deliver it one way.
+deliver it one way. That's why the setting is a single choice: you can't tick
+both. It is **per user**: each person picks their own on their own profile,
+and one person's choice doesn't affect anyone else.
 
 ### Ticket created: already notified
 
@@ -47,10 +49,17 @@ set on the stage, emails the *customer*; that is separate and unchanged.)
 
 ### How the desktop pop-up works
 
-Odoo 18 has web push built in. When a notification is for a user on
-**Handle in Odoo**, Odoo sends it to every browser that user has allowed
-notifications in. The pop-up appears even if the Odoo tab is closed, as long
-as the browser itself is running. Clicking it opens the ticket.
+A user on **Handle in Odoo** can get a desktop pop-up in two ways:
+
+| Situation | Who shows the pop-up | What it showed before the add-on |
+|---|---|---|
+| An Odoo tab is open, but you're in another tab or program | The Odoo page itself | Title: the author's name. Body: the message text. |
+| No Odoo tab open, browser still running | The server, through web push | Title: author and record. Body: message text and tracked changes. |
+
+"Ticket created" and stage-change messages have **no text**: only a type
+("Ticket created") and the tracked change (Stage: New → In Progress). So the
+in-page pop-up came out as just a name, e.g. **"Test"**, with the browser
+filling the empty body with the site address.
 
 ---
 
@@ -103,13 +112,42 @@ already exists. One side effect: that email's delivery status is not shown
 on the message in the chatter. It is listed in **Settings → Technical →
 Emails** like any other email.
 
+### Change 3: pop-ups say what happened (version 18.0.1.1.0)
+
+Both kinds of pop-up now name the ticket and say what happened:
+
+```
+Test · HT00012 - Printer not working
+Ticket created
+```
+
+```
+Test · HT00012 - Printer not working
+Stage changed · Stage: New → In Progress
+```
+
+When Odoo is closed (web push), the team and assignee are added on extra
+lines:
+
+```
+Test: HT00012 - Printer not working
+Stage changed
+Stage: New → In Progress
+Team: Sales
+Assigned to: Administrator
+```
+
+If the notification is a real message (a reply or a mention), its text
+follows the summary. Notifications from other apps are unchanged.
+
 ### Files
 
 | File | What it does |
 |---|---|
-| `__manifest__.py` | Name, version, depends on `helpdesk_mgmt`, loads the data file, runs the install hook. |
+| `__manifest__.py` | Name, version, depends on `helpdesk_mgmt`, loads the data file and the browser script, runs the install hook. |
 | `data/mail_message_subtype_data.xml` | The two new subtypes: "Stage Changed" (ticket) and "Ticket Stage Changed" (team, linked by `team_id`). |
-| `models/helpdesk_ticket.py` | `_track_subtype`: posts stage changes with the new subtype. `_notify_thread_by_email` and `_notify_inbox_users_by_email`: the extra email for "Handle in Odoo" users. |
+| `models/helpdesk_ticket.py` | `_track_subtype`: posts stage changes with the new subtype. `_notify_thread_by_email` and `_notify_inbox_users_by_email`: the extra email for "Handle in Odoo" users. `_notify_by_web_push_prepare_payload`: title and body of the pop-up sent while Odoo is closed. |
+| `static/src/js/out_of_focus_patch.esm.js` | Title and body of the pop-up the Odoo page shows while it's open in the background. |
 | `hooks.py` | On install, adds the new subtypes to internal users who already follow teams or tickets. |
 
 ---
@@ -121,7 +159,9 @@ Emails** like any other email.
    **"Helpdesk Notifications"**, click **Install**.
 
 Later updates are picked up on each deploy automatically (the Dockerfile
-starts Odoo with `-u base`, which upgrades every installed module).
+starts Odoo with `-u base`, which upgrades every installed module). After an
+update that changes the browser script, press **Ctrl+Shift+R** in open Odoo
+tabs so they load the new version.
 
 ---
 
@@ -162,9 +202,11 @@ shows nothing.
 
 1. B: steps 1–6 of section 5, then switch to another program.
 2. A (private window): create a ticket in B's team.
-   → B gets a desktop pop-up **"Ticket created"**, and an email.
+   → B gets a desktop pop-up titled **"A · <ticket number> - <title>"**
+   saying **"Ticket created"**, and an email.
 3. A: move the ticket to **In Progress**.
-   → B gets a pop-up and an email showing the stage change.
+   → B gets a pop-up saying **"Stage changed · Stage: New → In Progress"**,
+   and an email.
 4. A: move it to **Done**.
    → same again.
 5. Check the emails were created: Settings → Technical → Emails (needs

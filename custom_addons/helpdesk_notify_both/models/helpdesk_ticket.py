@@ -19,6 +19,31 @@ class HelpdeskTicket(models.Model):
             return self.env.ref("helpdesk_notify_both.hlp_tck_stage")
         return super()._track_subtype(init_values)
 
+    def _notify_by_web_push_prepare_payload(self, message, msg_vals=False):
+        """Desktop pop-up sent while Odoo is closed: name the ticket in the
+        title and put the team and assignee under what happened.
+
+        Core takes the title from msg_vals' record_name, which a tracking
+        message does not carry, and its body is the subtype and tracked values
+        wrapped in blank lines.
+        """
+        payload = super()._notify_by_web_push_prepare_payload(message, msg_vals=msg_vals)
+        if len(self) != 1:
+            return payload
+        author = message.author_id.name
+        payload["title"] = f"{author}: {self.display_name}" if author else self.display_name
+        lines = [line.strip() for line in payload["options"]["body"].splitlines()]
+        details = [
+            f"{label}: {value}"
+            for label, value in (
+                ("Team", self.team_id.name),
+                ("Assigned to", self.user_id.name),
+            )
+            if value
+        ]
+        payload["options"]["body"] = "\n".join([line for line in lines if line] + details)
+        return payload
+
     def _notify_thread_by_email(
         self,
         message,

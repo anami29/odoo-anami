@@ -22,12 +22,17 @@ Two additions to helpdesk_mgmt:
 
 See HELPDESK_NOTIFICATIONS.md at the root of the repository.
 """,
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "After-Sales",
     "license": "AGPL-3",
     "author": "RLFB",
     "depends": ["helpdesk_mgmt"],
     "data": ["data/mail_message_subtype_data.xml"],
+    "assets": {
+        "web.assets_backend": [
+            "helpdesk_notify_both/static/src/js/out_of_focus_patch.esm.js",
+        ],
+    },
     "post_init_hook": "post_init_hook",
     "installable": True,
 }
