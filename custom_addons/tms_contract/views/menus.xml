@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_tms_contracts" name="Contracts" parent="tms_estimate.menu_tms_sales" action="action_tms_contract" sequence="40"/>
-    <menuitem id="menu_tms_contract_items" name="Contract items" parent="tms_estimate.menu_tms_sales" action="action_tms_contract_item" sequence="41"/>
-    <menuitem id="menu_tms_contract_extensions" name="Contract extensions" parent="tms_estimate.menu_tms_sales" action="action_tms_contract_extension" sequence="42"/>
-    <menuitem id="menu_tms_contract_excess" name="Excess approvals" parent="tms_estimate.menu_tms_sales" action="action_tms_contract_excess" sequence="43"/>
-    <menuitem id="menu_tms_contract_reservations" name="Reservation ledger" parent="tms_estimate.menu_tms_sales" action="action_tms_contract_reservation" sequence="44"/>
-    <menuitem id="menu_tms_contract_escalation" name="Diesel escalation" parent="tms_estimate.menu_tms_sales" action="action_tms_contract_escalation" sequence="45"/>
-    <menuitem id="menu_tms_report_contract_pnl" name="Contract P&amp;L" parent="tms.reporting" action="action_tms_contract_pnl" sequence="34"/>
+    <!-- Sales contracts are a sales activity: Sales app › Contracts; the Booking Clerk releases movements
+         from Transport › Operations › Contract items -->
+    <menuitem id="menu_tms_sale_contracts" name="Contracts" parent="sale.sale_menu_root" sequence="15"/>
+    <menuitem id="menu_tms_contracts" name="Contracts" parent="menu_tms_sale_contracts" action="action_tms_contract" sequence="10"/>
+    <menuitem id="menu_tms_contract_items" name="Contract items" parent="menu_tms_sale_contracts" action="action_tms_contract_item" sequence="20"/>
+    <menuitem id="menu_tms_contract_extensions" name="Contract extensions" parent="menu_tms_sale_contracts" action="action_tms_contract_extension" sequence="30"/>
+    <menuitem id="menu_tms_contract_excess" name="Excess approvals" parent="menu_tms_sale_contracts" action="action_tms_contract_excess" sequence="40"/>
+    <menuitem id="menu_tms_contract_reservations" name="Reservation ledger" parent="menu_tms_sale_contracts" action="action_tms_contract_reservation" sequence="50"/>
+    <menuitem id="menu_tms_contract_escalation" name="Diesel escalation" parent="menu_tms_sale_contracts" action="action_tms_contract_escalation" sequence="60"/>
+    <menuitem id="menu_tms_report_contract_pnl" name="Contract P&amp;L" parent="tms_estimate.menu_tms_sale_reports" action="action_tms_contract_pnl" sequence="30"/>
+    <menuitem id="menu_tms_ops_contract_items" name="Contract items" parent="tms.operations" action="action_tms_contract_item" sequence="15"
+              groups="tms_core.group_booking_clerk,tms_core.group_tms_admin"/>
 </odoo>

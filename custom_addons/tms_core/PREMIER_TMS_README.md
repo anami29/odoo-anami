@@ -93,11 +93,14 @@ Work through the list in this order. The values marked OP-x are placeholders unt
 
 | Menu | Content |
 |---|---|
-| Transport › Sales | Opportunities, quotations and orders, cost estimates, contracts, contract items, extensions, excess approvals, reservation ledger, diesel escalation |
-| Transport › Operations | LRs, POD verification, e-way bills and tasks, DSR log, breakdowns, incidents, planning board, ODC permits and equipment |
+| CRM | Odoo's own CRM app: leads and opportunities with transport lanes, pipeline (Sales › My Pipeline), pipeline analysis (Reporting › Pipeline) |
+| Sales › Orders | Quotations and orders (Odoo's own), cost estimates |
+| Sales › Contracts | Contracts, contract items, extensions, excess approvals, reservation ledger, diesel escalation |
+| Sales › Reporting › Transport | Sales order P&L, estimate against actual, contract P&L |
+| Transport › Operations | LRs, contract items (Booking Clerk), POD verification, e-way bills and tasks, DSR log, breakdowns, incidents, planning board, ODC permits and equipment |
 | Transport › Trip money | Charges and recoveries, trip expenses, driver advances and settlements, hire memos, three-way matches, claims, month-end close, prepaid costs |
 | Transport › Dashboard | Exception dashboard (KPI tiles that drill down), filtered dashboard (branch, customer, vehicle, period), bills and expenses awaiting variance approval |
-| Transport › Reporting | LR register, DSR log, claims register, compliance expiry, recovery and receivables ageing, hire payables, TDS on hire (declarations), override log, vehicle utilisation, sales pipeline, sales order P&L, estimate against actual, contract P&L, Profitability (trip, leg, customer, truck, fleet, vendor, branch, company, recovery statement, WIP, ledger) |
+| Transport › Reporting | LR register, DSR log, claims register, compliance expiry, recovery and receivables ageing, hire payables, TDS on hire (declarations), override log, vehicle utilisation, Profitability (trip, leg, customer, truck, fleet, vendor, branch, company, recovery statement, WIP, ledger) |
 
 The prints of BRD #21 are on the document's **Print** menu: the LR (4 copies), trip sheet (with an ODC section), POD form, DSR, claim note, quotation with cost sheet and contract statement. The hire memo prints from its **Print hire memo** button, and the customer DSR goes out only as the attachment of the daily DSR email. With Marathi or Hindi set as a branch's second print language, the LR and POD form print each label in English and that language (BR-PRN-08).
 
@@ -161,4 +164,5 @@ Fixes found while writing the tester manual (TMS-UM-001). Each has a regression 
 | Credit control | Refusal messages print amounts in Indian grouping (₹4,80,000.00) | UT-CRD-03 |
 | E-way bill tasks | A task can be created from the menu: the Trip column is editable on new lines | — |
 | Upgrade | Updating the modules on a database with CRM or Calendar failed validating the driver form, which inherits the contact form's smart buttons (Meetings, Opportunities). The driver form now drops the contact's smart buttons, and an update from 18.0.1.0.0 runs clean | — |
+| Menus | Sales work moved out of the Transport app into Odoo's own apps: opportunities and pipeline in CRM; quotations, cost estimates, contracts and the sales reports in Sales. Transport › Sales is gone; the Booking Clerk keeps Transport › Operations › Contract items | — |
 | Labels | About 70 fields that showed generated labels ("Tms Mode", "Tms Exposure", "Pod Status") now have proper ones | — |

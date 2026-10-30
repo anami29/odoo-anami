@@ -4,4 +4,8 @@
     <record id="tms_core.group_booking_clerk" model="res.groups">
         <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman_all_leads'))]"/>
     </record>
+    <!-- Directors approving excess reach Sales › Contracts › Excess approvals -->
+    <record id="tms_core.group_contract_excess_approver" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman_all_leads'))]"/>
+    </record>
 </odoo>

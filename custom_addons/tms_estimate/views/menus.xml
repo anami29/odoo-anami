@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_tms_sales" name="Sales" parent="tms.root" sequence="5"/>
-    <menuitem id="menu_tms_opportunities" name="Opportunities" parent="menu_tms_sales" action="crm.crm_lead_action_pipeline" sequence="10"/>
-    <menuitem id="menu_tms_quotations" name="Quotations and orders" parent="menu_tms_sales" action="sale.action_quotations_with_onboarding" sequence="20"/>
-    <menuitem id="menu_tms_estimates" name="Cost estimates" parent="menu_tms_sales" action="action_tms_estimate" sequence="30"/>
-    <menuitem id="menu_tms_report_so_pnl" name="Sales order P&amp;L" parent="tms.reporting" action="action_tms_so_pnl" sequence="30"/>
-    <menuitem id="menu_tms_report_so_pnl_line" name="Estimate against actual" parent="tms.reporting" action="action_tms_so_pnl_line" sequence="31"/>
-    <menuitem id="menu_tms_report_pipeline" name="Sales pipeline" parent="tms.reporting" action="crm.crm_opportunity_report_action" sequence="32"/>
+    <!-- Sales activities live in the CRM and Sales apps: opportunities and the pipeline stay in CRM;
+         quotations, cost estimates and their reports sit in Sales (Transport keeps operations only) -->
+    <menuitem id="menu_tms_estimates" name="Cost estimates" parent="sale.sale_order_menu"
+              action="action_tms_estimate" sequence="15"/>
+    <menuitem id="menu_tms_sale_reports" name="Transport" parent="sale.menu_sale_report" sequence="50"/>
+    <menuitem id="menu_tms_report_so_pnl" name="Sales order P&amp;L" parent="menu_tms_sale_reports"
+              action="action_tms_so_pnl" sequence="10"/>
+    <menuitem id="menu_tms_report_so_pnl_line" name="Estimate against actual" parent="menu_tms_sale_reports"
+              action="action_tms_so_pnl_line" sequence="20"/>
+    <!-- the sales approvers read the Sales reports too -->
+    <record id="sale.menu_sale_report" model="ir.ui.menu">
+        <field name="groups_id" eval="[(4, ref('tms_core.group_branch_manager')), (4, ref('tms_core.group_operations_head')), (4, ref('tms_core.group_finance_head'))]"/>
+    </record>
     <menuitem id="menu_tms_config_cost_category" name="Cost categories" parent="tms.config" action="action_tms_cost_category" sequence="60"/>
     <menuitem id="menu_tms_config_cost_items" name="Cost items" parent="tms.config" action="action_tms_cost_items" sequence="61"/>
     <!-- BR-DSH-02: bills and expenses awaiting variance approval (BR-ACT-06, BR-NTF-10) -->
