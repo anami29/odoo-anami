@@ -5,7 +5,7 @@
     "summary": "Cost classes, standard rates per km, standard charge as analytic entries, truck pools and "
     "recovery variance, prepaid release, month-end close with accruals, P&L by trip, leg, customer, truck, "
     "fleet, vendor, branch and company",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.1.1",
     "category": "TMS",
     "license": "LGPL-3",
     "author": "Ranadive Consultancy Services",

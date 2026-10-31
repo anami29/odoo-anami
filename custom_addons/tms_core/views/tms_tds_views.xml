@@ -47,6 +47,6 @@
         <field name="context">{'search_default_group_quarter': 1}</field>
     </record>
 
-    <menuitem id="menu_tms_report_tds" name="TDS on hire (declarations)" parent="tms.reporting"
-              action="action_tms_tds_declaration_extract" sequence="10"/>
+    <menuitem id="menu_tms_report_tds" name="TDS on hire (declarations)" parent="tms_core.menu_tms_rep_ageing"
+              action="action_tms_tds_declaration_extract" sequence="40"/>
 </odoo>

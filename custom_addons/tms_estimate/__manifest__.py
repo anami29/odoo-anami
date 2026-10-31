@@ -4,7 +4,7 @@
     "name": "TMS Estimates (Premier Transport)",
     "summary": "Cost items, CRM lanes, quotations priced per km from cost estimates, item numbering, "
     "estimate lock and amendment, actual cost against estimate lines, the sales order P&L",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.1.1",
     "category": "TMS",
     "license": "LGPL-3",
     "author": "Ranadive Consultancy Services",

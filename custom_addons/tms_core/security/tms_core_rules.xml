@@ -138,7 +138,7 @@
         <field name="perm_read" eval="False"/>
         <field name="domain_force">['|', '|', ('company_id', '=', False), ('company_id', 'in', company_ids), ('delivery_branch_id', 'in', company_ids)]</field>
     </record>
-    <!-- OCA's empty global trip rule becomes a branch rule -->
+    <!-- The base module's empty global trip rule becomes a branch rule -->
     <record id="tms.tms_order_comp_rule" model="ir.rule">
         <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
     </record>

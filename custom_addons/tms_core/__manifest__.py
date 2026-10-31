@@ -4,7 +4,7 @@
     "name": "TMS Core (Premier Transport)",
     "summary": "LR booking, trips, compliance gate, POD, charges, expenses, "
     "claims, hire memo and three-way match, LR invoicing and credit control",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.1.1",
     "category": "TMS",
     "license": "LGPL-3",
     "author": "Ranadive Consultancy Services",

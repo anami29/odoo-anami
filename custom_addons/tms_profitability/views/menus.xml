@@ -13,8 +13,9 @@
     <menuitem id="menu_tms_company_pnl" name="Company P&amp;L" parent="menu_tms_profitability" action="action_tms_company_pnl" sequence="41"/>
     <menuitem id="menu_tms_pnl_ledger" name="P&amp;L ledger" parent="menu_tms_profitability" action="action_tms_pnl_line" sequence="50"/>
 
-    <menuitem id="menu_tms_pnl_close" name="Month-end close" parent="tms_core.menu_tms_finance" action="action_tms_pnl_close" sequence="80"/>
-    <menuitem id="menu_tms_prepaid" name="Prepaid truck costs" parent="tms_core.menu_tms_finance" action="action_tms_prepaid_schedule" sequence="81"/>
+    <menuitem id="menu_tms_money_close" name="Period close" parent="tms_core.menu_tms_finance" sequence="40"/>
+    <menuitem id="menu_tms_pnl_close" name="Month-end close" parent="menu_tms_money_close" action="action_tms_pnl_close" sequence="10"/>
+    <menuitem id="menu_tms_prepaid" name="Prepaid truck costs" parent="menu_tms_money_close" action="action_tms_prepaid_schedule" sequence="20"/>
 
     <menuitem id="menu_tms_config_std_rate" name="Standard rates" parent="tms.config" action="action_tms_std_rate" sequence="53"/>
     <menuitem id="menu_tms_config_truck_category" name="Truck cost categories" parent="tms.config" action="action_tms_truck_category" sequence="54"/>

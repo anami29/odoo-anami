@@ -1,13 +1,13 @@
 # Premier Transport TMS for Odoo 18 Community
 
-These addons implement BRD-TMS-001 v1.2 (*Transport Management System on Odoo 18 CE*) for Premier Transport Limited. They are built on OCA `tms` 18.0.1.1.0.
+These addons implement BRD-TMS-001 v1.2 (*Transport Management System on Odoo 18 CE*) for Premier Transport Limited. They are built on the community `tms` module 18.0.1.1.0.
 
 | | |
 |---|---|
-| Release | 18.0.1.1.0 (fixes found while writing the tester manual; see #10) |
+| Release | 18.0.1.1.1 (menus grouped by activity; see #10) |
 | Author | Ranadive Consultancy Services |
 | Licence | LGPL-3. Two dependencies are AGPL-3; see #9. |
-| Tests | 93 automated tests across the five modules, all passing with every module installed together |
+| Tests | 94 automated tests across the five modules, all passing with every module installed together |
 
 ## 1. Package contents
 
@@ -25,8 +25,8 @@ addons/
   tms_contract        Value-capped sales contracts, reservations, invoice gate, extensions,
                       excess approvals, escalation, contract P&L (#8.4, WF-11, #23.7)
 third_party/
-  oca/stock-logistics-transport/tms   OCA tms 18.0.1.1.0, pinned (commit a9b47c8), unmodified (SD-01)
-  oca/server-tools/auditlog           OCA auditlog 18.0.2.0.9, pinned (commit 126afd2), unmodified (SD-08)
+  stock-logistics-transport/tms       community tms 18.0.1.1.0, pinned (commit a9b47c8), unmodified (SD-01)
+  server-tools/auditlog               community auditlog 18.0.2.0.9, pinned (commit 126afd2), unmodified (SD-08)
 README.md
 ```
 
@@ -38,7 +38,7 @@ tms_core  ← tms_estimate ← tms_odc
                          ← tms_contract
 ```
 
-`tms_core` depends on `tms`, `auditlog`, `account_fleet`, `purchase`, `l10n_in`, `l10n_in_withholding`, `mail` and `auth_totp_mail_enforce`. `tms_estimate` adds `crm`, `sale_management` and `sale_crm`. Every module other than the two OCA ones is standard Odoo 18 CE. No extra Python packages are needed.
+`tms_core` depends on `tms`, `auditlog`, `account_fleet`, `purchase`, `l10n_in`, `l10n_in_withholding`, `mail` and `auth_totp_mail_enforce`. `tms_estimate` adds `crm`, `sale_management` and `sale_crm`. Every module other than `tms` and `auditlog` is standard Odoo 18 CE. No extra Python packages are needed.
 
 The BRD names four modules. `tms_core` is the fifth: it carries the operations layer (LR to invoice) that the other four extend through hooks.
 
@@ -53,12 +53,12 @@ The BRD names four modules. `tms_core` is the fifth: it carries the operations l
 
 ## 3. Installation
 
-1. Copy `addons/*` and `third_party/oca/*/*` into directories on the server's `addons_path`, for example:
+1. Copy `addons/*` and `third_party/*/*` into directories on the server's `addons_path`, for example:
    ```
-   addons_path = /opt/odoo/odoo/addons,/opt/odoo/addons,/opt/tms/third_party/oca/stock-logistics-transport,/opt/tms/third_party/oca/server-tools,/opt/tms/addons
+   addons_path = /opt/odoo/odoo/addons,/opt/odoo/addons,/opt/tms/third_party/stock-logistics-transport,/opt/tms/third_party/server-tools,/opt/tms/addons
    ```
 2. Restart Odoo and update the Apps list.
-3. On a database whose main company is in India (so the Indian chart loads), install **TMS Sales Contracts**, **TMS ODC** and **TMS Profitability**. Odoo installs `tms_core`, `tms_estimate`, OCA `tms` and `auditlog` with them. From the command line:
+3. On a database whose main company is in India (so the Indian chart loads), install **TMS Sales Contracts**, **TMS ODC** and **TMS Profitability**. Odoo installs `tms_core`, `tms_estimate`, `tms` and `auditlog` with them. From the command line:
    ```
    odoo-bin -c odoo.conf -d <db> -i tms_contract,tms_odc,tms_profitability --stop-after-init
    ```
@@ -97,10 +97,12 @@ Work through the list in this order. The values marked OP-x are placeholders unt
 | Sales › Orders | Quotations and orders (Odoo's own), cost estimates |
 | Sales › Contracts | Contracts, contract items, extensions, excess approvals, reservation ledger, diesel escalation |
 | Sales › Reporting › Transport | Sales order P&L, estimate against actual, contract P&L |
-| Transport › Operations | LRs, contract items (Booking Clerk), POD verification, e-way bills and tasks, DSR log, breakdowns, incidents, planning board, ODC permits and equipment |
-| Transport › Trip money | Charges and recoveries, trip expenses, driver advances and settlements, hire memos, three-way matches, claims, month-end close, prepaid costs |
+| Transport › Operations | **Booking:** consignment notes (LR), contract items (Booking Clerk), e-way bills, e-way bill tasks. **Trips:** all trips, planning board, DSR log, POD verification. **Exceptions:** incidents, breakdowns, damage and shortage claims. **ODC:** permits, equipment. **Fleet:** odometers |
+| Transport › Trip money | **Charges:** charges and recoveries, trip expenses. **Driver:** driver advances, driver settlements. **Hire:** hire memos, three-way matches. **Period close:** month-end close, prepaid truck costs |
 | Transport › Dashboard | Exception dashboard (KPI tiles that drill down), filtered dashboard (branch, customer, vehicle, period), bills and expenses awaiting variance approval |
-| Transport › Reporting | LR register, DSR log, claims register, compliance expiry, recovery and receivables ageing, hire payables, TDS on hire (declarations), override log, vehicle utilisation, Profitability (trip, leg, customer, truck, fleet, vendor, branch, company, recovery statement, WIP, ledger) |
+| Transport › Reporting | **Registers:** LR register, DSR log, claims register, compliance expiry, override log. **Ageing and payables:** recovery ageing, receivables ageing, hire payables, TDS on hire (declarations). **Fleet:** trips, vehicle utilisation, costs. **Profitability:** trip, leg, customer, truck, fleet, vendor, branch, company, recovery statement, WIP, ledger |
+
+In Operations, Trip money and Reporting the bold names are group headings: they show as captions inside the menu and hide themselves when a user can open none of their items.
 
 The prints of BRD #21 are on the document's **Print** menu: the LR (4 copies), trip sheet (with an ODC section), POD form, DSR, claim note, quotation with cost sheet and contract statement. The hire memo prints from its **Print hire memo** button, and the customer DSR goes out only as the attachment of the daily DSR email. With Marathi or Hindi set as a branch's second print language, the LR and POD form print each label in English and that language (BR-PRN-08).
 
@@ -112,7 +114,7 @@ odoo-bin -c odoo.conf -d tms_test -i tms_contract,tms_odc,tms_profitability \
   --stop-after-init
 ```
 
-Expected result: `0 failed, 0 error(s) of 93 tests`. The test companies have no mail server, so the log shows "failed sending mail … sender address" lines; they don't indicate a failure.
+Expected result: `0 failed, 0 error(s) of 94 tests`. The test companies have no mail server, so the log shows "failed sending mail … sender address" lines; they don't indicate a failure.
 
 ## 7. Controls worth knowing
 
@@ -130,20 +132,29 @@ Expected result: `0 failed, 0 error(s) of 93 tests`. The test companies have no 
 |---|---|
 | OP-22 TDS sections | Defaults are 2% under 393(1) Sl.6 for contract payments (non-individual) and 2% under 393(1) Sl.1(ii) for commission (Income-tax Act 2025). Set a vendor-level tax for individuals (1%). When the annual aggregate is crossed, TDS is deducted on the bill that crosses it, not retrospectively on earlier bills of the year. The tax advisor must confirm both points before go-live. |
 | OP-04, OP-05, OP-14, OP-19, OP-21 | ODC thresholds, revenue dating, run-on days and claim limits are settings, seeded with the BRD's working values. |
-| BR-INT-01 bank statement import (Should) | Not bundled. Install OCA `account_statement_import_file` (bank-statement-import) and `account_reconcile_oca` (account-reconcile) for 18.0. |
+| BR-INT-01 bank statement import (Should) | Not bundled. Add a bank-statement file import and a reconciliation widget for Odoo 18.0 Community. |
 | BR-DSH-04 spreadsheet dashboard (Should) | The exception dashboard is an Odoo kanban/list of `tms.kpi`, with drill-down and filters, rather than `spreadsheet_dashboard` data. |
 | BR-NFR-13 driver PII (Should) | Licence number and file are restricted to the Fleet Manager, Dispatchers and managers, and former drivers are anonymised after the retention period (`tms_core.driver_retention_years`, default 8). A driver's phone and address sit on the shared contact record and are not restricted per field. |
 | BR-HIR-15 cancelled hire memo | The advance already paid stays as a debit balance on the vendor's payable, and the accountants get an activity to recover it or net it against the next bill. No vendor refund entry is raised, because that would count the advance twice. |
 | E-way bills (SD-10) | Phase 1 is manual, with evidence; GSP APIs come in phase 2. |
 | Profitability | The reconciliation check blocks the close at company level. Branch differences from cross-branch trips show on the branch view only. Ratio columns average when grouped. |
 | Contracts | With a GST-inclusive value basis, pure-agent incidentals are grossed up as well. KPI-21 counts items held live. |
-| Updating OCA `tms` | On a database with CRM or Calendar, `-u tms` and `-u all` fail validating OCA's driver form (`tms.view_tms_driver_form_inherit`), which copies the contact form and its Meetings and Opportunities buttons; the error is "schedule_meeting is not a valid action on tms.driver". This is in OCA `tms` 18.0 itself (no upstream fix at commit a9b47c8). Update the TMS by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`, which runs clean. A one-line upstream fix is to clear the button box in that OCA view. |
+| Updating `tms` | On a database with CRM or Calendar, `-u tms` and `-u all` fail validating the base driver form (`tms.view_tms_driver_form_inherit`), which copies the contact form and its Meetings and Opportunities buttons; the error is "schedule_meeting is not a valid action on tms.driver". This is in the base `tms` 18.0 module itself (no upstream fix at commit a9b47c8). Update the TMS by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`, which runs clean. A one-line upstream fix is to clear the button box in that base view. |
 
 ## 9. Licences
 
-The five `tms_*` addons are LGPL-3. OCA `tms` and `auditlog` are AGPL-3, and their licence texts are in `third_party/oca/*/LICENSE`. Because `tms_core` depends on them, a distribution of the combined work must meet AGPL-3: offer the source to users of a network deployment.
+The five `tms_*` addons are LGPL-3. `tms` and `auditlog` are AGPL-3, and their licence texts are in `third_party/*/LICENSE`. Because `tms_core` depends on them, a distribution of the combined work must meet AGPL-3: offer the source to users of a network deployment.
 
-## 10. Changes in 18.0.1.1.0
+## 10. Changes in 18.0.1.1.1
+
+| Area | Change | Cases |
+|---|---|---|
+| Menus | Operations, Trip money and Reporting group their items by activity (#5). Claims move from Trip money to Operations › Exceptions as *Damage and shortage claims*; the Claims register stays in Reporting. No item changes role or access | UT-CFG-23 (new) |
+| Trips | The LR field on a trip's Consignments tab explains why the list can be empty: only confirmed LRs with packages not yet planned are offered | — |
+
+Upgrade from 18.0.1.1.0 by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`.
+
+## 11. Changes in 18.0.1.1.0
 
 Fixes found while writing the tester manual (TMS-UM-001). Each has a regression test; the suite is now 93 tests.
 

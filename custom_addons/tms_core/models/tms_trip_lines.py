@@ -44,6 +44,8 @@ class TmsTripConsignment(models.Model):
     consignment_id = fields.Many2one(
         "tms.consignment", string="LR", required=True, index=True,
         domain="[('state', '=', 'confirmed'), ('unplanned_packages', '>', 0)]",
+        help="Only confirmed LRs with packages not yet planned on a trip are offered. "
+             "A draft LR does not appear until it is confirmed.",
     )
     lr_company_id = fields.Many2one(related="consignment_id.company_id", store=True, string="Booking branch")
     delivery_branch_id = fields.Many2one(related="consignment_id.delivery_branch_id", store=True)

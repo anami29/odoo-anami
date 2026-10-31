@@ -13,7 +13,7 @@ STAGE_CODES = [
 
 
 class TmsStage(models.Model):
-    """BR-EXE-01, BR-EXE-02: OCA stages carry a technical code; seeded coded stages are locked."""
+    """BR-EXE-01, BR-EXE-02: base stages carry a technical code; seeded coded stages are locked."""
 
     _inherit = "tms.stage"
 
@@ -37,7 +37,7 @@ class TmsStage(models.Model):
 
     @api.model
     def _tms_seed_codes(self):
-        """Called from data: code OCA's seeded stages and create the three TMS-only stages."""
+        """Called from data: code the base module's seeded stages and create the three TMS-only stages."""
         mapping = {
             "tms.tms_stage_order_draft": "draft",
             "tms.tms_stage_order_confirmed": "confirmed",

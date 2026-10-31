@@ -118,7 +118,7 @@
         <field name="res_model">tms.vehicle.utilisation</field>
         <field name="view_mode">pivot,list</field>
     </record>
-    <menuitem id="menu_tms_vehicle_utilisation" name="Vehicle utilisation" parent="tms.reporting"
+    <menuitem id="menu_tms_vehicle_utilisation" name="Vehicle utilisation" parent="tms_core.menu_tms_rep_fleet"
               action="action_tms_vehicle_utilisation" sequence="20" groups="tms_core.group_owned_fleet_menus"/>
 
     <!-- BR-BRN-06: collect a To-Pay invoice at the delivery branch -->

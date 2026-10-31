@@ -11,7 +11,7 @@ FLEET_TYPES = [("owned", "Owned"), ("market", "Market")]
 
 
 class TmsOrder(models.Model):
-    """The trip: OCA tms.order extended (BR-TRP-01)."""
+    """The trip: base tms.order extended (BR-TRP-01)."""
 
     _name = "tms.order"
     _inherit = ["tms.order", "tms.reason.mixin"]
@@ -522,7 +522,7 @@ class TmsOrder(models.Model):
             if trip.fleet_type == "market":
                 asg.hire_memo_id.tms_assignment_id = asg
             if not trip.company_id.tms_enforce_compliance:
-                # BR-CMP-07: with enforcement off, OCA's own insurance and licence checks still run
+                # BR-CMP-07: with enforcement off, the base module's own insurance and licence checks still run
                 trip.started_without_gate = True
                 if len(trip.vehicle_id.insurance_id) <= 1:
                     super(TmsOrder, trip.with_context(tms_assignment=True)).button_start_order()
@@ -539,7 +539,7 @@ class TmsOrder(models.Model):
         return True
 
     def _tms_planned_km(self):
-        """Planned trip km: the OCA route's distance, else the longest e-way bill distance on board;
+        """Planned trip km: the base route's distance, else the longest e-way bill distance on board;
         tms_estimate uses the order item's distance."""
         self.ensure_one()
         if self.route_id and self.route_id.distance:

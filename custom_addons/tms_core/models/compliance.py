@@ -206,7 +206,7 @@ class TmsComplianceGate(models.AbstractModel):
         """Return (result, failures, warnings, snapshot lines).
 
         A document fails when missing or when its valid-until date falls before the trip's
-        scheduled end; it warns when it expires within OCA's security days after that end.
+        scheduled end; it warns when it expires within the base module's security days after that end.
         """
         end = fields.Date.to_date(end_date) if end_date else fields.Date.context_today(self)
         icp = self.env["ir.config_parameter"].sudo()
@@ -278,7 +278,7 @@ class TmsComplianceGate(models.AbstractModel):
             for t in types.filtered(lambda t: t.applies_to in ("driver", "both")):
                 docs = driver.tms_compliance_document_ids
                 if t.code == "DL" and not docs.filtered(lambda d: d.type_id == t) and driver.driver_license_number:
-                    # BR-MD-09: licence stays on OCA's fields
+                    # BR-MD-09: licence stays on the base module's fields
                     snapshot.append("%s | DL | %s | valid until %s" % (
                         label, driver.driver_license_number, driver.driver_license_expiration_date))
                     exp = driver.driver_license_expiration_date

@@ -516,6 +516,33 @@ class TestHire(TmsCommon):
         menu = self.env.ref("tms_core.menu_tms_gta_option")
         self.assertIn(menu.id, self.env["ir.ui.menu"].with_user(self.u_finance)._visible_menu_ids())
 
+    def test_menus_grouped_by_activity(self):
+        """UT-CFG-23: Operations, Trip money and Reporting hold only group headings, each holding its items."""
+        ref = self.env.ref
+        for top in ("tms.operations", "tms_core.menu_tms_finance", "tms.reporting"):
+            headings = ref(top).child_id
+            self.assertTrue(headings, top)
+            self.assertFalse(headings.filtered("action"), "%s has an item outside a group" % top)
+        expected = {
+            "tms_core.menu_tms_lr": "tms_core.menu_tms_ops_booking",
+            "tms_core.menu_tms_ewaybill": "tms_core.menu_tms_ops_booking",
+            "tms.menu_tms_operation_trip": "tms_core.menu_tms_ops_trips",
+            "tms_core.menu_tms_pod": "tms_core.menu_tms_ops_trips",
+            "tms_core.menu_tms_dsr": "tms_core.menu_tms_ops_trips",
+            "tms_core.menu_tms_incident": "tms_core.menu_tms_ops_exceptions",
+            "tms_core.menu_tms_claim": "tms_core.menu_tms_ops_exceptions",
+            "tms.menu_fleet_odometers": "tms_core.menu_tms_ops_fleet",
+            "tms_core.menu_tms_hire_memo": "tms_core.menu_tms_money_hire",
+            "tms_core.menu_tms_report_lr": "tms_core.menu_tms_rep_registers",
+            "tms_core.menu_tms_report_tds": "tms_core.menu_tms_rep_ageing",
+            "tms.menu_tms_report_trip": "tms_core.menu_tms_rep_fleet",
+        }
+        for item, heading in expected.items():
+            self.assertEqual(ref(item).parent_id, ref(heading), item)
+        visible = self.env["ir.ui.menu"].with_user(self.u_clerk)._visible_menu_ids()
+        self.assertIn(ref("tms_core.menu_tms_ops_booking").id, visible)
+        self.assertIn(ref("tms_core.menu_tms_lr").id, visible)
+
     def test_hire_memo_needs_pan_and_bank(self):
         """BR-HIR-03."""
         vendor = self.env["res.partner"].create({"name": "No PAN carrier"})

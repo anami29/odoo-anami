@@ -5,7 +5,7 @@
         <field name="model">res.config.settings</field>
         <field name="inherit_id" ref="tms.res_config_settings_view_form"/>
         <field name="arch" type="xml">
-            <!-- BR-CFG-11: OCA toggles for modules absent from 18.0 are hidden -->
+            <!-- BR-CFG-11: base toggles for modules absent from 18.0 are hidden -->
             <xpath expr="//field[@name='module_tms_account']/.." position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
