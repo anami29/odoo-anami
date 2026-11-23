@@ -4,12 +4,13 @@
         <field name="name">tms.so.pnl.list</field>
         <field name="model">tms.so.pnl</field>
         <field name="arch" type="xml">
-            <list create="0" edit="0" delete="0">
+            <list create="0" edit="0" delete="0" decoration-danger="contribution &lt; 0">
                 <field name="order_id"/>
                 <field name="item_no"/>
                 <field name="partner_id"/>
                 <field name="company_id" optional="show"/>
-                <field name="tms_cargo_type" optional="hide"/>
+                <field name="tms_cargo_type" widget="badge" optional="show"
+                       decoration-warning="tms_cargo_type == 'odc'" decoration-info="tms_cargo_type == 'regular'"/>
                 <field name="planned_revenue" sum="Total" optional="show"/>
                 <field name="revenue" sum="Total"/>
                 <field name="estimated_cost" sum="Total"/>
@@ -18,7 +19,12 @@
                 <field name="standard_charge" sum="Total"/>
                 <field name="contribution" sum="Total"/>
                 <field name="margin_pct"/>
+                <field name="planned_contribution" sum="Total" optional="show"/>
+                <field name="planned_margin_pct" optional="show"/>
                 <field name="variance" sum="Total"/>
+                <field name="variance_pct" optional="show"/>
+                <button name="action_open_estimate_lines" type="object" icon="fa-search-plus"
+                        title="Estimate against actual for this order"/>
             </list>
         </field>
     </record>
@@ -31,7 +37,21 @@
                 <field name="revenue" type="measure"/>
                 <field name="actual" type="measure"/>
                 <field name="contribution" type="measure"/>
+                <field name="margin_pct" type="measure"/>
             </pivot>
+        </field>
+    </record>
+    <record id="tms_so_pnl_graph" model="ir.ui.view">
+        <field name="name">tms.so.pnl.graph</field>
+        <field name="model">tms.so.pnl</field>
+        <field name="arch" type="xml">
+            <graph string="Sales order P&amp;L" type="bar" sample="1">
+                <field name="order_id"/>
+                <field name="planned_contribution" type="measure"/>
+                <field name="planned_margin_pct" type="measure"/>
+                <field name="margin_pct" type="measure"/>
+                <field name="contribution" type="measure"/>
+            </graph>
         </field>
     </record>
     <record id="tms_so_pnl_search" model="ir.ui.view">
@@ -52,7 +72,8 @@
     <record id="action_tms_so_pnl" model="ir.actions.act_window">
         <field name="name">Sales order P&amp;L</field>
         <field name="res_model">tms.so.pnl</field>
-        <field name="view_mode">list,pivot</field>
+        <field name="view_mode">list,graph,pivot</field>
+        <field name="context">{'search_default_by_order': 1}</field>
     </record>
     <record id="tms_so_pnl_line_list" model="ir.ui.view">
         <field name="name">tms.so.pnl.line.list</field>

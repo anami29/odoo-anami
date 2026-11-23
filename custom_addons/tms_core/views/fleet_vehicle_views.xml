@@ -23,7 +23,7 @@
                             <field name="tms_expected_free"/>
                         </group>
                     </group>
-                    <separator string="Compliance documents (BR-MD-07)"/>
+                    <separator string="Compliance documents"/>
                     <field name="tms_compliance_document_ids" context="{'default_vehicle_id': id}">
                         <list editable="bottom" decoration-danger="state == 'expired'" decoration-warning="state == 'expiring'">
                             <field name="type_id"/>
@@ -32,7 +32,8 @@
                             <field name="valid_until"/>
                             <field name="attachment" filename="attachment_name"/>
                             <field name="attachment_name" column_invisible="1"/>
-                            <field name="state"/>
+                            <field name="tms_days_left_text"/>
+                            <field name="state" widget="badge" decoration-danger="state == 'expired'" decoration-warning="state == 'expiring'" decoration-success="state == 'valid'"/>
                             <field name="verified_by_id"/>
                             <button name="action_verify" type="object" icon="fa-check" title="Verify"/>
                         </list>
@@ -41,7 +42,7 @@
             </xpath>
         </field>
     </record>
-    <!-- BR-TRP-09: planning board of owned vehicles -->
+    <!-- Planning board of owned vehicles -->
     <record id="fleet_vehicle_planning_list" model="ir.ui.view">
         <field name="name">fleet.vehicle.planning.list</field>
         <field name="model">fleet.vehicle</field>

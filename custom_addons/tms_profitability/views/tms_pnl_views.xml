@@ -79,7 +79,8 @@
                 <field name="company_id"/>
                 <field name="partner_id"/>
                 <field name="vehicle_id"/>
-                <field name="fleet_type"/>
+                <field name="fleet_type" widget="badge"
+                       decoration-info="fleet_type == 'owned'" decoration-muted="fleet_type == 'market'"/>
                 <field name="cargo_type" optional="hide"/>
                 <field name="origin_id" optional="hide"/>
                 <field name="destination_id" optional="hide"/>
@@ -108,6 +109,17 @@
                 <field name="trip_id" type="row"/>
                 <field name="trip_margin" type="measure"/>
             </pivot>
+        </field>
+    </record>
+    <record id="tms_trip_pnl_graph" model="ir.ui.view">
+        <field name="name">tms.trip.pnl.graph</field>
+        <field name="model">tms.trip.pnl</field>
+        <field name="arch" type="xml">
+            <graph string="Trip contribution" type="bar" sample="1">
+                <field name="trip_id"/>
+                <field name="trip_margin" type="measure"/>
+                <field name="contribution" type="measure"/>
+            </graph>
         </field>
     </record>
     <record id="tms_trip_pnl_search" model="ir.ui.view">
@@ -140,7 +152,7 @@
     <record id="action_tms_trip_pnl" model="ir.actions.act_window">
         <field name="name">Trip P&amp;L</field>
         <field name="res_model">tms.trip.pnl</field>
-        <field name="view_mode">list,pivot</field>
+        <field name="view_mode">list,graph,pivot</field>
         <field name="context">{'search_default_not_wip': 1}</field>
     </record>
     <record id="tms_trip_leg_list" model="ir.ui.view">
@@ -276,7 +288,8 @@
                 <field name="vehicle_id"/>
                 <field name="period"/>
                 <field name="company_id"/>
-                <field name="fleet_type"/>
+                <field name="fleet_type" widget="badge"
+                       decoration-info="fleet_type == 'owned'" decoration-muted="fleet_type == 'market'"/>
                 <field name="trip_count" sum="Total"/>
                 <field name="revenue" sum="Total"/>
                 <field name="direct_cost" sum="Total"/>
@@ -310,6 +323,16 @@
             </pivot>
         </field>
     </record>
+    <record id="tms_truck_pnl_graph" model="ir.ui.view">
+        <field name="name">tms.truck.pnl.graph</field>
+        <field name="model">tms.truck.pnl</field>
+        <field name="arch" type="xml">
+            <graph string="Truck operating result" type="bar" sample="1">
+                <field name="vehicle_id"/>
+                <field name="operating_result" type="measure"/>
+            </graph>
+        </field>
+    </record>
     <record id="tms_truck_pnl_search" model="ir.ui.view">
         <field name="name">tms.truck.pnl.search</field>
         <field name="model">tms.truck.pnl</field>
@@ -319,7 +342,10 @@
                 <field name="vehicle_id"/>
                 <filter name="owned" string="Owned" domain="[('fleet_type', '=', 'owned')]"/>
                 <filter name="market" string="Market" domain="[('fleet_type', '=', 'market')]"/>
-                <filter name="filter_period" string="Period" date="period"/>
+                <separator/>
+                <filter name="below_zero" string="Below zero" domain="[('operating_result', '&lt;', 0)]"/>
+                <separator/>
+                <filter name="filter_period" string="Period" date="period" default_period="month"/>
                 <group expand="0" string="Group by">
                     <filter name="group_company" string="Branch" context="{'group_by': 'company_id'}"/>
                     <filter name="group_period" string="Period" context="{'group_by': 'period:month'}"/>
@@ -332,8 +358,8 @@
     <record id="action_tms_truck_pnl" model="ir.actions.act_window">
         <field name="name">Truck P&amp;L</field>
         <field name="res_model">tms.truck.pnl</field>
-        <field name="view_mode">list,pivot</field>
-        <field name="context">{}</field>
+        <field name="view_mode">list,graph,pivot</field>
+        <field name="context">{'search_default_filter_period': 1, 'search_default_group_vehicle': 1}</field>
     </record>
     <record id="tms_recovery_statement_list" model="ir.ui.view">
         <field name="name">tms.recovery.statement.list</field>

@@ -1,14 +1,15 @@
-# Copyright 2026 Ranadive Consultancy Services
+# Copyright 2026 RLFB (Riamona Luxury and Fashion Brands), https://www.riamona.com
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
 {
     "name": "TMS Core (Premier Transport)",
     "summary": "LR booking, trips, compliance gate, POD, charges, expenses, "
     "claims, hire memo and three-way match, LR invoicing and credit control",
-    "version": "18.0.1.1.1",
+    "version": "18.0.1.2.0",
     "category": "TMS",
     "license": "LGPL-3",
-    "author": "Ranadive Consultancy Services",
-    "website": "https://www.ranadive.in",
+    "author": "RLFB (Riamona Luxury and Fashion Brands)",
+    "maintainers": ["RLFB"],
+    "website": "https://www.riamona.com",
     "depends": [
         "tms",
         "auditlog",
@@ -60,6 +61,10 @@
         "views/menus.xml",
         "views/tms_tds_views.xml",
         "views/tms_core_extra_views.xml",
+        "wizard/tms_ui_breakdown_views.xml",
+        "views/tms_ui_trip_views.xml",
+        "views/tms_ui_compliance_views.xml",
+        "views/tms_ui_billing_views.xml",
         "report/report_paperformat.xml",
         "report/report_lr.xml",
         "report/report_trip_sheet.xml",

@@ -3,6 +3,7 @@ from collections import OrderedDict
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.service.model import get_public_method
+from odoo.tools.misc import format_datetime
 
 
 class TmsReasonWizard(models.TransientModel):
@@ -139,8 +140,58 @@ class TmsBreakdownResolveWizard(models.TransientModel):
     hire_amount = fields.Float(string="Hire for the remaining leg")
     km_run = fields.Float(string="Km run by the replaced market vehicle")
     km_planned = fields.Float(string="Planned km of the replaced market vehicle")
+    reposition_cost = fields.Float(
+        string="Reposition cost",
+        help="Empty run of the own replacement vehicle to the breakdown spot; booked as a trip expense.")
+    revised_eta = fields.Datetime(
+        string="Revised ETA", help="Logged on a new DSR line when the vehicle is repaired and continues.")
+
+    @api.onchange("vehicle_id")
+    def _onchange_vehicle_id_driver(self):
+        """The replacement's driver defaults from the chosen vehicle's driver."""
+        vehicle = self.vehicle_id
+        if not vehicle:
+            return
+        driver = vehicle.tms_driver_id
+        if not driver and vehicle.driver_id:
+            driver = self.env["tms.driver"].search([("partner_id", "=", vehicle.driver_id.id)], limit=1)
+        if driver:
+            self.driver_id = driver
+
+    @api.onchange("market_vehicle_id")
+    def _onchange_market_vehicle_id_broker(self):
+        if self.market_vehicle_id.broker_id:
+            self.broker_id = self.market_vehicle_id.broker_id
 
     def action_resolve(self):
+        self._tms_resolve()
+        return {"type": "ir.actions.act_window_close"}
+
+    def _tms_log_revised_eta(self, bd):
+        """Repair and continue: a Delayed - Breakdown DSR line carries the revised ETA."""
+        when = format_datetime(self.env, self.revised_eta, dt_format="dd/MM/yyyy HH:mm")
+        return self.env["tms.trip.dsr"].create({
+            "trip_id": bd.trip_id.id,
+            "location": bd.location,
+            "status": "delayed_breakdown",
+            "eta": self.revised_eta,
+            "remark": _("Repair and continue: ETA revised to %s", when),
+        })
+
+    def _tms_book_reposition(self, trip, incident):
+        """The own replacement's empty run to the breakdown spot is a trip expense."""
+        category = self.env.ref("tms_core.tms_category_reposition", raise_if_not_found=False) or \
+            self.env["tms.category"].search([("use_expense", "=", True), ("code", "=", "MISC")], limit=1)
+        return self.env["tms.trip.expense"].create({
+            "trip_id": trip.id,
+            "category_id": category.id,
+            "amount": self.reposition_cost,
+            "vehicle_id": self.vehicle_id.id,
+            "incident_id": incident.id,
+        })
+
+    def _tms_resolve(self):
+        """Resolve the breakdown; return the replacement assignment (empty when repaired)."""
         self.ensure_one()
         bd = self.breakdown_id
         trip = bd.trip_id
@@ -149,7 +200,9 @@ class TmsBreakdownResolveWizard(models.TransientModel):
         bd.write({"resolution": self.resolution, "repair_cost": self.repair_cost or bd.repair_cost})
         if self.resolution == "repair":
             bd._tms_close(self.resumed_at)
-            return {"type": "ir.actions.act_window_close"}
+            if self.revised_eta:
+                self._tms_log_revised_eta(bd)
+            return self.env["tms.trip.assignment"]
         old = trip.open_assignment_id
         vals = {"reason": self.reason}
         if old.fleet_type == "owned" and self.odometer_at_breakdown:
@@ -210,16 +263,18 @@ class TmsBreakdownResolveWizard(models.TransientModel):
         trip._tms_create_partb_tasks(asg.vehicle_number or "", assignment=asg)
         # BR-ASG-12: Vehicle Replacement incident
         category = self.env.ref("tms_core.tms_category_vehicle_replacement")
-        self.env["tms.trip.incident"].create({
+        incident = self.env["tms.trip.incident"].create({
             "trip_id": trip.id,
             "category_id": category.id,
             "location": bd.location,
             "description": _("Replaced %(old)s with %(new)s", old=old.vehicle_number, new=asg.vehicle_number),
             "breakdown_id": bd.id,
         })
+        if self.resolution == "replace_own" and self.reposition_cost:
+            self._tms_book_reposition(trip, incident)
         bd.replacement_assignment_id = asg
         bd._tms_close(self.resumed_at)
-        return {"type": "ir.actions.act_window_close"}
+        return asg
 
 
 class TmsInvoiceLrWizard(models.TransientModel):

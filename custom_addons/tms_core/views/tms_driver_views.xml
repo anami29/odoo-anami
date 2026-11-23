@@ -16,15 +16,16 @@
                     <field name="tms_home_branch_id"/>
                     <field name="tms_availability"/>
                 </group>
-                <separator string="Compliance documents (BR-MD-07)"/>
+                <separator string="Compliance documents"/>
                 <field name="tms_compliance_document_ids" context="{'default_driver_id': id}">
-                    <list editable="bottom">
+                    <list editable="bottom" decoration-danger="state == 'expired'" decoration-warning="state == 'expiring'">
                         <field name="type_id"/>
                         <field name="number"/>
                         <field name="valid_until"/>
                         <field name="attachment" filename="attachment_name"/>
                         <field name="attachment_name" column_invisible="1"/>
-                        <field name="state"/>
+                        <field name="tms_days_left_text"/>
+                        <field name="state" widget="badge" decoration-danger="state == 'expired'" decoration-warning="state == 'expiring'" decoration-success="state == 'valid'"/>
                     </list>
                 </field>
                 </page>

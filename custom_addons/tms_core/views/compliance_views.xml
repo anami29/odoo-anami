@@ -31,8 +31,10 @@
                 <field name="number"/>
                 <field name="valid_from"/>
                 <field name="valid_until"/>
-                <field name="state"/>
+                <field name="tms_days_left_text" decoration-danger="state == 'expired'" decoration-warning="state == 'expiring'"/>
+                <field name="state" widget="badge" decoration-danger="state == 'expired'" decoration-warning="state == 'expiring'" decoration-success="state == 'valid'"/>
                 <field name="verified_by_id"/>
+                <button name="action_tms_renew" type="object" string="Renew" icon="fa-refresh" invisible="state == 'valid'" groups="tms_core.group_tms_staff"/>
             </list>
         </field>
     </record>
@@ -79,7 +81,11 @@
                 <field name="type_id"/>
                 <filter name="expiring" string="Expiring within 30 days" domain="[('state', '=', 'expiring')]"/>
                 <filter name="expired" string="Expired" domain="[('state', '=', 'expired')]"/>
+                <separator/>
+                <filter name="own_fleet" string="Own vehicles and drivers" domain="[('market_vehicle_id', '=', False)]"/>
+                <filter name="market" string="Market vehicles" domain="[('market_vehicle_id', '!=', False)]"/>
                 <group expand="0" string="Group by">
+                    <filter name="by_holder" string="Holder" context="{'group_by': 'holder_name'}"/>
                     <filter name="by_type" string="Type" context="{'group_by': 'type_id'}"/>
                 </group>
             </search>

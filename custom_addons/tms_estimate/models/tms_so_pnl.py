@@ -1,4 +1,29 @@
-from odoo import api, fields, models, tools
+from odoo import _, api, fields, models, tools
+
+# ratio columns: on a group row each is recomputed from the group's sums, never averaged
+SO_PNL_RATIOS = {
+    "margin_pct": ("contribution", "revenue"),
+    "planned_margin_pct": ("planned_contribution", "planned_revenue"),
+    "variance_pct": ("variance", "estimated_cost"),
+}
+SO_PNL_LINE_RATIOS = {"variance_pct": ("variance", "estimated_cost")}
+
+
+def _ratio_read_group(parent, ratios, domain, fields, groupby, **kw):
+    """Run read_group with the sums behind each requested ratio column, then set the ratio of every group
+    to sum(numerator) ÷ sum(denominator) × 100 instead of the average of its rows."""
+    wanted = {name: ratios[name] for name in {spec.split(":")[0] for spec in fields} if name in ratios}
+    sums = sorted({fname for pair in wanted.values() for fname in pair})
+    specs = list(fields) + ["tms_ratio_%s:sum(%s)" % (fname, fname) for fname in sums]
+    groups = parent.read_group(domain, specs, groupby, **kw)
+    for group in groups:
+        for name, (num, den) in wanted.items():
+            numerator = group.get("tms_ratio_%s" % num) or 0.0
+            denominator = group.get("tms_ratio_%s" % den) or 0.0
+            group[name] = numerator / denominator * 100.0 if denominator else 0.0
+        for fname in sums:
+            group.pop("tms_ratio_%s" % fname, None)
+    return groups
 
 
 class TmsSoPnlLine(models.Model):
@@ -22,7 +47,12 @@ class TmsSoPnlLine(models.Model):
     committed = fields.Float(readonly=True)
     actual = fields.Float(readonly=True)
     variance = fields.Float(readonly=True)
-    variance_pct = fields.Float(readonly=True, aggregator="avg")
+    variance_pct = fields.Float(string="Variance %", readonly=True, aggregator="avg")
+
+    @api.model
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+        return _ratio_read_group(super(), SO_PNL_LINE_RATIOS, domain, fields, groupby, offset=offset,
+                                 limit=limit, orderby=orderby, lazy=lazy)
 
     def init(self):
         tools.drop_view_if_exists(self.env.cr, self._table)
@@ -82,9 +112,30 @@ class TmsSoPnl(models.Model):
     actual = fields.Float(readonly=True)
     standard_charge = fields.Float(readonly=True)
     contribution = fields.Float(readonly=True)
-    margin_pct = fields.Float(readonly=True, aggregator="avg")
+    margin_pct = fields.Float(string="Margin %", readonly=True, aggregator="avg",
+                              help="Contribution ÷ revenue; on a group row, the group's contribution ÷ its revenue.")
+    planned_contribution = fields.Float(readonly=True, help="Planned revenue less the estimated cost.")
+    planned_margin_pct = fields.Float(string="Planned margin %", readonly=True, aggregator="avg",
+                                      help="Planned contribution ÷ planned revenue.")
     variance = fields.Float(readonly=True)
+    variance_pct = fields.Float(string="Cost variance %", readonly=True, aggregator="avg",
+                                help="Actual less estimated cost, as a share of the estimated cost.")
     date_order = fields.Datetime(readonly=True)
+
+    @api.model
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+        return _ratio_read_group(super(), SO_PNL_RATIOS, domain, fields, groupby, offset=offset, limit=limit,
+                                 orderby=orderby, lazy=lazy)
+
+    def action_open_estimate_lines(self):
+        """The order's estimate lines with their committed and actual cost."""
+        self.ensure_one()
+        action = self.env["ir.actions.act_window"]._for_xml_id("tms_estimate.action_tms_so_pnl_line")
+        action.update({
+            "name": _("Estimate against actual · %s", self.order_id.name),
+            "domain": [("order_id", "=", self.order_id.id)],
+        })
+        return action
 
     @api.model
     def _tms_standard_charge_sql(self):
@@ -119,7 +170,13 @@ class TmsSoPnl(models.Model):
                    CASE WHEN COALESCE(rev.amount, 0) <> 0
                         THEN (COALESCE(rev.amount, 0) - COALESCE(cost.act, 0) - COALESCE(std.amount, 0))
                              / rev.amount * 100 ELSE 0 END AS margin_pct,
-                   COALESCE(cost.act, 0) - COALESCE(cost.est, 0) AS variance
+                   sol.price_subtotal - COALESCE(cost.est, 0) AS planned_contribution,
+                   CASE WHEN COALESCE(sol.price_subtotal, 0) <> 0
+                        THEN (sol.price_subtotal - COALESCE(cost.est, 0)) / sol.price_subtotal * 100
+                        ELSE 0 END AS planned_margin_pct,
+                   COALESCE(cost.act, 0) - COALESCE(cost.est, 0) AS variance,
+                   CASE WHEN COALESCE(cost.est, 0) <> 0
+                        THEN (COALESCE(cost.act, 0) - cost.est) / cost.est * 100 ELSE 0 END AS variance_pct
               FROM sale_order_line sol
               JOIN sale_order so ON so.id = sol.order_id
          LEFT JOIN rev ON rev.sale_line_id = sol.id

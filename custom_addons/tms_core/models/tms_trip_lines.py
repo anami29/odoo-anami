@@ -279,6 +279,9 @@ class TmsTripConsignment(models.Model):
                 "claimant_id": lr.billing_partner_id.id,
             })
         incident.claim_id = claim
+        if not claim.pod_link_id:
+            # a claim raised from the incident first: approval reads this POD line
+            claim.pod_link_id = self
         self.write({"incident_id": incident.id, "claim_id": claim.id})
 
     def _tms_mark_hire_received(self):

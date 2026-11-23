@@ -7,14 +7,14 @@
         <field name="inherit_id" ref="tms_core.account_move_form_tms_core"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='invoice_line_ids']/list/field[@name='tms_cost_class']" position="after">
-                <field name="vehicle_id" optional="show"/>
-                <field name="tms_replacement_vehicle_id" optional="hide"/>
-                <field name="tms_truck_category_id" optional="show" invisible="tms_cost_class not in ('truck_running', 'truck_fixed')"/>
-                <field name="tms_cover_from" optional="show" invisible="tms_cost_class != 'truck_fixed'"/>
-                <field name="tms_cover_to" optional="show" invisible="tms_cost_class != 'truck_fixed'"/>
-                <field name="tms_useful_life_months" optional="hide" invisible="tms_cost_class != 'truck_running'"/>
+                <field name="vehicle_id" optional="show" column_invisible="parent.move_type in ('out_invoice', 'out_refund')"/>
+                <field name="tms_replacement_vehicle_id" optional="hide" column_invisible="parent.move_type in ('out_invoice', 'out_refund')"/>
+                <field name="tms_truck_category_id" optional="show" column_invisible="parent.move_type in ('out_invoice', 'out_refund')" invisible="tms_cost_class not in ('truck_running', 'truck_fixed')"/>
+                <field name="tms_cover_from" optional="show" column_invisible="parent.move_type in ('out_invoice', 'out_refund')" invisible="tms_cost_class != 'truck_fixed'"/>
+                <field name="tms_cover_to" optional="show" column_invisible="parent.move_type in ('out_invoice', 'out_refund')" invisible="tms_cost_class != 'truck_fixed'"/>
+                <field name="tms_useful_life_months" optional="hide" column_invisible="parent.move_type in ('out_invoice', 'out_refund')" invisible="tms_cost_class != 'truck_running'"/>
                 <field name="tms_pnl_late_date" optional="hide"/>
-                <field name="tms_prepaid_schedule_id" optional="hide"/>
+                <field name="tms_prepaid_schedule_id" optional="hide" column_invisible="parent.move_type in ('out_invoice', 'out_refund')"/>
             </xpath>
             <xpath expr="//field[@name='tms_is_accrual']" position="after">
                 <field name="tms_close_id" invisible="not tms_close_id"/>

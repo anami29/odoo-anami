@@ -1,14 +1,15 @@
-# Copyright 2026 Ranadive Consultancy Services
+# Copyright 2026 RLFB (Riamona Luxury and Fashion Brands), https://www.riamona.com
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
 {
     "name": "TMS Estimates (Premier Transport)",
     "summary": "Cost items, CRM lanes, quotations priced per km from cost estimates, item numbering, "
     "estimate lock and amendment, actual cost against estimate lines, the sales order P&L",
-    "version": "18.0.1.1.1",
+    "version": "18.0.1.2.0",
     "category": "TMS",
     "license": "LGPL-3",
-    "author": "Ranadive Consultancy Services",
-    "website": "https://www.ranadive.in",
+    "author": "RLFB (Riamona Luxury and Fashion Brands)",
+    "maintainers": ["RLFB"],
+    "website": "https://www.riamona.com",
     "depends": ["tms_core", "crm", "sale_management", "sale_crm"],
     "data": [
         "security/tms_estimate_groups.xml",

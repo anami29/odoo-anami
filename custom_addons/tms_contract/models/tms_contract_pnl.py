@@ -1,4 +1,6 @@
-from odoo import fields, models, tools
+from odoo import api, fields, models, tools
+
+from odoo.addons.tms_core.models.tools import ratio_read_group
 
 
 class TmsContractPnl(models.Model):
@@ -6,6 +8,15 @@ class TmsContractPnl(models.Model):
     revenue, cost, contribution and margin. Incidentals billed at actual are revenue and trip direct cost alike."""
 
     _name = "tms.contract.pnl"
+    _tms_ratios = {"margin_pct": (("contribution",), ("revenue",), 100.0),
+                   "utilisation": (("invoiced", "reserved"), ("value", "extensions"), 100.0)}
+
+    @api.model
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+        """Ratio columns on group rows: sum over sum, not the average of rows."""
+        return ratio_read_group(super(), self._tms_ratios, domain, fields, groupby, offset=offset,
+                                limit=limit, orderby=orderby, lazy=lazy)
+
     _description = "Contract P&L"
     _auto = False
     _order = "contract_id desc"

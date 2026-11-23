@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Trips kanban: one card per trip, grouped by stage; stages move only through the trip's buttons -->
+    <record id="tms_order_kanban_trips" model="ir.ui.view">
+        <field name="name">tms.order.kanban.trips</field>
+        <field name="model">tms.order</field>
+        <field name="priority">30</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="stage_id" records_draggable="0" group_create="0" group_edit="0" group_delete="0" quick_create="0">
+                <field name="state_code"/>
+                <field name="kanban_flag"/>
+                <field name="kanban_flag_level"/>
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bold"/>
+                        <field name="route_display" class="text-muted"/>
+                        <div class="small">
+                            <field name="vehicle_display"/>
+                            <span class="text-muted"> · </span>
+                            <field name="current_fleet_type"/>
+                        </div>
+                        <footer class="pt-1 small">
+                            <div class="d-flex align-items-center w-100 gap-1">
+                                <span><field name="lr_count"/> LR · <field name="driver_display"/></span>
+                                <span t-if="record.kanban_flag.raw_value" t-attf-class="ms-auto badge rounded-pill text-bg-{{ record.kanban_flag_level.raw_value or 'secondary' }}">
+                                    <t t-esc="record.kanban_flag.value"/>
+                                </span>
+                            </div>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Trips: list, kanban and form; cancelled trips hidden by default -->
+    <record id="tms.action_tms_operation_trip" model="ir.actions.act_window">
+        <field name="view_mode">list,kanban,form</field>
+        <field name="context">{'search_default_not_cancelled': 1}</field>
+        <field name="view_ids" eval="[Command.clear(),
+            Command.create({'sequence': 1, 'view_mode': 'list', 'view_id': ref('tms.tms_order_view_list')}),
+            Command.create({'sequence': 2, 'view_mode': 'kanban', 'view_id': ref('tms_order_kanban_trips')}),
+            Command.create({'sequence': 3, 'view_mode': 'form', 'view_id': ref('tms.tms_order_view_form')})]"/>
+    </record>
+
+    <!-- Log status: one new status line on a trip on the road -->
+    <record id="tms_trip_dsr_form_log" model="ir.ui.view">
+        <field name="name">tms.trip.dsr.form.log</field>
+        <field name="model">tms.trip.dsr</field>
+        <field name="arch" type="xml">
+            <form string="Log status">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="trip_id" readonly="id" force_save="1" domain="[('state_code', 'in', ('started', 'in_transit'))]" options="{'no_create': True}"/>
+                            <field name="logged_at" readonly="id"/>
+                            <field name="location" readonly="id" placeholder="Where the vehicle is now"/>
+                            <field name="status" readonly="id"/>
+                            <field name="eta" readonly="id"/>
+                        </group>
+                        <group>
+                            <field name="consignment_id" readonly="id" options="{'no_create': True}"/>
+                            <field name="source" readonly="id"/>
+                            <field name="logged_by_id" invisible="not id"/>
+                        </group>
+                    </group>
+                    <field name="remark" readonly="id" placeholder="What the driver or the GPS reports; a delay needs a remark"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Daily status report: one row per trip on the road -->
+    <record id="tms_order_list_dsr_report" model="ir.ui.view">
+        <field name="name">tms.order.list.dsr.report</field>
+        <field name="model">tms.order</field>
+        <field name="priority">40</field>
+        <field name="arch" type="xml">
+            <list string="Daily status report" create="0" delete="0" default_order="next_dsr_due asc">
+                <field name="name" string="Trip"/>
+                <field name="route_display" string="Route"/>
+                <field name="vehicle_display" string="Vehicle"/>
+                <field name="current_fleet_type" widget="badge" decoration-info="current_fleet_type == 'owned'" decoration-warning="current_fleet_type == 'market'"/>
+                <field name="dsr_customer_id"/>
+                <field name="last_dsr_at" string="Last update"/>
+                <field name="last_dsr_status" widget="badge" decoration-danger="last_dsr_status in ('delayed_breakdown', 'delayed_traffic', 'delayed_other')" decoration-info="last_dsr_status in ('night_halt', 'at_loading', 'at_unloading')" decoration-success="last_dsr_status in ('on_schedule', 'departed')" decoration-warning="last_dsr_status in ('halted_window', 'halted_clearance')"/>
+                <field name="last_dsr_location" string="Current location"/>
+                <field name="last_dsr_remark" optional="show"/>
+                <field name="current_eta"/>
+                <field name="scheduled_date_end" string="Planned arrival" optional="hide"/>
+                <field name="delay_hours" widget="float_time" decoration-danger="delay_hours &gt; 0"/>
+                <field name="next_dsr_due" decoration-danger="dsr_overdue" decoration-bf="dsr_overdue"/>
+                <field name="dsr_overdue" column_invisible="1"/>
+                <field name="state_code" column_invisible="1"/>
+                <button name="action_log_status" type="object" string="Log status" icon="fa-map-marker" class="btn-secondary"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_order_search_dsr_report" model="ir.ui.view">
+        <field name="name">tms.order.search.dsr.report</field>
+        <field name="model">tms.order</field>
+        <field name="priority">40</field>
+        <field name="arch" type="xml">
+            <search string="Daily status report">
+                <field name="name" string="Trip"/>
+                <field name="dsr_customer_id"/>
+                <field name="vehicle_id"/>
+                <field name="last_dsr_location"/>
+                <filter name="overdue" string="Update overdue" domain="[('dsr_overdue', '=', True)]"/>
+                <filter name="delayed" string="Delayed" domain="[('last_dsr_status', 'in', ('delayed_breakdown', 'delayed_traffic', 'delayed_other'))]"/>
+                <filter name="late" string="Late against plan" domain="[('delay_hours', '&gt;', 0)]"/>
+                <separator/>
+                <filter name="market" string="Market" domain="[('fleet_type', '=', 'market')]"/>
+                <group>
+                    <filter name="group_status" string="Status" context="{'group_by': 'last_dsr_status'}"/>
+                    <filter name="group_customer" string="Customer" context="{'group_by': 'dsr_customer_id'}"/>
+                    <filter name="group_branch" string="Branch" context="{'group_by': 'company_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_daily_status_report" model="ir.actions.act_window">
+        <field name="name">Daily status report</field>
+        <field name="res_model">tms.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state_code', 'in', ('started', 'in_transit'))]</field>
+        <field name="context">{'search_default_group_status': 1, 'create': 0}</field>
+        <field name="search_view_id" ref="tms_order_search_dsr_report"/>
+        <field name="view_ids" eval="[Command.clear(),
+            Command.create({'sequence': 1, 'view_mode': 'list', 'view_id': ref('tms_order_list_dsr_report')}),
+            Command.create({'sequence': 2, 'view_mode': 'form', 'view_id': ref('tms.tms_order_view_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No trip is on the road</p>
+            <p>Started and in-transit trips appear here with their latest status. Delivered trips drop off; their status history stays on the trip's Status log tab.</p>
+        </field>
+    </record>
+
+    <!-- Operations › Trips: the report; Reporting › Registers keeps the raw status line log -->
+    <record id="tms_core.menu_tms_dsr" model="ir.ui.menu">
+        <field name="name">Daily status report</field>
+        <field name="action" ref="action_tms_daily_status_report"/>
+    </record>
+</odoo>

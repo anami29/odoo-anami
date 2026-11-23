@@ -5,6 +5,8 @@ The views show costs as positive figures."""
 
 from odoo import _, api, fields, models, tools
 
+from odoo.addons.tms_core.models.tools import ratio_read_group
+
 from .analytic import POOLS
 
 KINDS = [
@@ -408,6 +410,14 @@ class TmsTripPnl(models.Model):
     rate until the month-end close posts it."""
 
     _name = "tms.trip.pnl"
+    _tms_ratios = {"margin_pct": (("trip_margin",), ("revenue",), 100.0)}
+
+    @api.model
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+        """Ratio columns on group rows: sum over sum, not the average of rows."""
+        return ratio_read_group(super(), self._tms_ratios, domain, fields, groupby, offset=offset,
+                                limit=limit, orderby=orderby, lazy=lazy)
+
     _description = "Trip P&L"
     _auto = False
     _order = "date desc, trip_id desc"
@@ -527,6 +537,14 @@ class TmsCustomerPnl(models.Model):
     """BR-PNL-27: the customer's legs and the LRs it booked without a trip, per period."""
 
     _name = "tms.customer.pnl"
+    _tms_ratios = {"margin_pct": (("trip_margin",), ("revenue",), 100.0), "revenue_per_km": (("revenue",), ("km",), 1.0)}
+
+    @api.model
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+        """Ratio columns on group rows: sum over sum, not the average of rows."""
+        return ratio_read_group(super(), self._tms_ratios, domain, fields, groupby, offset=offset,
+                                limit=limit, orderby=orderby, lazy=lazy)
+
     _description = "Customer P&L"
     _auto = False
     _order = "period desc, partner_id"
@@ -597,6 +615,14 @@ class TmsTruckPnl(models.Model):
     result. Recovery variance is never allocated to trips, legs, orders or customers (BR-PNL-20)."""
 
     _name = "tms.truck.pnl"
+    _tms_ratios = {"recovery_pct": (("running_charged", "fixed_charged"), ("running_actual", "fixed_actual"), 100.0)}
+
+    @api.model
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+        """Ratio columns on group rows: sum over sum, not the average of rows."""
+        return ratio_read_group(super(), self._tms_ratios, domain, fields, groupby, offset=offset,
+                                limit=limit, orderby=orderby, lazy=lazy)
+
     _description = "Truck P&L"
     _auto = False
     _order = "period desc, vehicle_id"
@@ -788,6 +814,14 @@ class TmsFleetPnl(models.Model):
     plus direct cost per km market, by lane."""
 
     _name = "tms.fleet.pnl"
+    _tms_ratios = {"revenue_per_km": (("revenue",), ("km",), 1.0), "cost_per_km": (("full_cost",), ("km",), 1.0)}
+
+    @api.model
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+        """Ratio columns on group rows: sum over sum, not the average of rows."""
+        return ratio_read_group(super(), self._tms_ratios, domain, fields, groupby, offset=offset,
+                                limit=limit, orderby=orderby, lazy=lazy)
+
     _description = "Fleet P&L by lane"
     _auto = False
     _order = "period desc, fleet_type"

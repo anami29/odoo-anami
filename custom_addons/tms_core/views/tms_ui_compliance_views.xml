@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Renewal dialog: a new compliance document prefilled with type and holder -->
+    <record id="tms_compliance_document_renew_form" model="ir.ui.view">
+        <field name="name">tms.compliance.document.renew.form</field>
+        <field name="model">tms.compliance.document</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="type_id" readonly="context.get('tms_renew')"/>
+                            <field name="number" string="Certificate no."/>
+                            <field name="valid_from" string="Issued on"/>
+                            <field name="valid_until"/>
+                            <field name="attachment" string="Attachment" filename="attachment_name"/>
+                            <field name="attachment_name" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="vehicle_id" readonly="1" invisible="not vehicle_id"/>
+                            <field name="driver_id" readonly="1" invisible="not driver_id"/>
+                            <field name="market_vehicle_id" readonly="1" invisible="not market_vehicle_id"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Save" special="save" class="btn-primary" data-hotkey="s"/>
+                    <button string="Discard" special="cancel" class="btn-secondary" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Register: owned vehicles -->
+    <record id="fleet_vehicle_compliance_register_list" model="ir.ui.view">
+        <field name="name">fleet.vehicle.compliance.register.list</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="priority">95</field>
+        <field name="arch" type="xml">
+            <list create="0" decoration-danger="tms_cmp_gate_state == 'blocked'" decoration-warning="tms_cmp_gate_state == 'expiring'">
+                <header>
+                    <button name="action_tms_compliance_register_switch" type="object" string="Drivers" display="always" class="btn-secondary"/>
+                </header>
+                <field name="license_plate" string="Vehicle" class="fw-bold"/>
+                <field name="model_id" string="Model" options="{'no_open': True}"/>
+                <field name="tms_cmp_rc_state" column_invisible="1"/>
+                <field name="tms_cmp_fit_state" column_invisible="1"/>
+                <field name="tms_cmp_permit_state" column_invisible="1"/>
+                <field name="tms_cmp_ins_state" column_invisible="1"/>
+                <field name="tms_cmp_puc_state" column_invisible="1"/>
+                <field name="tms_cmp_rc_text" decoration-danger="tms_cmp_rc_state in ('expired', 'missing')" decoration-warning="tms_cmp_rc_state == 'expiring'" decoration-success="tms_cmp_rc_state == 'valid'"/>
+                <field name="tms_cmp_fit_text" decoration-danger="tms_cmp_fit_state in ('expired', 'missing')" decoration-warning="tms_cmp_fit_state == 'expiring'" decoration-success="tms_cmp_fit_state == 'valid'"/>
+                <field name="tms_cmp_permit_text" decoration-danger="tms_cmp_permit_state in ('expired', 'missing')" decoration-warning="tms_cmp_permit_state == 'expiring'" decoration-success="tms_cmp_permit_state == 'valid'"/>
+                <field name="tms_cmp_ins_text" string="Insurance" decoration-danger="tms_cmp_ins_state in ('expired', 'missing')" decoration-warning="tms_cmp_ins_state == 'expiring'" decoration-success="tms_cmp_ins_state == 'valid'"/>
+                <field name="tms_cmp_puc_text" decoration-danger="tms_cmp_puc_state in ('expired', 'missing')" decoration-warning="tms_cmp_puc_state == 'expiring'" decoration-success="tms_cmp_puc_state == 'valid'"/>
+                <field name="tms_cmp_gate_state" column_invisible="1"/>
+                <field name="tms_cmp_gate" widget="badge" decoration-danger="tms_cmp_gate_state == 'blocked'" decoration-warning="tms_cmp_gate_state == 'expiring'" decoration-success="tms_cmp_gate_state == 'valid'"/>
+                <field name="tms_cmp_trip_id"/>
+                <field name="tms_status" string="Status" widget="badge" decoration-success="tms_status == 'free'" decoration-info="tms_status == 'on_trip'" decoration-danger="tms_status == 'breakdown'" decoration-warning="tms_status == 'service'"/>
+                <field name="tms_cmp_renew_code" string="To renew" optional="show"/>
+                <button name="action_renew_document" type="object" string="Renew" class="btn-primary btn-sm" invisible="not tms_cmp_renew_code" groups="tms_core.group_tms_staff"/>
+            </list>
+        </field>
+    </record>
+    <record id="fleet_vehicle_compliance_register_search" model="ir.ui.view">
+        <field name="name">fleet.vehicle.compliance.register.search</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="priority">95</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="license_plate" string="Vehicle"/>
+                <field name="model_id"/>
+                <filter name="all" string="All" domain="[]"/>
+                <filter name="expired" string="Expired or missing" domain="[('tms_cmp_gate_state', '=', 'blocked')]"/>
+                <filter name="expiring" string="Expiring ≤ 30 days" domain="[('tms_cmp_gate_state', '=', 'expiring')]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Register: drivers -->
+    <record id="tms_driver_compliance_register_list" model="ir.ui.view">
+        <field name="name">tms.driver.compliance.register.list</field>
+        <field name="model">tms.driver</field>
+        <field name="priority">95</field>
+        <field name="arch" type="xml">
+            <list create="0" decoration-danger="tms_cmp_gate_state == 'blocked'" decoration-warning="tms_cmp_gate_state == 'expiring'">
+                <header>
+                    <button name="action_tms_compliance_register_switch" type="object" string="Vehicles" display="always" class="btn-secondary"/>
+                </header>
+                <field name="name" string="Driver" class="fw-bold"/>
+                <field name="driver_license_number" string="DL number"
+                       groups="tms_core.group_fleet_manager,tms_core.group_dispatcher,tms_core.group_branch_manager,tms_core.group_operations_head,tms_core.group_tms_admin"/>
+                <field name="driver_license_type" string="DL type"/>
+                <field name="tms_cmp_dl_state" column_invisible="1"/>
+                <field name="tms_cmp_dl_text" decoration-danger="tms_cmp_dl_state in ('expired', 'missing')" decoration-warning="tms_cmp_dl_state == 'expiring'" decoration-success="tms_cmp_dl_state == 'valid'"/>
+                <field name="tms_cmp_gate_state" column_invisible="1"/>
+                <field name="tms_cmp_gate" widget="badge" decoration-danger="tms_cmp_gate_state == 'blocked'" decoration-warning="tms_cmp_gate_state == 'expiring'" decoration-success="tms_cmp_gate_state == 'valid'"/>
+                <field name="tms_cmp_trip_id"/>
+                <field name="tms_availability" string="Status" widget="badge" decoration-success="tms_availability == 'free'" decoration-info="tms_availability == 'on_trip'"/>
+                <field name="tms_cmp_renew_code" column_invisible="1"/>
+                <button name="action_renew_document" type="object" string="Renew" class="btn-primary btn-sm" invisible="not tms_cmp_renew_code" groups="tms_core.group_tms_staff"/>
+            </list>
+        </field>
+    </record>
+    <record id="tms_driver_compliance_register_search" model="ir.ui.view">
+        <field name="name">tms.driver.compliance.register.search</field>
+        <field name="model">tms.driver</field>
+        <field name="priority">95</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Driver"/>
+                <filter name="all" string="All" domain="[]"/>
+                <filter name="expired" string="Expired or missing" domain="[('tms_cmp_gate_state', '=', 'blocked')]"/>
+                <filter name="expiring" string="Expiring ≤ 30 days" domain="[('tms_cmp_gate_state', '=', 'expiring')]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_tms_compliance_register_driver" model="ir.actions.act_window">
+        <field name="name">Compliance register: drivers</field>
+        <field name="res_model">tms.driver</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_active', '=', True)]</field>
+        <field name="search_view_id" ref="tms_driver_compliance_register_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('tms_driver_compliance_register_list')}),
+            (0, 0, {'view_mode': 'form'})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No drivers to show</p>
+            <p>Each row shows the driver's licence and the result the compliance gate would give today.</p>
+            <p><span class="text-danger fw-bold">Red</span>: expired or missing, trip start is blocked.
+               <span class="text-warning fw-bold">Amber</span>: expires within 30 days, a warning only.
+               <span class="text-success fw-bold">Green</span>: valid.</p>
+            <p>A licence document, when one is held, takes precedence over the licence date on the driver.</p>
+        </field>
+    </record>
+    <record id="action_tms_compliance_register" model="ir.actions.act_window">
+        <field name="name">Compliance register: vehicles</field>
+        <field name="res_model">fleet.vehicle</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('tms_ownership', '=', 'owned')]</field>
+        <field name="search_view_id" ref="fleet_vehicle_compliance_register_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('fleet_vehicle_compliance_register_list')}),
+            (0, 0, {'view_mode': 'form'})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No owned vehicles to show</p>
+            <p>One row per owned vehicle with the latest valid-until date of each mandatory document:
+               registration (RC), fitness, permit, insurance (policy end date) and pollution under control (PUC).</p>
+            <p><span class="text-danger fw-bold">Red</span>: expired or missing, trip start is blocked.
+               <span class="text-warning fw-bold">Amber</span>: expires within 30 days, a warning only.
+               <span class="text-success fw-bold">Green</span>: valid.</p>
+            <p>At trip start the gate also warns when a document expires within the security days after the
+               trip's scheduled end. Market vehicles are not listed: their documents are captured per assignment.</p>
+        </field>
+    </record>
+    <record id="action_tms_compliance_document_register" model="ir.actions.act_window">
+        <field name="name">Compliance documents</field>
+        <field name="res_model">tms.compliance.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_own_fleet': 1, 'search_default_by_holder': 1}</field>
+    </record>
+
+    <!-- Master Data: the register replaces the flat document list, which stays as a sub-item -->
+    <record id="tms_core.menu_tms_compliance_document" model="ir.ui.menu">
+        <field name="name">Compliance register</field>
+        <field name="action" ref="action_tms_compliance_register"/>
+    </record>
+    <menuitem id="menu_tms_compliance_register_vehicle" name="Vehicles" parent="tms_core.menu_tms_compliance_document"
+              action="action_tms_compliance_register" sequence="10"/>
+    <menuitem id="menu_tms_compliance_register_driver" name="Drivers" parent="tms_core.menu_tms_compliance_document"
+              action="action_tms_compliance_register_driver" sequence="20"/>
+    <menuitem id="menu_tms_compliance_document_list" name="Compliance documents" parent="tms_core.menu_tms_compliance_document"
+              action="action_tms_compliance_document_register" sequence="30"/>
+</odoo>

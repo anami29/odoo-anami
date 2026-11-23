@@ -5,4 +5,14 @@
         <field name="key">auth_totp.policy</field>
         <field name="value">employee_required</field>
     </record>
+    <!-- Compliance gate warning windows. The base module reads these as integers and treats 0 as "never warn".
+         Seeded once on install; an upgrade keeps the value set in Settings. -->
+    <record id="icp_driver_security_days" model="ir.config_parameter" forcecreate="True">
+        <field name="key">tms.default_driver_license_security_days</field>
+        <field name="value">15</field>
+    </record>
+    <record id="icp_vehicle_security_days" model="ir.config_parameter" forcecreate="True">
+        <field name="key">tms.default_vehicle_insurance_security_days</field>
+        <field name="value">15</field>
+    </record>
 </odoo>

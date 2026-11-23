@@ -4,10 +4,10 @@ These addons implement BRD-TMS-001 v1.2 (*Transport Management System on Odoo 18
 
 | | |
 |---|---|
-| Release | 18.0.1.1.1 (menus grouped by activity; see #10) |
-| Author | Ranadive Consultancy Services |
+| Release | 18.0.1.2.0 (screens aligned with the agreed mockup TMS-OD18-001; gap analysis TMS-UIG-001; see #10) |
+| Author | RLFB (Riamona Luxury and Fashion Brands), [www.riamona.com](https://www.riamona.com) |
 | Licence | LGPL-3. Two dependencies are AGPL-3; see #9. |
-| Tests | 94 automated tests across the five modules, all passing with every module installed together |
+| Tests | 147 automated tests across the five modules, all passing with every module installed together |
 
 ## 1. Package contents
 
@@ -97,10 +97,12 @@ Work through the list in this order. The values marked OP-x are placeholders unt
 | Sales › Orders | Quotations and orders (Odoo's own), cost estimates |
 | Sales › Contracts | Contracts, contract items, extensions, excess approvals, reservation ledger, diesel escalation |
 | Sales › Reporting › Transport | Sales order P&L, estimate against actual, contract P&L |
-| Transport › Operations | **Booking:** consignment notes (LR), contract items (Booking Clerk), e-way bills, e-way bill tasks. **Trips:** all trips, planning board, DSR log, POD verification. **Exceptions:** incidents, breakdowns, damage and shortage claims. **ODC:** permits, equipment. **Fleet:** odometers |
-| Transport › Trip money | **Charges:** charges and recoveries, trip expenses. **Driver:** driver advances, driver settlements. **Hire:** hire memos, three-way matches. **Period close:** month-end close, prepaid truck costs |
+| Transport › Operations | **Booking:** consignment notes (LR), contract items (Booking Clerk), e-way bills, e-way bill tasks. **Trips:** all trips (list, kanban), planning board, daily status report, POD verification. **Exceptions:** incidents, breakdowns, damage and shortage claims. **ODC:** permits, equipment. **Fleet:** odometers |
+| Transport › Trip money | **Invoices:** freight invoices. **Charges:** charges and recoveries, trip expenses. **Driver:** driver advances, driver settlements. **Hire:** hire memos, three-way matches. **Period close:** month-end close, prepaid truck costs |
+| Transport › Master Data | Vehicles, market vehicles, insurance policies, drivers, locations, routes; **Compliance register:** vehicles and drivers (one row per holder, a column per document, gate status, Renew), compliance documents |
 | Transport › Dashboard | Exception dashboard (KPI tiles that drill down), filtered dashboard (branch, customer, vehicle, period), bills and expenses awaiting variance approval |
-| Transport › Reporting | **Registers:** LR register, DSR log, claims register, compliance expiry, override log. **Ageing and payables:** recovery ageing, receivables ageing, hire payables, TDS on hire (declarations). **Fleet:** trips, vehicle utilisation, costs. **Profitability:** trip, leg, customer, truck, fleet, vendor, branch, company, recovery statement, WIP, ledger |
+| Transport › Reporting | **Registers:** LR register, DSR log, claims register, compliance expiry, override log. **Ageing and payables:** recovery ageing, receivables ageing, hire payables, TDS on hire (declarations). **Fleet:** trips, vehicle utilisation, costs. **Profitability:** trip, leg, customer, truck, fleet, vendor, branch, company, recovery statement, WIP, ledger (Trip and Truck P&L also as bar charts) |
+| Transport › Configuration | Settings, stages, master data types, standard rates, **KPI alert rules** (TMS Administrator: when each dashboard card turns red) |
 
 In Operations, Trip money and Reporting the bold names are group headings: they show as captions inside the menu and hide themselves when a user can open none of their items.
 
@@ -114,7 +116,7 @@ odoo-bin -c odoo.conf -d tms_test -i tms_contract,tms_odc,tms_profitability \
   --stop-after-init
 ```
 
-Expected result: `0 failed, 0 error(s) of 94 tests`. The test companies have no mail server, so the log shows "failed sending mail … sender address" lines; they don't indicate a failure.
+Expected result: `0 failed, 0 error(s) of 147 tests`. The test companies have no mail server, so the log shows "failed sending mail … sender address" lines; they don't indicate a failure.
 
 ## 7. Controls worth knowing
 
@@ -145,16 +147,38 @@ Expected result: `0 failed, 0 error(s) of 94 tests`. The test companies have no 
 
 The five `tms_*` addons are LGPL-3. `tms` and `auditlog` are AGPL-3, and their licence texts are in `third_party/*/LICENSE`. Because `tms_core` depends on them, a distribution of the combined work must meet AGPL-3: offer the source to users of a network deployment.
 
-## 10. Changes in 18.0.1.1.1
+## 10. Changes in 18.0.1.2.0
+
+Screens aligned with the agreed mockup TMS-OD18-001, from the gap analysis TMS-UIG-001. Items that wait for a client decision are listed at the end.
+
+| Area | Change |
+|---|---|
+| Trip form | POD tab with Upload / Verify per LR and a header **Verify POD** (a different POD Verifier than the uploader); POD-pending banner; smart buttons Consignments, Incidents, Claims, Expenses, Vendor bill, LRs to invoice; subtitle (route · LRs · weight); Current assignment group (shows a market replacement's vehicle, broker, hire and driver); schedule group with variance; Status log tab with coloured badges; **Report incident**, **Log status**, **Mark done**, **Print trip sheet** |
+| Market documents | The market-vehicle document tab shows whenever a market vehicle may be assigned (market trip, trip on the road, open breakdown), so a replacement by a market vehicle can pass the gate |
+| Trips | List and kanban; route, vehicle, driver or broker, scheduled start, LR count, pre-start compliance (Valid 6/6 / PUC expired / Pending), latest status badge, single stage badge; row buttons Start / Depart / End / POD pending by stage; default filter Not cancelled |
+| Daily status report | One row per trip on the road, grouped by latest status: customer, last update, location, remark, ETA, delay vs plan, next update due; **Log status** per row. Operations › Trips. The line log stays in Reporting › Registers › DSR log |
+| Breakdown | One dialog reports and resolves: cause, place, repair cost; market replacement, own replacement (hidden in Broker mode, reposition cost booked as an expense, driver from the vehicle) or repair with a revised ETA (writes a status line); live compliance check of the replacement (Confirm blocked while it fails); e-way bills on board with their Part-B target; breakdowns numbered BD/yyyy/nnnn |
+| Compliance register | Master Data › Compliance register: one row per owned vehicle (RC, Fitness, Permit, Insurance, PUC) and per driver (licence), each cell dated and coloured, gate status, **Renew** |
+| Vendor bill | Three-way match on the bill: hold badge, match page (elements, variance, tolerance, totals), **Re-run match**, **Apply recoveries**, Trip and Hire memo buttons |
+| Freight invoices | Trip money › Invoices › Freight invoices lists customer invoices raised from LRs |
+| Charts and P&L | Bar charts for Trip, Sales order and Truck P&L; Truck P&L opens on this month by truck with a Below-zero filter; Sales order P&L groups by order. Ratio columns (margin %, recovery %, per-km, utilisation) on group rows are now sum over sum, not averages |
+| Defects | GSTIN, then PAN, customer match on lead conversion; KPI cards turn red by each card's own rule (Configuration › KPI alert rules); compliance security days default 15 on new databases; Consumer mode no longer offered; Return to origin hidden (phase 2); claim credit note linked to the LR invoice; incident claims linked to their POD line; bill-only columns hidden on customer invoices; Approve variance hidden on customer invoices; Hire payables and Bills awaiting variance open the bill list; amounts in hire-bill messages in Indian format |
+
+Waiting for a client decision (TMS-UIG-001 #7): Document Types, the one-page exception dashboard, the name of the Trip money menu, how the breakdown repair cost is booked, requirement codes in screen labels, and the base module's author text in Apps.
+
+Upgrade from 18.0.1.1.x by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`. Existing databases keep their compliance security days and KPI alert settings; new databases get 15 days and the rules above.
+
+## 11. Changes in 18.0.1.1.1 and 18.0.1.1.2
 
 | Area | Change | Cases |
 |---|---|---|
+| Module info (18.0.1.1.2) | Author RLFB (Riamona Luxury and Fashion Brands), website www.riamona.com, and a description page on each module's Apps entry | — |
 | Menus | Operations, Trip money and Reporting group their items by activity (#5). Claims move from Trip money to Operations › Exceptions as *Damage and shortage claims*; the Claims register stays in Reporting. No item changes role or access | UT-CFG-23 (new) |
 | Trips | The LR field on a trip's Consignments tab explains why the list can be empty: only confirmed LRs with packages not yet planned are offered | — |
 
-Upgrade from 18.0.1.1.0 by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`.
+Upgrade from 18.0.1.1.0 or 18.0.1.1.1 by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`.
 
-## 11. Changes in 18.0.1.1.0
+## 12. Changes in 18.0.1.1.0
 
 Fixes found while writing the tester manual (TMS-UM-001). Each has a regression test; the suite is now 93 tests.
 

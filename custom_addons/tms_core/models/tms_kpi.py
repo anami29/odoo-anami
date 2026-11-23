@@ -2,6 +2,28 @@ from datetime import timedelta
 
 from odoo import _, api, fields, models
 
+ALERT_MODES = [
+    ("any", "Any record"),
+    ("trend", "Trend only, never red"),
+    ("count_above", "Count above the threshold"),
+    ("amount_above", "Amount above the threshold"),
+    ("amount_below", "Amount below the threshold"),
+    ("older_than", "Any record older than the threshold (days)"),
+]
+
+# How each KPI turns red when its record carries no alert setting (records loaded before the setting existed).
+ALERT_DEFAULTS = {
+    "KPI-04": ("trend", 0.0),
+    "KPI-07": ("amount_above", 48.0),  # average hours from delivery to POD verification
+    "KPI-08": ("older_than", 30.0),  # open claims older than 30 days
+    "KPI-10": ("older_than", 30.0),  # one monthly billing cycle
+    "KPI-13": ("amount_below", 0.0),  # trip margin below zero
+    "KPI-16": ("amount_below", 25.0),  # win rate % below 25
+    "KPI-18": ("amount_below", 90.0),  # fleet recovery % below 90
+    "KPI-19": ("amount_above", 0.0),  # any unassigned cost in the period
+    "KPI-24": ("count_above", 3.0),  # more than three credit overrides in the period
+}
+
 
 class TmsKpi(models.Model):
     """BR-DSH-01..06: the exception dashboard. One tile per KPI of #19.5; every tile drills to its records.
@@ -18,6 +40,10 @@ class TmsKpi(models.Model):
     sequence = fields.Integer(default=10)
     definition = fields.Text(translate=True)
     alert_rule = fields.Char(string="Alert when", translate=True)
+    alert_mode = fields.Selection(ALERT_MODES, string="Alert evaluation",
+                                  help="How the tile turns red. Empty uses the built-in rule for the KPI.")
+    alert_threshold = fields.Float(string="Alert threshold",
+                                   help="Count, amount, percentage or days the alert evaluation compares against.")
     group = fields.Selection([("exception", "Exceptions"), ("margin", "Margin"), ("sales", "Sales"),
                               ("contract", "Contracts"), ("compliance", "Compliance")], default="exception")
     value_count = fields.Integer(compute="_compute_value", string="Count")
@@ -37,11 +63,50 @@ class TmsKpi(models.Model):
             if not method:
                 kpi.value_count, kpi.value_amount, kpi.alert, kpi.available = 0, 0.0, False, False
                 continue
-            count, amount, _model, _domain = method()
+            count, amount, model, domain = method()
             kpi.value_count = count
             kpi.value_amount = amount
-            kpi.alert = bool(count)
+            kpi.alert = kpi._tms_evaluate_alert(count, amount, model, domain)
             kpi.available = True
+
+    def _tms_alert_setting(self):
+        """(mode, threshold) of the KPI: its own setting, else the built-in rule for its code, else Any."""
+        self.ensure_one()
+        if self.alert_mode:
+            return self.alert_mode, self.alert_threshold
+        return ALERT_DEFAULTS.get(self.code, ("any", 0.0))
+
+    @api.model
+    def _tms_domain_ids(self, domain):
+        for leaf in domain or []:
+            if isinstance(leaf, (list, tuple)) and len(leaf) == 3 and leaf[0] == "id" and leaf[1] == "in":
+                return list(leaf[2])
+        return None
+
+    def _tms_evaluate_alert(self, count, amount, model, domain):
+        """Red or not, by the KPI's alert evaluation instead of 'has a count'."""
+        self.ensure_one()
+        mode, threshold = self._tms_alert_setting()
+        ids = self._tms_domain_ids(domain)
+        has_rows = bool(count) or bool(ids)
+        if mode == "trend":
+            return False
+        if mode == "count_above":
+            return count > threshold
+        if mode == "amount_above":
+            return has_rows and amount > threshold
+        if mode == "amount_below":
+            return has_rows and amount < threshold
+        if mode == "older_than":
+            if not has_rows:
+                return False
+            Model = self.env[model]
+            if "create_date" not in Model._fields:
+                return bool(count)
+            limit = fields.Datetime.now() - timedelta(days=threshold)
+            rows = Model.browse(ids) if ids is not None else Model.search(domain)
+            return any(r.create_date and r.create_date < limit for r in rows)
+        return bool(count)
 
     def action_drill(self):
         self.ensure_one()

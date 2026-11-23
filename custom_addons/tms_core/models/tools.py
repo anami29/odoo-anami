@@ -63,3 +63,20 @@ def inr(amount):
     if head:
         groups.insert(0, head)
     return "%s₹%s.%s" % (sign, ",".join(groups + [tail]), frac)
+
+
+def ratio_read_group(parent, ratios, domain, fields, groupby, **kw):
+    """read_group where each ratio column of a group row is sum(numerators) / sum(denominators) x factor,
+    never the average of its rows. ``ratios`` maps a column to (numerator fields, denominator fields, factor)."""
+    wanted = {name: ratios[name] for name in {spec.split(":")[0] for spec in fields} if name in ratios}
+    sums = sorted({fname for num, den, _f in wanted.values() for fname in num + den})
+    specs = list(fields) + ["tms_rsum_%s:sum(%s)" % (fname, fname) for fname in sums]
+    groups = parent.read_group(domain, specs, groupby, **kw)
+    for group in groups:
+        for name, (num, den, factor) in wanted.items():
+            numerator = sum(group.get("tms_rsum_%s" % f) or 0.0 for f in num)
+            denominator = sum(group.get("tms_rsum_%s" % f) or 0.0 for f in den)
+            group[name] = numerator / denominator * factor if denominator else 0.0
+        for fname in sums:
+            group.pop("tms_rsum_%s" % fname, None)
+    return groups

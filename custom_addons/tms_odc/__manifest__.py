@@ -1,14 +1,15 @@
-# Copyright 2026 Ranadive Consultancy Services
+# Copyright 2026 RLFB (Riamona Luxury and Fashion Brands), https://www.riamona.com
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
 {
     "name": "TMS ODC (Premier Transport)",
     "summary": "Over-dimensional cargo: cargo pieces and ODC suggestion, route by state, puller and axle "
     "checks, trip equipment, state permits, route survey, escort and the extended START gate",
-    "version": "18.0.1.1.1",
+    "version": "18.0.1.2.0",
     "category": "TMS",
     "license": "LGPL-3",
-    "author": "Ranadive Consultancy Services",
-    "website": "https://www.ranadive.in",
+    "author": "RLFB (Riamona Luxury and Fashion Brands)",
+    "maintainers": ["RLFB"],
+    "website": "https://www.riamona.com",
     "depends": ["tms_estimate"],
     "data": [
         "security/ir.model.access.csv",

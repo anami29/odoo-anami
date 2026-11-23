@@ -27,3 +27,6 @@ from . import tms_kpi
 from . import tms_dashboard
 from . import audit
 from . import tms_print_labels
+from . import tms_ui_trip
+from . import tms_ui_compliance
+from . import tms_ui_billing

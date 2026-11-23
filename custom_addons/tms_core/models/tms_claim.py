@@ -210,6 +210,7 @@ class TmsDamageClaim(models.Model):
             "journal_id": self.company_id.tms_branch_journal("sale").id,
             "tms_credit_reason": "claim",
             "tms_claim_id": self.id,
+            "reversed_entry_id": self._tms_freight_invoice().id or False,
             "ref": _("Claim %(c)s on LR %(lr)s", c=self.name, lr=lr.name),
             "invoice_line_ids": [(0, 0, {
                 "name": _("Claim settlement %(c)s, LR %(lr)s", c=self.name, lr=lr.name),
@@ -226,6 +227,14 @@ class TmsDamageClaim(models.Model):
             })],
         })
         self.credit_note_id = move.id
+
+    def _tms_freight_invoice(self):
+        """The LR's first posted customer invoice carrying its freight, or an empty recordset."""
+        self.ensure_one()
+        lines = self.consignment_id.sudo().invoice_line_ids.filtered(
+            lambda line: line.parent_state == "posted" and line.tms_line_kind == "freight"
+            and line.move_id.move_type == "out_invoice")
+        return lines.mapped("move_id").sorted(lambda m: (m.invoice_date or m.date, m.id))[:1]
 
     def _tms_create_recovery(self):
         """BR-CLM-06: the responsible party's share becomes a recovery charge."""

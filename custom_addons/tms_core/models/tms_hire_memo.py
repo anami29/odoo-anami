@@ -1,7 +1,7 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from .tools import notify_detached, schedule, users_in_group
+from .tools import inr, notify_detached, schedule, users_in_group
 
 HIRE_ELEMENTS = [
     ("hire", "Agreed hire"),
@@ -107,8 +107,8 @@ class PurchaseOrder(models.Model):
         recovery the debit note claims; raising a vendor refund on top would count it twice. The accountants
         get an activity to recover it (or net it against the vendor's next bill)."""
         self.ensure_one()
-        msg = _("Hire memo %(po)s cancelled: advance %(amt).2f is recoverable from %(v)s (debit balance on payable).",
-                po=self.name, amt=amount, v=self.partner_id.display_name)
+        msg = _("Hire memo %(po)s cancelled: advance %(amt)s is recoverable from %(v)s (debit balance on payable).",
+                po=self.name, amt=inr(amount), v=self.partner_id.display_name)
         self.message_post(body=msg)
         accountants = users_in_group(self.env, "tms_core.group_branch_accountant", self.company_id)
         schedule(self, accountants, _("Recover the advance of %s", self.name), msg)
@@ -248,8 +248,8 @@ class TmsHireAdvance(models.Model):
             if po.state not in ("purchase", "done"):
                 raise UserError(_("Confirm the hire memo before paying an advance."))
             if po.tms_advance_total + adv.amount > po.tms_advance_cap + 0.005:
-                raise UserError(_("Advances %(t).2f would exceed the cap %(c).2f (BR-HIR-04, BR-HIR-16).",
-                                  t=po.tms_advance_total + adv.amount, c=po.tms_advance_cap))
+                raise UserError(_("Advances of %(t)s would exceed the cap of %(c)s.",
+                                  t=inr(po.tms_advance_total + adv.amount), c=inr(po.tms_advance_cap)))
             company = po.company_id
             if adv.kind in ("cash", "bank"):
                 journal = (company.tms_cash_journal_id or company.tms_branch_journal("cash")) if adv.kind == "cash" \
@@ -414,9 +414,9 @@ class TmsVendorBillMatch(models.Model):
             if not match.pod_ok:
                 problems.append(_("not every POD on the leg is verified"))
             for line in match.line_ids.filtered(lambda line: line.result != "pass"):
-                problems.append(_("%(l)s: approved %(a).2f, billed %(b).2f, tolerance %(t).2f",
-                                  l=line.label, a=line.approved, b=line.billed, t=line.tolerance))
-            msg = _("Hire bill blocked by the three-way match (BR-HIR-07):\n%s", "\n".join(problems))
+                problems.append(_("%(l)s: approved %(a)s, billed %(b)s, tolerance %(t)s",
+                                  l=line.label, a=inr(line.approved), b=inr(line.billed), t=inr(line.tolerance)))
+            msg = _("Hire bill blocked by the three-way match:\n%s", "\n".join(problems))
             users = users_in_group(self.env, "tms_core.group_branch_accountant", match.company_id)
             notify_detached(self.env, match._name, match.id, users.ids, _("Hire bill blocked"), msg)  # BR-NTF-07
             raise UserError(msg)

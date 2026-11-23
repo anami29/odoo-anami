@@ -12,10 +12,10 @@
                 <field name="tms_consignment_id" optional="show"/>
                 <field name="tms_trip_id" optional="show"/>
                 <field name="tms_line_kind" optional="hide"/>
-                <field name="tms_cost_class" optional="show"/>
-                <field name="tms_overhead" optional="hide"/>
-                <field name="tms_overhead_reason" optional="hide"/>
-                <field name="tms_charge_id" optional="hide"/>
+                <field name="tms_cost_class" optional="show" column_invisible="parent.move_type in ('out_invoice', 'out_refund')"/>
+                <field name="tms_overhead" optional="hide" column_invisible="parent.move_type in ('out_invoice', 'out_refund')"/>
+                <field name="tms_overhead_reason" optional="hide" column_invisible="parent.move_type in ('out_invoice', 'out_refund')"/>
+                <field name="tms_charge_id" optional="show"/>
             </xpath>
             <xpath expr="//notebook" position="inside">
                 <page string="Transport" name="tms" invisible="move_type == 'entry'">

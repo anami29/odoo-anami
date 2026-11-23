@@ -11,25 +11,27 @@
                         <field name="resolution"/>
                         <field name="resumed_at"/>
                         <field name="repair_cost"/>
+                        <field name="revised_eta" invisible="resolution != 'repair'"/>
                         <field name="reason" invisible="resolution == 'repair'"/>
                         <field name="odometer_at_breakdown" invisible="resolution == 'repair'"/>
                     </group>
-                    <group invisible="resolution != 'replace_own'" string="Own replacement (gate runs first, BR-ASG-06)">
-                        <field name="vehicle_id"/>
-                        <field name="driver_id"/>
+                    <group invisible="resolution != 'replace_own'" string="Own replacement (the compliance gate runs first)">
+                        <field name="vehicle_id" required="resolution == 'replace_own'"/>
+                        <field name="driver_id" required="resolution == 'replace_own'"/>
                         <field name="replacement_odometer"/>
+                        <field name="reposition_cost"/>
                     </group>
-                    <group invisible="resolution != 'replace_market'" string="Market replacement (own hire memo, BR-ASG-07)">
-                        <field name="market_vehicle_id"/>
-                        <field name="broker_id"/>
-                        <field name="hire_amount"/>
+                    <group invisible="resolution != 'replace_market'" string="Market replacement (own hire memo)">
+                        <field name="market_vehicle_id" required="resolution == 'replace_market'"/>
+                        <field name="broker_id" required="resolution == 'replace_market'"/>
+                        <field name="hire_amount" string="Agreed hire"/>
                         <field name="market_driver_name"/>
                         <field name="market_driver_phone"/>
                         <field name="market_driver_licence"/>
                         <field name="market_driver_licence_expiry"/>
                     </group>
                 </group>
-                <group string="Replaced market vehicle (pro rata hire, BR-ASG-11)" invisible="resolution == 'repair'">
+                <group string="Replaced market vehicle (pro rata hire)" invisible="resolution == 'repair'">
                     <field name="km_run"/>
                     <field name="km_planned"/>
                 </group>

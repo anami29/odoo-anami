@@ -34,7 +34,8 @@
                 <header>
                     <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_deliver_from_godown" type="object" string="Deliver from godown" invisible="not godown_hold" help="BR-LR-10, BR-POD-09"/>
-                    <button name="action_return_to_origin" type="object" string="Return to origin" invisible="not godown_hold" help="BR-POD-09: new LR billed to the billing party"/>
+                    <!-- return-to-origin LRs are phase 2: the action stays in code, the button stays hidden -->
+                    <button name="action_return_to_origin" type="object" string="Return to origin" invisible="1" help="New LR billed to the billing party"/>
                     <button name="action_open_credit_override" type="object" string="Confirm over credit block" invisible="state != 'draft'" groups="tms_core.group_branch_manager,tms_core.group_finance_head" help="BR-CRD-03: confirm with a logged reason"/>
                     <button name="action_invoice" type="object" string="Create invoice" invisible="state in ('draft', 'cancel', 'invoiced')" groups="tms_core.group_booking_clerk,tms_core.group_branch_accountant"/>
                     <button name="action_print_lr" type="object" string="Print LR" invisible="state == 'draft'"/>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_tms_trip_breakdown" model="ir.sequence">
+            <field name="name">Trip breakdown</field>
+            <field name="code">tms.trip.breakdown</field>
+            <field name="prefix">BD/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <record id="tms_category_reposition" model="tms.category">
+            <field name="name">Repositioning / empty run</field>
+            <field name="code">REPOSITION</field>
+            <field name="sequence">330</field>
+            <field name="use_incident" eval="False"/>
+            <field name="use_charge" eval="False"/>
+            <field name="use_expense" eval="True"/>
+            <field name="incident_moves_money" eval="False"/>
+            <field name="default_cost_class">trip_direct</field>
+            <field name="is_fuel" eval="False"/>
+            <field name="gst_treatment">gta</field>
+        </record>
+    </data>
+
+    <record id="access_tms_breakdown_report_wizard_staff" model="ir.model.access">
+        <field name="name">tms.breakdown.report.wizard staff</field>
+        <field name="model_id" ref="model_tms_breakdown_report_wizard"/>
+        <field name="group_id" ref="tms_core.group_tms_staff"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- One dialog that reports the breakdown and resolves it -->
+    <record id="tms_breakdown_report_wizard_form" model="ir.ui.view">
+        <field name="name">tms.breakdown.report.wizard.form</field>
+        <field name="model">tms.breakdown.report.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="trip_id" invisible="1"/>
+                <field name="breakdown_id" invisible="1"/>
+                <field name="current_vehicle_id" invisible="1"/>
+                <field name="current_fleet_type" invisible="1"/>
+                <field name="is_broker_mode" invisible="1"/>
+                <field name="gate_fail" invisible="1"/>
+                <group>
+                    <group string="Breakdown">
+                        <field name="reported_at"/>
+                        <field name="location" placeholder="e.g. Igatpuri, Mumbai–Nashik Hwy"/>
+                        <field name="cause"/>
+                        <field name="description" placeholder="What failed and where the vehicle is now"/>
+                        <field name="current_vehicle_driver" readonly="1"/>
+                        <field name="repair_cost"/>
+                        <field name="odometer_at_breakdown" string="Odometer at breakdown" invisible="current_fleet_type != 'owned' or resolution == 'repair'"/>
+                    </group>
+                    <group string="Resolution">
+                        <field name="resolution" widget="radio"/>
+                        <!-- market replacement -->
+                        <field name="broker_id" string="Broker" invisible="resolution != 'replace_market'" required="resolution == 'replace_market'"/>
+                        <field name="market_vehicle_id" invisible="resolution != 'replace_market'" required="resolution == 'replace_market'" options="{'no_create': True}"/>
+                        <field name="market_driver_name" invisible="resolution != 'replace_market'"/>
+                        <field name="market_driver_phone" invisible="resolution != 'replace_market'"/>
+                        <field name="market_driver_licence" invisible="resolution != 'replace_market'"/>
+                        <field name="market_driver_licence_expiry" invisible="resolution != 'replace_market'"/>
+                        <field name="hire_amount" invisible="resolution != 'replace_market'"/>
+                        <!-- own replacement -->
+                        <field name="vehicle_id" invisible="resolution != 'replace_own'" required="resolution == 'replace_own'" options="{'no_create': True}"/>
+                        <field name="driver_id" invisible="resolution != 'replace_own'" required="resolution == 'replace_own'" options="{'no_create': True}"/>
+                        <field name="replacement_odometer" string="Odometer out" invisible="resolution != 'replace_own'"/>
+                        <field name="reposition_cost" invisible="resolution != 'replace_own'"/>
+                        <!-- both replacements -->
+                        <field name="resumed_at" string="Available from" invisible="resolution == 'repair'"/>
+                        <field name="km_run" invisible="resolution == 'repair' or current_fleet_type != 'market'"/>
+                        <field name="km_planned" invisible="resolution == 'repair' or current_fleet_type != 'market'"/>
+                        <!-- repair and continue -->
+                        <field name="revised_eta" invisible="resolution != 'repair'" required="resolution == 'repair'"/>
+                        <field name="resumed_at" string="Repaired by" invisible="resolution != 'repair'"/>
+                    </group>
+                </group>
+                <div invisible="resolution == 'repair'">
+                    <separator string="Replacement compliance"/>
+                    <field name="gate_preview" nolabel="1" readonly="1"/>
+                    <div class="alert alert-danger mt-2 mb-0" role="alert" invisible="not gate_fail">
+                        <field name="gate_message" nolabel="1" readonly="1"/>
+                    </div>
+                    <div class="alert alert-warning mt-2 mb-0" role="alert" invisible="not gate_note">
+                        <field name="gate_note" nolabel="1" readonly="1"/>
+                    </div>
+                </div>
+                <separator string="Consignments on board"/>
+                <field name="ewaybill_preview" nolabel="1" readonly="1"/>
+                <div class="text-muted small mt-1" invisible="resolution == 'repair'">
+                    Each live e-way bill gets a Part-B update task; departure stays blocked until every task holds its portal evidence.
+                </div>
+                <footer>
+                    <button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="gate_fail" data-hotkey="q"/>
+                    <button special="cancel" string="Discard" data-hotkey="x"/>
+                    <span class="text-muted small ms-auto align-self-center">
+                        <field name="creates_summary" nolabel="1" readonly="1"/>
+                    </span>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- The trip's Report breakdown button opens the one-step dialog -->
+    <record id="tms_order_form_ui_breakdown" model="ir.ui.view">
+        <field name="name">tms.order.form.ui.breakdown</field>
+        <field name="model">tms.order</field>
+        <field name="inherit_id" ref="tms_core.tms_order_form_tms_core"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_open_breakdown']" position="before">
+                <button name="action_report_breakdown_wizard" type="object" string="Report breakdown" invisible="state_code not in ('started', 'in_transit')"/>
+            </xpath>
+            <xpath expr="//button[@name='action_open_breakdown']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -39,37 +39,67 @@ class CrmLead(models.Model):
                 raise UserError(_("Choose a lost reason (BR-CRM-03)."))
         return super().action_set_lost(**additional_values)
 
-    def _find_matching_partner(self, email_only=False):
-        """BR-CRM-05: match the customer by GSTIN, then PAN, before creating a duplicate."""
+    tms_vat = fields.Char(string="GSTIN")
+    tms_pan = fields.Char(string="PAN")
+
+    @staticmethod
+    def _tms_clean_tax_id(value):
+        return (value or "").strip().upper().replace(" ", "")
+
+    def _tms_lead_tax_ids(self):
+        """GSTIN and PAN of the lead: the context keys first (callers may pass them), then the lead's own fields.
+        Without a PAN, the PAN held inside the GSTIN (characters 3 to 12) is used."""
+        self.ensure_one()
+        vat = self._tms_clean_tax_id(self.env.context.get("tms_lead_vat") or self.tms_vat)
+        pan = self._tms_clean_tax_id(self.env.context.get("tms_lead_pan") or self.tms_pan)
+        if not pan and len(vat) == 15:
+            pan = vat[2:12]
+        return vat, pan
+
+    def _tms_match_partner_by_tax_id(self):
+        """BR-CRM-05: the existing customer with the lead's GSTIN, else with its PAN; empty when neither matches."""
         self.ensure_one()
         Partner = self.env["res.partner"]
-        vat = self.env.context.get("tms_lead_vat")
-        pan = self.env.context.get("tms_lead_pan")
+        vat, pan = self._tms_lead_tax_ids()
+        company_domain = [("company_id", "in", [False, self.company_id.id or self.env.company.id])]
         if vat:
-            partner = Partner.search([("vat", "=", vat)], limit=1)
+            partner = Partner.search([("vat", "=ilike", vat)] + company_domain, order="id", limit=1)
             if partner:
-                return partner
+                return partner.commercial_partner_id
         if pan:
-            partner = Partner.search([("l10n_in_pan", "=", pan)], limit=1)
+            partner = Partner.search(["|", ("l10n_in_pan", "=ilike", pan), ("vat", "=ilike", "__%s%%" % pan)]
+                                     + company_domain, order="id", limit=1)
+            if partner:
+                return partner.commercial_partner_id
+        return Partner
+
+    def _find_matching_partner(self, email_only=False):
+        """BR-CRM-05: match the customer by GSTIN, then PAN, before the standard email and name match."""
+        self.ensure_one()
+        if not self.partner_id:
+            partner = self._tms_match_partner_by_tax_id()
             if partner:
                 return partner
         return super()._find_matching_partner(email_only=email_only)
 
-    tms_vat = fields.Char(string="GSTIN")
-    tms_pan = fields.Char(string="PAN")
-
     def _handle_partner_assignment(self, force_partner_id=False, create_missing=True):
         for lead in self:
-            super(CrmLead, lead.with_context(tms_lead_vat=lead.tms_vat, tms_lead_pan=lead.tms_pan)) \
-                ._handle_partner_assignment(force_partner_id=force_partner_id, create_missing=create_missing)
+            if not force_partner_id and not lead.partner_id and create_missing:
+                # link the customer already registered under this GSTIN or PAN instead of creating a duplicate
+                match = lead._tms_match_partner_by_tax_id()
+                if match:
+                    lead.partner_id = match
+            super(CrmLead, lead)._handle_partner_assignment(force_partner_id=force_partner_id,
+                                                            create_missing=create_missing)
             if lead.partner_id and create_missing:
+                partner = lead.partner_id.commercial_partner_id
                 vals = {}
-                if lead.tms_vat and not lead.partner_id.vat:
-                    vals["vat"] = lead.tms_vat
-                if lead.tms_pan and not lead.partner_id.l10n_in_pan:
-                    vals["l10n_in_pan"] = lead.tms_pan
+                if lead.tms_vat and not partner.vat:
+                    vals["vat"] = lead._tms_clean_tax_id(lead.tms_vat)
+                if lead.tms_pan and not partner.l10n_in_pan:
+                    vals["l10n_in_pan"] = lead._tms_clean_tax_id(lead.tms_pan)
                 if vals:
-                    lead.partner_id.write(vals)
+                    partner.write(vals)
         return True
 
     def _prepare_customer_values(self, partner_name, is_company=False, parent_id=False):

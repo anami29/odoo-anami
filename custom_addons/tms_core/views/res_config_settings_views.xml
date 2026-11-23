@@ -23,7 +23,7 @@
             </xpath>
             <xpath expr="//block[@name='general_settings_container']" position="before">
                 <block title="Operating mode and controls" name="tms_core_mode">
-                    <setting string="Operating mode" help="Hybrid and Broker in phase 1 (BR-CFG-01). Locks once confirmed LRs or trips exist.">
+                    <setting string="Operating mode" help="Hybrid or Broker. Locks once confirmed LRs or trips exist.">
                         <field name="tms_operation_mode" readonly="tms_mode_locked"/>
                         <div class="text-warning" invisible="not tms_mode_locked">Locked: the TMS Administrator unlocks it from the branch form with a reason.</div>
                     </setting>

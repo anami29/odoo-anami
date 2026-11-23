@@ -9,8 +9,27 @@ GTA_OPTIONS = [
 ]
 
 
+PHASE_2_MODES = ("consumer",)
+
+
+def _tms_offered_modes(env, description):
+    """Drop the phase 2 operating modes from the choices the screens offer. The value stays valid on the
+    server, so a branch that already holds it keeps reading and showing it."""
+    field = description.get("tms_operation_mode")
+    if not field or not field.get("selection"):
+        return description
+    held = set(env["res.company"].sudo().search([("tms_operation_mode", "in", PHASE_2_MODES)])
+               .mapped("tms_operation_mode"))
+    field["selection"] = [opt for opt in field["selection"] if opt[0] not in PHASE_2_MODES or opt[0] in held]
+    return description
+
+
 class ResCompany(models.Model):
     _inherit = "res.company"
+
+    @api.model
+    def fields_get(self, allfields=None, attributes=None):
+        return _tms_offered_modes(self.env, super().fields_get(allfields=allfields, attributes=attributes))
 
     # ---- BR-CFG-01..04 operating mode
     tms_operation_mode = fields.Selection(MODES, default="hybrid", required=True, string="Operating mode")
@@ -180,6 +199,14 @@ class ResCompany(models.Model):
         return self.tms_lr_sequence_id
 
     # tms_branch_journal: see tms_branch.py (BR-BRN-04)
+
+
+class ResConfigSettings(models.TransientModel):
+    _inherit = "res.config.settings"
+
+    @api.model
+    def fields_get(self, allfields=None, attributes=None):
+        return _tms_offered_modes(self.env, super().fields_get(allfields=allfields, attributes=attributes))
 
 
 class TmsGtaOption(models.Model):
