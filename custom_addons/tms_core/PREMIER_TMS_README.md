@@ -4,10 +4,10 @@ These addons implement BRD-TMS-001 v1.2 (*Transport Management System on Odoo 18
 
 | | |
 |---|---|
-| Release | 18.0.1.6.0 (every screen of the agreed mockup TMS-OD18-001 checked against the delivered one and the gaps closed: LR, trip, CRM, quotation, estimate, incident, claim, charges register, freight invoice, vendor bill, compliance register, Settings; see #10). 18.0.1.5.1 (every role opens the trip form; the TMS Administrator may let the uploader verify a POD; see #11). 18.0.1.5.0 (TMS-UIG-001 #7 closed: Document Types, breakdown repair cost as a trip expense, the Trip money menu kept, bundled base modules' texts; see #12). 18.0.1.4.0 removed requirement codes from screens (#13); 18.0.1.3.0 built the one-page Exception dashboard, Sales order P&L and Truck P&L to the agreed mockup TMS-OD18-001 (#14) |
+| Release | 18.0.1.6.1 (a trip did not open once Crews were switched on; see #10). 18.0.1.6.0 (every screen of the agreed mockup TMS-OD18-001 checked against the delivered one and the gaps closed: LR, trip, CRM, quotation, estimate, incident, claim, charges register, freight invoice, vendor bill, compliance register, Settings; see #11). 18.0.1.5.1 (every role opens the trip form; the TMS Administrator may let the uploader verify a POD; see #12). 18.0.1.5.0 (TMS-UIG-001 #7 closed: Document Types, breakdown repair cost as a trip expense, the Trip money menu kept, bundled base modules' texts; see #13). 18.0.1.4.0 removed requirement codes from screens (#14); 18.0.1.3.0 built the one-page Exception dashboard, Sales order P&L and Truck P&L to the agreed mockup TMS-OD18-001 (#15) |
 | Author | RLFB (Riamona Luxury and Fashion Brands), [www.riamona.com](https://www.riamona.com) |
 | Licence | LGPL-3. Two dependencies are AGPL-3; see #9. |
-| Tests | 199 automated tests across the six modules, all passing with every module installed together |
+| Tests | 200 automated tests across the six modules, all passing with every module installed together |
 
 ## 1. Package contents
 
@@ -123,7 +123,7 @@ odoo-bin -c odoo.conf -d tms_test -i tms_document_type \
   --stop-after-init
 ```
 
-Expected result: `0 failed, 0 error(s) of 199 tests`. The test companies have no mail server, so the log shows "failed sending mail … sender address" lines; they don't indicate a failure.
+Expected result: `0 failed, 0 error(s) of 200 tests`. The test companies have no mail server, so the log shows "failed sending mail … sender address" lines; they don't indicate a failure.
 
 ## 7. Controls worth knowing
 
@@ -159,7 +159,17 @@ The six `tms_*` addons are LGPL-3. `tms` and `auditlog` are AGPL-3, and their li
 
 The bundled copies of `tms` and `auditlog` are edited in their descriptive texts only (TMS-UIG-001 #7 item 9): the author is the original company (Open Source Integrators for `tms`, ABF OSIELL for `auditlog`); the upstream project's badges, issue-tracker and maintainer sections and its credits are removed from `README.rst`, `readme/` and the Apps page; translator credits in the `.po` headers are cleared. The code, the licence files and every copyright notice are unchanged.
 
-## 10. Changes in 18.0.1.6.0
+## 10. Changes in 18.0.1.6.1
+
+| Area | Change |
+|---|---|
+| Defect: trip form | With Crews switched on (Settings › Transport, base-module features), opening a trip failed with "The trip's vehicle follows its open assignment and cannot be edited". The base module's crew flag copied the trip's vehicle back onto the trip each time the form was read, and the TMS refuses any write of the trip's vehicle outside its assignment. The flag is now computed without touching the vehicle; a crew's default vehicle no longer lands on the trip (the vehicle follows the assignment). Writing back the vehicle a trip already has is accepted as a no-op; a different vehicle is still refused |
+
+Tests: 1 added in `tms_core` (`TestUiScreens.test_trip_form_opens_with_every_base_feature_on`): with crews, teams, routes, stops, licences, insurance and units of measure on, the dispatcher, the branch manager and the TMS Administrator read and save a draft and a delivered trip.
+
+Upgrade from 18.0.1.6.0 or 18.0.1.5.1: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract,tms_document_type`.
+
+## 11. Changes in 18.0.1.6.0
 
 Every screen of the agreed mockup (TMS-OD18-001) was set beside the delivered screen; this release closes the gaps found (TMS-UIG-001, tab *Screen audit 1.5.1*).
 
@@ -187,7 +197,7 @@ Tests: 20 added (`TestUiScreens`, `TestUiScreensD` in `tms_core`; `TestUiSales` 
 
 Upgrade from 18.0.1.5.1: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract,tms_document_type`. The upgrade activates English (IN), numbers existing incidents and switches the claim series to DC.
 
-## 11. Changes in 18.0.1.5.1
+## 12. Changes in 18.0.1.5.1
 
 | Area | Change |
 |---|---|
@@ -199,7 +209,7 @@ Tests: 2 added in `tms_core`. `TestUiTripAccess` opens the owned and market trip
 
 Upgrade from 18.0.1.5.0: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract,tms_document_type`.
 
-## 12. Changes in 18.0.1.5.0
+## 13. Changes in 18.0.1.5.0
 
 The open items of TMS-UIG-001 #7 are closed: item 1 (the Trip money menu keeps its name), item 2 (Document Types, change request CR-04), item 4 (breakdown repair cost) and item 9 (the bundled base modules' texts).
 
@@ -221,7 +231,7 @@ Tests: 21 added. `tms_document_type`: 19 (`TestDocumentType`, `TestDocumentTypeP
 
 Upgrade from 18.0.1.4.0: update the five modules and install the sixth: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract -i tms_document_type`. Installing it gives every existing order, invoice and bill its Transport type.
 
-## 13. Changes in 18.0.1.4.0
+## 14. Changes in 18.0.1.4.0
 
 Decision 10 of TMS-UIG-001 #7 is closed: users no longer see requirement codes. Codes such as `BR-…`, `KPI-…`, `OP-…`, `WF-…` and BRD section references are removed from every field label, help tooltip, placeholder, selection value, button, menu, error and warning message, chatter note and Apps page. The code stays only where a tester or developer looks for it: this README, the tester's manual TMS-UM-001, the test specification UTS-TMS-001, code comments and the tests.
 
@@ -238,7 +248,7 @@ Tests: 3 added in `tms_core` (`TestNoRequirementCodes`, post-install). With all 
 
 Upgrade from 18.0.1.3.0 by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`. Labels and help texts update on upgrade; no migration script is needed.
 
-## 14. Changes in 18.0.1.3.0
+## 15. Changes in 18.0.1.3.0
 
 The Exception dashboard, Sales order P&L and Truck P&L are now the one-page screens of the agreed mockup TMS-OD18-001 (TMS-UIG-001 #7, decision 3: one page, replacing the KPI board as the first screen). Each page has a Branch and Period filter, Refresh, and an "As of" time; the P&L pages also export their main table as CSV. Every tile, row and link opens the records behind it, under the user's own access rights.
 
@@ -254,7 +264,7 @@ Tests: 6 added in `tms_profitability` (`TestUiCockpit`, `TestUiCockpitPages`). T
 
 Upgrade from 18.0.1.2.0 by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`. The menus move to the new pages on upgrade.
 
-## 15. Changes in 18.0.1.2.0
+## 16. Changes in 18.0.1.2.0
 
 Screens aligned with the agreed mockup TMS-OD18-001, from the gap analysis TMS-UIG-001. Items that wait for a client decision are listed at the end.
 
@@ -275,7 +285,7 @@ Waiting for a client decision (TMS-UIG-001 #7) at this release (all closed in 18
 
 Upgrade from 18.0.1.1.x by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`. Existing databases keep their compliance security days and KPI alert settings; new databases get 15 days and the rules above.
 
-## 16. Changes in 18.0.1.1.1 and 18.0.1.1.2
+## 17. Changes in 18.0.1.1.1 and 18.0.1.1.2
 
 | Area | Change | Cases |
 |---|---|---|
@@ -285,7 +295,7 @@ Upgrade from 18.0.1.1.x by module name: `-u tms_core,tms_estimate,tms_odc,tms_pr
 
 Upgrade from 18.0.1.1.0 or 18.0.1.1.1 by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`.
 
-## 17. Changes in 18.0.1.1.0
+## 18. Changes in 18.0.1.1.0
 
 Fixes found while writing the tester manual (TMS-UM-001). Each has a regression test; the suite is now 93 tests.
 

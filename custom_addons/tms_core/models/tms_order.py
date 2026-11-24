@@ -277,12 +277,24 @@ class TmsOrder(models.Model):
         if "stage_id" in vals and not self.env.context.get("tms_stage_move"):
             raise UserError(_("Trips move between stages only through their buttons."))
         if "vehicle_id" in vals and not self.env.context.get("tms_assignment"):
-            raise UserError(_("The trip's vehicle follows its open assignment and cannot be edited."))
+            # writing back the vehicle a trip already has changes nothing: let it pass
+            if any(trip.vehicle_id.id != (vals["vehicle_id"] or False) for trip in self):
+                raise UserError(_("The trip's vehicle follows its open assignment and cannot be edited."))
+            vals = {k: v for k, v in vals.items() if k != "vehicle_id"}
+            if not vals:
+                return True
         if "fleet_type" in vals:
             for trip in self:
                 if trip.tms_mode == "broker" and vals["fleet_type"] != "market":
                     raise UserError(_("Broker mode trips are always Market."))
         return super().write(vals)
+
+    @api.depends("crew_id")
+    def _compute_active_crew(self):
+        """The base module also copies the crew's default vehicle onto the trip here, a write on every read of the
+        form once Crews are on. The trip's vehicle follows its open assignment, so only the flag is computed."""
+        for order in self:
+            order.crew_active = bool(order.crew_id)
 
     def unlink(self):
         if any(trip.state_code not in ("draft", "cancel") for trip in self):

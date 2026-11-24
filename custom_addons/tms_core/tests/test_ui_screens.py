@@ -7,6 +7,7 @@ from unittest.mock import patch
 from lxml import etree
 
 from odoo import Command, fields
+from odoo.exceptions import UserError
 from odoo.tests import tagged
 
 from .common import TmsCommon
@@ -114,3 +115,31 @@ class TestUiScreens(TmsCommon):
             self.assertEqual(action["report"], "tms_core.report_dsr")
             self.assertIn(trip.id, action["ids"])
             self.assertEqual(trip.action_print_dsr()["ids"], trip.ids)
+
+    def test_trip_form_opens_with_every_base_feature_on(self):
+        """With Crews (and every other base-module feature) on, reading the trip form wrote the trip's vehicle back
+        onto it and the vehicle guard refused: "The trip's vehicle follows its open assignment" (18.0.1.6.1)."""
+        features = self.env["res.groups"]
+        for xmlid in ("crew", "team", "route", "route_stop", "driver_license", "vehicle_insurance", "uom"):
+            features |= self.env.ref("tms.group_tms_%s" % xmlid)
+        lr = self._lr()
+        trip = self._trip(lr)
+        for link in trip.consignment_link_ids:
+            link.action_mark_delivered()
+        draft = self._trip(self._lr(), start=False)
+        for user in (self.u_dispatcher, self.u_manager, self.u_admin):
+            user.groups_id |= features
+            T = self.env["tms.order"].with_user(user)
+            arch = T.get_views([(False, "form")])["views"]["form"]["arch"]
+            spec = {n.get("name"): {} for n in etree.fromstring(arch).iter("field") if n.get("name") in T._fields}
+            self.assertIn("crew_active", spec)
+            for rec in (trip, draft):
+                rec.with_user(user).invalidate_recordset()
+                rec.with_user(user).web_read(spec)
+                rec.with_user(user).web_save({}, spec)
+        vehicle = trip.vehicle_id
+        trip.write({"vehicle_id": vehicle.id})
+        self.assertEqual(trip.vehicle_id, vehicle)
+        with self.assertRaises(UserError):
+            trip.write({"vehicle_id": self.env["fleet.vehicle"].create({"name": "Other", "model_id": vehicle.model_id.id,
+                                                                         "license_plate": "MH01ZZ0001"}).id})

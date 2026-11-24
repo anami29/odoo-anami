@@ -5,7 +5,7 @@
     "summary": "Value-capped sales contracts: km rates per vehicle class and accessory, items released against the "
     "balance, reservations for running trips, incidentals at actual, extensions, excess approvals, escalation, "
     "the invoice gate and the contract P&L",
-    "version": "18.0.1.6.0",
+    "version": "18.0.1.6.1",
     "category": "TMS",
     "license": "LGPL-3",
     "author": "RLFB (Riamona Luxury and Fashion Brands)",
