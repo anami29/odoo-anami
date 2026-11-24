@@ -26,7 +26,7 @@
                     <field name="tms_release_state" widget="statusbar" statusbar_visible="draft,released,closed"/>
                 </header>
                 <div class="alert alert-warning" role="alert" invisible="not tms_held">
-                    Held (BR-CON-10): budget <field name="tms_budget" class="oe_inline"/> against a balance of
+                    Held: budget <field name="tms_budget" class="oe_inline"/> against a balance of
                     <field name="tms_balance_available" class="oe_inline"/>; shortfall <field name="tms_shortfall" class="oe_inline"/>.
                     Only a customer extension or an approved excess releases it.
                 </div>
@@ -46,7 +46,7 @@
                             <field name="tms_estimate_id" readonly="1"/>
                             <field name="tms_is_movement" invisible="1"/>
                         </group>
-                        <group string="Budget and reservation (#23.7)">
+                        <group string="Budget and reservation">
                             <field name="tms_freight"/>
                             <field name="tms_incidental_estimate"/>
                             <field name="tms_budget"/>
@@ -68,7 +68,7 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Rate lines used (BR-CON-05)" name="rates">
+                        <page string="Rate lines used" name="rates">
                             <field name="tms_contract_rate_ids" readonly="tms_release_state != 'draft'"
                                    context="{'default_sale_line_id': id}">
                                 <list editable="bottom">

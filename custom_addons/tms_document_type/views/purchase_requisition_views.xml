@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_requisition_form_tms_amc" model="ir.ui.view">
+        <field name="name">purchase.requisition.form.tms.amc</field>
+        <field name="model">purchase.requisition</field>
+        <field name="inherit_id" ref="purchase_requisition.view_purchase_requisition_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_tms_amc_bill" type="object" string="Bill next period" invisible="not tms_is_amc"/>
+            </xpath>
+            <xpath expr="//field[@name='vendor_id']" position="after">
+                <field name="tms_document_type_id" options="{'no_create': True}"/>
+                <field name="tms_is_amc" invisible="1"/>
+                <field name="tms_amc_assets" invisible="not tms_is_amc" required="tms_is_amc"/>
+                <field name="tms_amc_value" invisible="not tms_is_amc" required="tms_is_amc"/>
+                <field name="tms_amc_frequency" invisible="not tms_is_amc" required="tms_is_amc"/>
+                <field name="tms_amc_bill_ids" invisible="not tms_amc_bill_ids" widget="many2many_tags"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

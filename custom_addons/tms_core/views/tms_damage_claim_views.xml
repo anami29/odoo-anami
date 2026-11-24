@@ -17,8 +17,8 @@
                 </header>
                 <sheet>
                     <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
-                    <div class="alert alert-warning" role="status" invisible="not time_barred">The customer's notice is later than the claim notice period (BR-CLM-11).</div>
-                    <div class="alert alert-info" role="status" invisible="not owner_risk">Owner's-risk LR: the Operations Head must accept liability (BR-CLM-09).</div>
+                    <div class="alert alert-warning" role="status" invisible="not time_barred">The customer's notice is later than the claim notice period.</div>
+                    <div class="alert alert-info" role="status" invisible="not owner_risk">Owner's-risk LR: the Operations Head must accept liability.</div>
                     <group>
                         <group>
                             <field name="consignment_id"/>
@@ -53,7 +53,7 @@
                     </group>
                     <notebook>
                         <page string="Recoveries"><field name="recovery_charge_ids" readonly="1"/></page>
-                        <page string="Insurer claims (BR-CLM-07)">
+                        <page string="Insurer claims">
                             <field name="insurer_claim_ids">
                                 <list editable="bottom">
                                     <field name="policy_id"/>

@@ -6,8 +6,7 @@
     "version": "18.0.1.1.0",
     "license": "AGPL-3",
     "category": "TMS",
-    "author": "Open Source Integrators, Odoo Community Association (OCA)",
-    "website": "https://github.com/OCA/stock-logistics-transport",
+    "author": "Open Source Integrators",
     "depends": ["base", "uom", "fleet", "base_geolocalize"],
     "data": [
         "data/ir_sequence_data.xml",

@@ -29,13 +29,13 @@
                     <field name="state" widget="statusbar" statusbar_visible="draft,active,exhausted,expired,closed"/>
                 </header>
                 <div class="alert alert-warning" role="alert" invisible="not fully_reserved or state in ('draft', 'closed')">
-                    Fully reserved: the balance is <field name="balance" class="oe_inline"/>; new items wait for an extension or an approved excess (BR-CON-10).
+                    Fully reserved: the balance is <field name="balance" class="oe_inline"/>; new items wait for an extension or an approved excess.
                 </div>
                 <div class="alert alert-danger" role="alert" invisible="not over_contract">
-                    Over-contract: <field name="over_contract" class="oe_inline"/> reserved or invoiced above value plus extensions (BR-CON-19).
+                    Over-contract: <field name="over_contract" class="oe_inline"/> reserved or invoiced above value plus extensions.
                 </div>
                 <div class="alert alert-info" role="alert" invisible="state != 'draft' or not submitted">
-                    Submitted: waiting for the Operations Head's approval (BR-CON-04).
+                    Submitted: waiting for the Operations Head's approval.
                 </div>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
@@ -66,7 +66,7 @@
                             <field name="order_id" readonly="1"/>
                             <field name="approved_by_id" invisible="not approved_by_id"/>
                         </group>
-                        <group string="Value (#23.7)">
+                        <group string="Value">
                             <field name="value" readonly="state != 'draft'"/>
                             <field name="value_basis" readonly="state != 'draft'"/>
                             <field name="opening_consumption" readonly="state != 'draft'"/>
@@ -182,12 +182,12 @@
                         </page>
                         <page string="Terms" name="terms">
                             <group>
-                                <group string="Detention (BR-MD-16)">
+                                <group string="Detention">
                                     <field name="free_hours_loading"/>
                                     <field name="free_hours_unloading"/>
                                     <field name="detention_rate"/>
                                 </group>
-                                <group string="Commitment and SLA (BR-CON-27)">
+                                <group string="Commitment and SLA">
                                     <field name="min_commitment"/>
                                     <field name="shortfall_move_id" invisible="not shortfall_move_id"/>
                                     <field name="sla_transit_days"/>
@@ -201,7 +201,7 @@
                                     <field name="deposit_reference" invisible="deposit_kind == 'none'"/>
                                     <field name="deposit_expiry" invisible="deposit_kind == 'none'"/>
                                 </group>
-                                <group string="Diesel escalation (BR-CON-22)">
+                                <group string="Diesel escalation">
                                     <field name="escalation_clause" readonly="state != 'draft'"/>
                                     <field name="diesel_base_price" invisible="not escalation_clause" readonly="state != 'draft'"/>
                                     <field name="diesel_base_date" invisible="not escalation_clause" readonly="state != 'draft'"/>
@@ -280,7 +280,7 @@
         <field name="context">{'search_default_active': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Register a customer's contract</p>
-            <p>A contract fixes km rates per vehicle class and accessory up to a value; movements are released against its balance (WF-11).</p>
+            <p>A contract fixes km rates per vehicle class and accessory up to a value; movements are released against its balance.</p>
         </field>
     </record>
 </odoo>

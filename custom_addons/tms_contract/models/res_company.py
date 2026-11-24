@@ -13,7 +13,7 @@ class ResCompany(models.Model):
         help="An extension adding more than this share of the contract value is approved by the Operations Head.")
     tms_contract_excess_ceiling = fields.Float(
         string="Excess ceiling %", default=10.0,
-        help="Approved excess above this share of the contract value needs a director (OP-20).")
+        help="Approved excess above this share of the contract value needs a director.")
     tms_contract_runon_days = fields.Integer(
         string="Run-on days", default=30,
         help="Items released while the contract was Active book LRs up to this many days after its end date.")

@@ -4,8 +4,8 @@
     "name": "TMS Sales Contracts (Premier Transport)",
     "summary": "Value-capped sales contracts: km rates per vehicle class and accessory, items released against the "
     "balance, reservations for running trips, incidentals at actual, extensions, excess approvals, escalation, "
-    "the invoice gate and the contract P&L (BRD #8.4, WF-11, #23.7)",
-    "version": "18.0.1.2.0",
+    "the invoice gate and the contract P&L",
+    "version": "18.0.1.5.0",
     "category": "TMS",
     "license": "LGPL-3",
     "author": "RLFB (Riamona Luxury and Fashion Brands)",

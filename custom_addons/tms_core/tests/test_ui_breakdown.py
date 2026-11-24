@@ -153,3 +153,31 @@ class TestUiBreakdown(TmsCommon):
         wiz.action_resolve()
         self.assertEqual(bd.state, "resolved")
         self.assertEqual(dict(bd._fields["cause"].selection)["tyre"], "Tyre burst")
+
+    def test_repair_cost_books_trip_expense(self):
+        """TMS-UIG-001 #7 item 4: the repair cost of record is a draft trip expense linked to the service log."""
+        trip, lr, bill = self._started_trip_with_bill()
+        wiz = self._wizard(trip, resolution="repair", repair_cost=4500.0,
+                           revised_eta=fields.Datetime.now() + timedelta(hours=6))
+        wiz.action_confirm()
+        bd = trip.breakdown_ids
+        exp = bd.expense_id
+        self.assertTrue(exp)
+        self.assertEqual(exp.state, "draft")
+        self.assertEqual(exp.trip_id, trip)
+        self.assertEqual(exp.amount, 4500.0)
+        self.assertEqual(exp.category_id, self.env.ref("tms_core.tms_category_roadside_repair"))
+        self.assertEqual(exp.breakdown_id, bd)
+        self.assertEqual(exp.incident_id, bd.incident_id)
+        self.assertEqual(exp.vehicle_id, self.vehicle)
+        self.assertEqual(bd.service_log_id.tms_expense_id, exp)
+        self.assertEqual(bd.service_log_id.amount, 4500.0)
+        # a corrected cost follows the draft expense; no second expense is created
+        bd.repair_cost = 5200.0
+        self.assertEqual(exp.amount, 5200.0)
+        self.assertEqual(len(trip.expense_ids.filtered("breakdown_id")), 1)
+
+    def test_no_repair_cost_no_expense(self):
+        trip, lr, bill = self._started_trip_with_bill()
+        self._wizard(trip, resolution="repair", revised_eta=fields.Datetime.now() + timedelta(hours=2)).action_confirm()
+        self.assertFalse(trip.breakdown_ids.expense_id)

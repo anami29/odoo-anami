@@ -21,6 +21,7 @@ KINDS = [
     ("truck_fixed", "Truck fixed cost"),
     ("overhead", "Branch overhead"),
     ("head_office", "Head-office cost"),
+    ("other_income", "Other income"),
 ]
 FLEET_TYPES = [("owned", "Owned"), ("market", "Market")]
 CARGO_TYPES = [("regular", "Regular"), ("odc", "ODC")]
@@ -195,6 +196,20 @@ def _ledger_sql():
          WHERE (b.tms_cost_class = 'overhead' OR COALESCE(b.tms_overhead, FALSE))
            AND b.account_type IN ('expense', 'expense_direct_cost')
            AND COALESCE(b.tms_line_kind, '') != 'accrual'""")
+    other = _select({
+        "id": "b.id::bigint * 1000000",
+        "kind": "'other_income'",
+        "amount": "-b.balance",
+        "date": "b.date",
+        "company_id": "b.company_id",
+        "partner_id": "b.move_partner_id",
+        "is_replacement": "FALSE",
+        "move_line_id": "b.id",
+        "account_id": "b.account_id",
+        "line_kind": "b.tms_line_kind",
+    }, """FROM base b
+         WHERE b.tms_line_kind = 'other_income'
+           AND b.account_type IN ('income', 'income_other')""")
     return """
         WITH trip AS (
             SELECT t.id, t.company_id, t.tms_pnl_date, t.primary_vehicle_id, t.fleet_type, t.tms_cargo_type,
@@ -226,11 +241,12 @@ def _ledger_sql():
             UNION ALL %s
             UNION ALL %s
             UNION ALL %s
+            UNION ALL %s
         )
         SELECT rows.*, (rows.trip_id IS NOT NULL AND rows.date IS NULL) AS wip,
                date_trunc('month', rows.date)::date AS period
           FROM rows
-    """ % (revenue, accrual, direct, recovery, std, truck, overhead)
+    """ % (revenue, accrual, direct, recovery, std, truck, overhead, other)
 
 
 class TmsPnlLine(models.Model):
@@ -940,6 +956,8 @@ class TmsBranchPnl(models.Model):
     trip_margin = fields.Float(string="Trip margin (customer view)", readonly=True)
     recovery_variance = fields.Float(readonly=True)
     overhead = fields.Float(string="Branch overhead", readonly=True)
+    other_income = fields.Float(string="Other income", readonly=True,
+                                help="Standard sales: scrap, vehicle disposals and other income outside transport.")
     branch_result = fields.Float(readonly=True)
     truck_view = fields.Float(string="Truck view operating result", readonly=True)
     check_difference = fields.Float(string="Reconciliation difference", readonly=True)
@@ -957,7 +975,8 @@ class TmsBranchPnl(models.Model):
                        COALESCE(SUM(amount) FILTER (WHERE kind IN ('std_recovered', 'truck_running',
                                                                     'truck_fixed')), 0) AS recovery,
                        COALESCE(-SUM(amount) FILTER (WHERE kind = 'overhead'), 0) AS overhead,
-                       COALESCE(-SUM(amount) FILTER (WHERE kind = 'head_office'), 0) AS head_office
+                       COALESCE(-SUM(amount) FILTER (WHERE kind = 'head_office'), 0) AS head_office,
+                       COALESCE(SUM(amount) FILTER (WHERE kind = 'other_income'), 0) AS other_income
                   FROM tms_pnl_line WHERE period IS NOT NULL GROUP BY 1, 2
             ), trk AS (
                 SELECT company_id, period, SUM(operating_result) AS result FROM tms_truck_pnl GROUP BY 1, 2
@@ -968,12 +987,14 @@ class TmsBranchPnl(models.Model):
             SELECT ROW_NUMBER() OVER (ORDER BY k.company_id, k.period) AS id, k.company_id, k.period,
                    COALESCE(c.margin, 0) AS trip_margin, COALESCE(l.recovery, 0) AS recovery_variance,
                    COALESCE(l.overhead, 0) AS overhead,
-                   COALESCE(c.margin, 0) + COALESCE(l.recovery, 0) - COALESCE(l.overhead, 0) AS branch_result,
+                   COALESCE(l.other_income, 0) AS other_income,
+                   COALESCE(c.margin, 0) + COALESCE(l.recovery, 0) - COALESCE(l.overhead, 0)
+                       + COALESCE(l.other_income, 0) AS branch_result,
                    COALESCE(t.result, 0) AS truck_view,
                    COALESCE(c.margin, 0) + COALESCE(l.recovery, 0) - COALESCE(t.result, 0) AS check_difference,
                    COALESCE(l.head_office, 0) AS head_office_cost,
                    COALESCE(c.margin, 0) + COALESCE(l.recovery, 0) - COALESCE(l.overhead, 0)
-                       - COALESCE(l.head_office, 0) AS operating_result
+                       + COALESCE(l.other_income, 0) - COALESCE(l.head_office, 0) AS operating_result
               FROM keys k
          LEFT JOIN cust c ON c.company_id = k.company_id AND c.period = k.period
          LEFT JOIN led l ON l.company_id = k.company_id AND l.period = k.period

@@ -36,7 +36,7 @@ class CrmLead(models.Model):
         if not additional_values.get("lost_reason_id") and any(
                 lead.type == "opportunity" and not lead.lost_reason_id for lead in self):
             if not self.env.context.get("tms_allow_lost_without_reason"):
-                raise UserError(_("Choose a lost reason (BR-CRM-03)."))
+                raise UserError(_("Choose a lost reason."))
         return super().action_set_lost(**additional_values)
 
     tms_vat = fields.Char(string="GSTIN")

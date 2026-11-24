@@ -1,7 +1,7 @@
 from dateutil.relativedelta import relativedelta
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 from .account_move import cover_months, month_end
 
@@ -18,12 +18,13 @@ class TmsPrepaidSchedule(models.Model):
     name = fields.Char(compute="_compute_name", store=True)
     company_id = fields.Many2one("res.company", string="Branch", required=True, default=lambda s: s.env.company)
     currency_id = fields.Many2one(related="company_id.currency_id")
-    kind = fields.Selection([("prepaid", "Prepaid fixed cost"), ("spread", "Repair spread over useful life")],
+    kind = fields.Selection([("prepaid", "Prepaid fixed cost"), ("spread", "Repair spread over useful life"),
+                             ("overhead", "Prepaid branch overhead")],
                             required=True, default="prepaid", tracking=True)
-    vehicle_id = fields.Many2one("fleet.vehicle", required=True, domain=[("tms_ownership", "=", "owned")],
-                                 tracking=True)
-    category_id = fields.Many2one("tms.truck.category", string="Truck cost category", required=True, tracking=True)
-    cost_class = fields.Selection([("truck_running", "Truck running"), ("truck_fixed", "Truck fixed")],
+    vehicle_id = fields.Many2one("fleet.vehicle", domain=[("tms_ownership", "=", "owned")], tracking=True)
+    category_id = fields.Many2one("tms.truck.category", string="Truck cost category", tracking=True)
+    cost_class = fields.Selection([("truck_running", "Truck running"), ("truck_fixed", "Truck fixed"),
+                                   ("overhead", "Overhead")],
                                   compute="_compute_cost_class", store=True)
     move_line_id = fields.Many2one("account.move.line", string="Source line", readonly=True, copy=False)
     amount = fields.Monetary(required=True, tracking=True)
@@ -41,13 +42,25 @@ class TmsPrepaidSchedule(models.Model):
     @api.depends("vehicle_id", "category_id", "date_from")
     def _compute_name(self):
         for sch in self:
-            sch.name = "%s / %s / %s" % (sch.vehicle_id.license_plate or "", sch.category_id.name or "",
+            subject = sch.vehicle_id.license_plate or (sch.kind == "overhead" and sch.company_id.name) or ""
+            sch.name = "%s / %s / %s" % (subject, sch.category_id.name or sch.prepaid_account_id.name or "",
                                          sch.date_from or "")
 
-    @api.depends("category_id.cost_pool")
+    @api.depends("kind", "category_id.cost_pool")
     def _compute_cost_class(self):
         for sch in self:
-            sch.cost_class = "truck_%s" % sch.category_id.cost_pool if sch.category_id else False
+            if sch.kind == "overhead":
+                sch.cost_class = "overhead"
+            else:
+                sch.cost_class = "truck_%s" % sch.category_id.cost_pool if sch.category_id else False
+
+    @api.constrains("kind", "vehicle_id", "category_id")
+    def _check_truck(self):
+        for sch in self:
+            if sch.kind != "overhead" and not (sch.vehicle_id and sch.category_id):
+                raise ValidationError(_("A truck schedule names its owned vehicle and truck cost category."))
+            if sch.kind == "overhead" and sch.vehicle_id:
+                raise ValidationError(_("A branch overhead schedule names no vehicle."))
 
     @api.depends("line_ids.state", "line_ids.amount")
     def _compute_released(self):
@@ -138,7 +151,7 @@ class TmsPrepaidScheduleLine(models.Model):
 
     def unlink(self):
         if self.filtered(lambda line: line.state == "released"):
-            raise UserError(_("A released month is never deleted (BR-AUD-04)."))
+            raise UserError(_("A released month is never deleted."))
         return super().unlink()
 
     def _tms_release(self):
@@ -159,8 +172,9 @@ class TmsPrepaidScheduleLine(models.Model):
                 "ref": label,
                 "line_ids": [
                     (0, 0, {"name": label, "account_id": sch.expense_account_id.id, "debit": line.amount,
-                            "credit": 0.0, "vehicle_id": sch.vehicle_id.id, "tms_cost_class": sch.cost_class,
-                            "tms_truck_category_id": sch.category_id.id,
+                            "credit": 0.0, "vehicle_id": sch.vehicle_id.id or False,
+                            "tms_cost_class": sch.cost_class,
+                            "tms_truck_category_id": sch.category_id.id or False,
                             "tms_cover_from": date.replace(day=1), "tms_cover_to": month_end(date),
                             "tms_useful_life_months": 1}),
                     (0, 0, {"name": label, "account_id": sch.prepaid_account_id.id, "debit": 0.0,

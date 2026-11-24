@@ -87,7 +87,7 @@ class TmsTripEquipment(models.Model):
         self._tms_check_trip_open()
         if self.filtered("estimate_line_id") and not self.env.context.get("tms_odc_reload"):
             raise UserError(_("Equipment lines from the estimate are kept; record a different type or count with "
-                              "the Operations Head's approval instead (BR-ODC-05)."))
+                              "the Operations Head's approval instead."))
         return super().unlink()
 
     def _tms_check_trip_open(self):
@@ -97,7 +97,7 @@ class TmsTripEquipment(models.Model):
     def action_approve_substitution(self):
         """BR-ODC-05: a different type or count needs the Operations Head's approval with a reason."""
         if not self.env.user.has_group("tms_core.group_operations_head"):
-            raise UserError(_("The Operations Head approves ODC equipment substitutions (BR-ODC-05)."))
+            raise UserError(_("The Operations Head approves ODC equipment substitutions."))
         for line in self.filtered("substituted"):
             if not line.substitution_reason:
                 raise UserError(_("Give the reason for the substitution first."))
@@ -248,7 +248,7 @@ class TmsOrder(models.Model):
     def _check_odc_enabled(self):
         for trip in self:
             if trip.tms_cargo_type == "odc" and not trip.company_id.tms_odc_enabled:
-                raise ValidationError(_("ODC is switched off for %s (BR-CFG-13).", trip.company_id.name))
+                raise ValidationError(_("ODC is switched off for %s.", trip.company_id.name))
 
     def write(self, vals):
         if "survey_file" in vals and not self.env.context.get("tms_odc_survey"):
@@ -320,13 +320,13 @@ class TmsOrder(models.Model):
         lrs = self.consignment_link_ids.filtered(lambda x: x.state != "cancel").mapped("consignment_id")
         if self.tms_cargo_type != "odc":
             if "odc" in lrs.mapped("tms_cargo_type"):
-                raise UserError(_("A trip carrying an ODC LR is an ODC trip (BR-ODC-01)."))
+                raise UserError(_("A trip carrying an ODC LR is an ODC trip."))
             return res
         if not self.equipment_ids:
             self.action_load_odc_from_estimate()
         gaps = self._tms_odc_equipment_gaps()
         if gaps:
-            raise UserError(_("ODC trip %(t)s cannot be confirmed (BR-ODC-05):\n%(g)s", t=self.name,
+            raise UserError(_("ODC trip %(t)s cannot be confirmed:\n%(g)s", t=self.name,
                               g="\n".join(gaps)))
         return res
 
@@ -385,7 +385,7 @@ class TmsOrder(models.Model):
         if self.tms_cargo_type == "odc":
             gaps = self._tms_odc_start_gaps()
             if gaps:
-                raise UserError(_("ODC trip %(t)s cannot start (BR-ODC-06):\n%(g)s", t=self.name,
+                raise UserError(_("ODC trip %(t)s cannot start:\n%(g)s", t=self.name,
                                   g="\n".join(gaps)))
         return res
 
@@ -420,7 +420,7 @@ class TmsOrder(models.Model):
         hour = local.hour + local.minute / 60.0
         outside = self.permit_ids.filtered(lambda p: not p._tms_in_window(hour))
         if outside:
-            note = _("Departed at %(t)s, outside the movement window of %(p)s (BR-ODC-07).",
+            note = _("Departed at %(t)s, outside the movement window of %(p)s.",
                      t=local.strftime("%H:%M"),
                      p=", ".join("%s %s" % (p.state_id.name, p._tms_window_label()) for p in outside))
             self.message_post(body=note)
@@ -445,7 +445,7 @@ class TmsOrder(models.Model):
                 if latest.eta < bill.valid_until - timedelta(days=1):
                     continue
                 summary = _("ETA within a day of e-way bill %s expiry", bill.name)
-                note = _("Latest ETA %(e)s; e-way bill %(b)s valid until %(v)s. Extend it (BR-NTF-04).",
+                note = _("Latest ETA %(e)s; e-way bill %(b)s valid until %(v)s. Extend it.",
                          e=latest.eta, b=bill.name, v=bill.valid_until)
                 users = trip.user_id or users_in_group(self.env, "tms_core.group_dispatcher", trip.company_id)
                 if not trip.activity_ids.filtered(lambda a, s=summary: a.summary == s):

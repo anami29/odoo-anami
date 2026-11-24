@@ -3,7 +3,6 @@
 # * auditlog
 #
 # Translators:
-# OCA Transbot <transbot@odoo-community.org>, 2016
 # leemannd <leemannd@gmail.com>, 2016
 msgid ""
 msgstr ""
@@ -12,7 +11,7 @@ msgstr ""
 "POT-Creation-Date: 2016-12-03 04:11+0000\n"
 "PO-Revision-Date: 2016-12-03 04:11+0000\n"
 "Last-Translator: leemannd <leemannd@gmail.com>, 2016\n"
-"Language-Team: French (Switzerland) (https://www.transifex.com/oca/"
+"Language-Team: French\n"
 "teams/23907/fr_CH/)\n"
 "Language: fr_CH\n"
 "MIME-Version: 1.0\n"

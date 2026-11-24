@@ -21,7 +21,7 @@ class TmsComplianceDocumentType(models.Model):
         required=True,
         default="vehicle",
     )
-    mandatory_for_start = fields.Boolean(default=True, help="BR-CMP-01: checked by the compliance gate.")
+    mandatory_for_start = fields.Boolean(default=True, help="checked by the compliance gate.")
     reminder_offsets = fields.Char(help="Days before expiry, comma separated; empty uses the company setting.")
     active = fields.Boolean(default=True)
 

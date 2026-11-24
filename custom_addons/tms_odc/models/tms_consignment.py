@@ -27,7 +27,7 @@ class TmsConsignment(models.Model):
     def _check_odc_enabled(self):
         for lr in self:
             if lr.tms_cargo_type == "odc" and not lr.company_id.tms_odc_enabled:
-                raise ValidationError(_("ODC is switched off for %s (BR-CFG-13).", lr.company_id.name))
+                raise ValidationError(_("ODC is switched off for %s.", lr.company_id.name))
 
     def write(self, vals):
         res = super().write(vals)
@@ -49,15 +49,15 @@ class TmsConsignment(models.Model):
                 item_reason = "sale_line_id" in lr._fields and lr.sale_line_id.tms_regular_reason
                 if lr.odc_suggested and not (lr.tms_regular_reason or item_reason):
                     raise UserError(_("LR %s has a piece above an ODC threshold: make it ODC or give a reason to "
-                                      "keep it Regular (BR-ODC-02).", lr.name))
+                                      "keep it Regular.", lr.name))
                 continue
             missing = lr.line_ids.filtered(lambda x: not (x.piece_length and x.piece_width and x.piece_height))
             if missing:
-                raise UserError(_("ODC LR %(lr)s needs the piece length, width and height on %(c)s (BR-ODC-04).",
+                raise UserError(_("ODC LR %(lr)s needs the piece length, width and height on %(c)s.",
                                   lr=lr.name, c=", ".join(missing.mapped("commodity"))))
             regular_bills = lr.ewaybill_ids.filtered(lambda b: not b.is_odc and b.state != "cancelled")
             if regular_bills:
-                raise UserError(_("E-way bills of an ODC LR are generated as Over Dimensional Cargo (BR-ODC-04): %s",
+                raise UserError(_("E-way bills of an ODC LR are generated as Over Dimensional Cargo: %s",
                                   ", ".join(regular_bills.mapped("name"))))
 
 

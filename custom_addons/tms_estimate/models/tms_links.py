@@ -33,7 +33,7 @@ class AccountMoveLine(models.Model):
         domain="[('order_state', '=', 'sale'), ('company_id', '=', company_id)]",
     )
     tms_sale_line_id = fields.Many2one("sale.order.line", string="Order item", index="btree_not_null",
-                                       help="The order item an invoice line bills (BR-NUM-05).")
+                                       help="The order item an invoice line bills.")
 
 
 class AccountMove(models.Model):
@@ -60,7 +60,7 @@ class AccountMove(models.Model):
                         and line.tms_trip_id._tms_moves_order_item() and line.tms_cost_class in (
                             "trip_direct", False):
                     raise UserError(_("Line '%s' names a trip but no estimate line: choose the estimate line or mark "
-                                      "it overhead with a reason (BR-ACT-05).", line.name))
+                                      "it overhead with a reason.", line.name))
             move._tms_check_variance()
         return res
 
@@ -77,7 +77,7 @@ class AccountMove(models.Model):
             return  # expense entries are checked on the expense (tms.trip.expense._tms_check_before_post)
         over = self._tms_lines_over_tolerance()
         if over:
-            msg = _("Over the estimate by more than the tolerance (BR-ACT-06): %s. A Branch Manager approves first.",
+            msg = _("Over the estimate by more than the tolerance: %s. A Branch Manager approves first.",
                     ", ".join(over))
             company = self.company_id
             users = users_in_group(self.env, "tms_core.group_branch_manager", company)
@@ -106,7 +106,7 @@ class AccountMove(models.Model):
     def action_tms_approve_variance(self):
         for move in self:
             if not self.env.user.has_group("tms_core.group_branch_manager"):
-                raise UserError(_("A Branch Manager approves variances over the estimate (BR-ACT-06)."))
+                raise UserError(_("A Branch Manager approves variances over the estimate."))
             move.sudo().tms_variance_approved_by_id = self.env.user
             move.sudo().message_post(body=_("Variance over the estimate approved."))
 
@@ -131,13 +131,13 @@ class TmsTripExpense(models.Model):
             if exp.trip_id and exp.tms_cost_class == "trip_direct" and not exp.estimate_line_id \
                     and not exp.tms_overhead_reason and exp.trip_id._tms_moves_order_item():
                 raise UserError(_("Expense %s names a trip but no estimate line: choose it or mark the expense "
-                                  "overhead with a reason (BR-ACT-05).", exp.name))
+                                  "overhead with a reason.", exp.name))
             eline = exp.estimate_line_id
             if eline and not exp.variance_approved_by_id:
                 tol = eline.company_id.tms_estimate_variance_tolerance
                 if eline.estimated_cost and eline.actual + exp.amount > eline.estimated_cost * (1 + tol / 100.0):
                     msg = _("Expense %(e)s takes %(l)s over its estimate by more than %(t)s%%; a Branch "
-                            "Manager approves first (BR-ACT-06).", e=exp.name, l=eline.display_name, t=tol)
+                            "Manager approves first.", e=exp.name, l=eline.display_name, t=tol)
                     users = users_in_group(self.env, "tms_core.group_branch_manager",
                                            eline.company_id or exp.company_id)
                     notify_detached(self.env, exp._name, exp.id, users.ids, _("Variance approval needed"),
@@ -148,7 +148,7 @@ class TmsTripExpense(models.Model):
     def action_tms_approve_variance(self):
         for exp in self:
             if not self.env.user.has_group("tms_core.group_branch_manager"):
-                raise UserError(_("A Branch Manager approves variances over the estimate (BR-ACT-06)."))
+                raise UserError(_("A Branch Manager approves variances over the estimate."))
             exp.variance_approved_by_id = self.env.user
 
 
@@ -192,7 +192,7 @@ class TmsConsignment(models.Model):
         return bool(self.sale_line_id) or super()._tms_has_order_item()
 
     item_freight = fields.Monetary(readonly=True, copy=False,
-                                   help="This LR's share of its movement's amount, by charged weight (#23.1).")
+                                   help="This LR's share of its movement's amount, by charged weight.")
 
     @api.depends("sale_line_id", "item_freight", "freight_frozen", "frozen_freight", "state")
     def _compute_freight(self):
@@ -240,7 +240,7 @@ class TmsConsignment(models.Model):
                                         n=int(lr.sale_line_id.product_uom_qty)))
             siblings = lr._tms_movement_lrs() - lr
             if siblings and (lr.freight_basis == "paid" or "paid" in siblings.mapped("freight_basis")):
-                raise ValidationError(_("A Paid LR cannot share a movement (BR-EST-13)."))
+                raise ValidationError(_("A Paid LR cannot share a movement."))
             customer = lr.sale_line_id.order_id.partner_id.commercial_partner_id
             if customer not in (lr.consignor_id.commercial_partner_id, lr.billing_partner_id.commercial_partner_id):
                 raise ValidationError(_("The LR's consignor or billing party must be the order's customer."))

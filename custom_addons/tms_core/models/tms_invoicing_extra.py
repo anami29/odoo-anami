@@ -38,7 +38,7 @@ class AccountMove(models.Model):
                 line.sudo().with_context(check_move_validity=False).date_maturity = base + shift
             if terms:
                 move.sudo().invoice_date_due = max(terms.mapped("date_maturity"))
-            move.message_post(body=_("Credit days run from the submission date %s (BR-INV-13).",
+            move.message_post(body=_("Credit days run from the submission date %s.",
                                      move.tms_submission_date))
 
     def _tms_after_post(self):
@@ -49,8 +49,7 @@ class AccountMove(models.Model):
                 unbilled = lr.charge_ids.filtered(lambda c: c.recover_from == "customer" and c.state == "approved"
                                                   and not c.move_line_id)
                 if unbilled:
-                    msg = _("LR %(lr)s is fully invoiced but approved customer charges remain unbilled: %(c)s "
-                            "(BR-CHG-08).", lr=lr.name, c=", ".join(unbilled.mapped("name")))
+                    msg = _("LR %(lr)s is fully invoiced but approved customer charges remain unbilled: %(c)s.", lr=lr.name, c=", ".join(unbilled.mapped("name")))
                     move.message_post(body=msg)
                     schedule(move, self.env.user, _("Unbilled charges on %s", lr.name), msg)
         return res
@@ -110,7 +109,7 @@ class TmsTopayCollectWizard(models.TransientModel):
         clearing = delivery.tms_interbranch_account_id or booking.tms_interbranch_account_id \
             or booking.root_id.tms_interbranch_account_id
         if not clearing:
-            raise UserError(_("Configure the inter-branch clearing account (BR-BRN-06)."))
+            raise UserError(_("Configure the inter-branch clearing account."))
         cash_account = self.journal_id.default_account_id
         partner = move.commercial_partner_id
         Move = self.env["account.move"].sudo()
@@ -141,7 +140,7 @@ class TmsTopayCollectWizard(models.TransientModel):
         (receivable | settled.line_ids.filtered(lambda line: line.account_id == receivable.account_id)).reconcile()
         if clearing.reconcile:
             (collected.line_ids | settled.line_ids).filtered(lambda line: line.account_id == clearing).reconcile()
-        move.message_post(body=_("Collected at %(b)s: %(c)s, settled by %(s)s (BR-BRN-06).",
+        move.message_post(body=_("Collected at %(b)s: %(c)s, settled by %(s)s.",
                                  b=delivery.name, c=collected.name, s=settled.name))
         move.line_ids.mapped("tms_consignment_id")._tms_refresh_invoiced()
         return {"type": "ir.actions.act_window_close"}

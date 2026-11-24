@@ -5,7 +5,7 @@ from odoo.exceptions import UserError, ValidationError
 class ResCompanyItemIncrement(models.Model):
     _inherit = "res.company"
 
-    tms_item_increment = fields.Integer(string="Item increment", default=10, help="BR-CFG-12, BR-NUM-01")
+    tms_item_increment = fields.Integer(string="Item increment", default=10, help="")
 
 
 class TmsItemNumberMixin(models.AbstractModel):
@@ -39,7 +39,7 @@ class TmsItemNumberMixin(models.AbstractModel):
             if order:
                 if rec.tms_item_no and self.search_count(self._tms_item_lines_domain(order) + [
                         ("tms_item_no", "=", rec.tms_item_no), ("id", "!=", rec.id)]):
-                    raise ValidationError(_("Item number %s is already used on this order (BR-NUM-02).",
+                    raise ValidationError(_("Item number %s is already used on this order.",
                                             rec.tms_item_no))
                 if rec.tms_item_no > order.tms_last_item_no:
                     order.sudo().tms_last_item_no = rec.tms_item_no
@@ -48,7 +48,7 @@ class TmsItemNumberMixin(models.AbstractModel):
 
     def write(self, vals):
         if "tms_item_no" in vals and any(line.tms_item_no and line.tms_item_no != vals["tms_item_no"] for line in self):
-            raise UserError(_("An item number never changes (BR-NUM-02)."))
+            raise UserError(_("An item number never changes."))
         return super().write(vals)
 
     def _tms_item_label(self):

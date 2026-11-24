@@ -8,7 +8,7 @@ class TmsComplianceDocument(models.Model):
     _inherit = "tms.compliance.document"
 
     trip_id = fields.Many2one("tms.order", string="Captured on trip", ondelete="cascade", index=True,
-                              help="Market vehicle document captured on the assignment (BR-CMP-05).")
+                              help="Market vehicle document captured on the assignment.")
 
     @api.constrains("vehicle_id", "driver_id", "market_vehicle_id", "trip_id")
     def _check_holder(self):

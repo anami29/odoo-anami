@@ -53,10 +53,13 @@ class FleetVehicle(models.Model):
         )
 
     def _tms_has_open_service(self):
+        """A workshop job in progress keeps the truck off the road. The cost records that posting a vendor bill
+        line creates for its vehicle are not workshop jobs and do not block it."""
         self.ensure_one()
         return bool(
             self.env["fleet.vehicle.log.services"].search_count(
-                [("vehicle_id", "=", self.id), ("state", "in", ("new", "running"))], limit=1
+                [("vehicle_id", "=", self.id), ("state", "in", ("new", "running")),
+                 ("account_move_line_id", "=", False)], limit=1
             )
         )
 
@@ -134,4 +137,6 @@ class FleetVehicleLogServices(models.Model):
     _inherit = "fleet.vehicle.log.services"
 
     tms_breakdown_id = fields.Many2one("tms.trip.breakdown", string="Breakdown")
+    tms_expense_id = fields.Many2one("tms.trip.expense", string="Repair expense", readonly=True, copy=False,
+                                     help="The trip expense that carries this repair's cost.")
     tms_downtime_hours = fields.Float(string="Downtime (hours)")

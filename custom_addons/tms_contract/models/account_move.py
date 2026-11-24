@@ -24,7 +24,7 @@ class AccountMove(models.Model):
 
     tms_contract_awaiting = fields.Boolean(compute="_compute_tms_contract_awaiting", string="Awaiting extension",
                                            help="The invoice exceeds its contract's balance plus the item's own "
-                                                "reservation and waits in draft (BR-CON-12).")
+                                                "reservation and waits in draft.")
     tms_contract_shortfall = fields.Monetary(compute="_compute_tms_contract_awaiting", string="Contract shortfall")
     tms_contract_fit_amount = fields.Monetary(compute="_compute_tms_contract_awaiting",
                                               string="Lines that fit the contract balance")
@@ -113,7 +113,7 @@ class AccountMove(models.Model):
                 self.env["tms.contract.hold"]._tms_record("invoice", move, contracts[:1], move.amount_untaxed,
                                                           shortfall, detached=True)
                 raise UserError(_("The invoice exceeds the balance of contract %(c)s by %(s).2f: it stays in draft, "
-                                  "Awaiting extension (BR-CON-12). The Branch Accountant may post the lines that "
+                                  "Awaiting extension. The Branch Accountant may post the lines that "
                                   "fit; the rest waits for an extension or an approved excess.",
                                   c=", ".join(contracts.mapped("name")), s=shortfall))
         return res

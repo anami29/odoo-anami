@@ -24,7 +24,7 @@ class TmsOrder(models.Model):
         string="Operating mode")
     fleet_type = fields.Selection(FLEET_TYPES, default="owned", required=True, tracking=True)
     tms_cargo_type = fields.Selection(CARGO_TYPES, string="Cargo Type", default="regular", required=True, tracking=True)
-    empty_trip = fields.Boolean(string="Empty / positioning trip", help="BR-TRP-10: carries no LR.")
+    empty_trip = fields.Boolean(string="Empty / positioning trip", help="carries no LR.")
     state_code = fields.Selection(related="stage_id.tms_code", store=True, string="Status", index=True)
     stage_id = fields.Many2one(tracking=True)
     # planning (BR-TRP-06) – the trip's vehicle and driver themselves compute from the open assignment
@@ -271,20 +271,20 @@ class TmsOrder(models.Model):
 
     def write(self, vals):
         if "stage_id" in vals and not self.env.context.get("tms_stage_move"):
-            raise UserError(_("Trips move between stages only through their buttons (BR-EXE-02)."))
+            raise UserError(_("Trips move between stages only through their buttons."))
         if "vehicle_id" in vals and not self.env.context.get("tms_assignment"):
-            raise UserError(_("The trip's vehicle follows its open assignment and cannot be edited (BR-TRP-08)."))
+            raise UserError(_("The trip's vehicle follows its open assignment and cannot be edited."))
         if "fleet_type" in vals:
             for trip in self:
                 if trip.tms_mode == "broker" and vals["fleet_type"] != "market":
-                    raise UserError(_("Broker mode trips are always Market (BR-TRP-02)."))
+                    raise UserError(_("Broker mode trips are always Market."))
         return super().write(vals)
 
     def unlink(self):
         if any(trip.state_code not in ("draft", "cancel") for trip in self):
-            raise UserError(_("Started or confirmed trips are never deleted (BR-AUD-04)."))
+            raise UserError(_("Started or confirmed trips are never deleted."))
         if not self.env.user.has_group("tms_core.group_tms_admin"):
-            raise UserError(_("Only Administrators delete trips (BR-BRN-08)."))
+            raise UserError(_("Only Administrators delete trips."))
         return super().unlink()
 
     def _tms_move_stage(self, code):
@@ -314,29 +314,29 @@ class TmsOrder(models.Model):
     def _tms_check_confirm(self):
         self.ensure_one()
         if not (self.route_id or (self.origin_id and self.destination_id)):
-            raise UserError(_("A trip needs a route, or an origin and a destination (BR-TRP-06)."))
+            raise UserError(_("A trip needs a route, or an origin and a destination."))
         links = self.consignment_link_ids.filtered(lambda x: x.state != "cancel")
         if self.empty_trip and links:
-            raise UserError(_("An empty or positioning trip carries no LR (BR-TRP-10)."))
+            raise UserError(_("An empty or positioning trip carries no LR."))
         if not self.empty_trip and not links:
-            raise UserError(_("A trip needs at least one consignment link (BR-TRP-06)."))
+            raise UserError(_("A trip needs at least one consignment link."))
         if self.fleet_type == "owned":
             if not (self.planned_vehicle_id and self.planned_driver_id):
-                raise UserError(_("An owned trip needs a vehicle and a driver (BR-TRP-06)."))
+                raise UserError(_("An owned trip needs a vehicle and a driver."))
             self._tms_check_vehicle_free(self.planned_vehicle_id, self.planned_driver_id, exclude_trip=self)
         else:
             if not self.planned_market_vehicle_id:
-                raise UserError(_("A market trip needs a market vehicle (BR-TRP-06)."))
+                raise UserError(_("A market trip needs a market vehicle."))
             if self.planned_market_vehicle_id.blacklisted:
-                raise UserError(_("A blacklisted market vehicle cannot be assigned (RL-02)."))
+                raise UserError(_("A blacklisted market vehicle cannot be assigned."))
             if not self.hire_memo_ids.filtered(lambda p: p.state in ("purchase", "done")):
-                raise UserError(_("A market trip needs a confirmed hire memo (BR-TRP-06, BR-HIR-01)."))
+                raise UserError(_("A market trip needs a confirmed hire memo."))
         # BR-TRP-05 payload
         if self.payload_kg and self.planned_weight > self.payload_kg:
             if not (self.payload_approved_by_id and self.payload_override_reason):
                 raise UserError(
                     _("Planned weight %(w)s kg exceeds the payload %(p)s kg; the Operations Head must approve "
-                      "with a reason (BR-TRP-05).", w=self.planned_weight, p=self.payload_kg)
+                      "with a reason.", w=self.planned_weight, p=self.payload_kg)
                 )
         self._tms_check_confirm_odc()
 
@@ -393,7 +393,7 @@ class TmsOrder(models.Model):
         """BR-EXE-07: from Draft or Confirmed only; releases the consignment links."""
         for trip in self:
             if trip.state_code not in ("draft", "confirmed"):
-                raise UserError(_("A trip is cancelled only from Draft or Confirmed (BR-EXE-07)."))
+                raise UserError(_("A trip is cancelled only from Draft or Confirmed."))
             trip.consignment_link_ids.filtered(lambda x: x.state != "cancel").write({"state": "cancel"})
             trip.ewaybill_update_ids.filtered(lambda t: t.state == "pending").unlink()
             trip._tms_move_stage("cancel")
@@ -425,7 +425,7 @@ class TmsOrder(models.Model):
             vehicle = market_vehicle._tms_fleet_vehicle()
             vals["vehicle_id"] = vehicle.id
         if market_vehicle.blacklisted:
-            raise UserError(_("A blacklisted market vehicle cannot be assigned (RL-02)."))
+            raise UserError(_("A blacklisted market vehicle cannot be assigned."))
         self._tms_check_vehicle_free(vehicle if not market_vehicle else None, driver, exclude_trip=self)
         result, failures, warnings, snapshot = self.env["tms.compliance.gate"].evaluate(
             self.scheduled_date_end, vehicle=vehicle if not market_vehicle else None,
@@ -442,7 +442,7 @@ class TmsOrder(models.Model):
             snapshot.append("Market driver | DL | %s | valid until %s" % (vals.get("market_driver_licence"), exp))
         enforcement = self.company_id.tms_enforce_compliance
         if result == "fail" and enforcement and enforce:
-            raise UserError(_("Compliance gate failed (BR-CMP-06):\n%s", "\n".join(failures)))
+            raise UserError(_("Compliance gate failed:\n%s", "\n".join(failures)))
         current = self.open_assignment_id
         if current:
             current.write({"state": "closed", "date_to": fields.Datetime.now(),
@@ -479,10 +479,10 @@ class TmsOrder(models.Model):
         lrs = self.consignment_ids
         missing = lrs.filtered("ewaybill_missing")
         if missing:
-            raise UserError(_("A required e-way bill is missing on %s (BR-EWB-04).", ", ".join(missing.mapped("name"))))
+            raise UserError(_("A required e-way bill is missing on %s.", ", ".join(missing.mapped("name"))))
         pending = self.ewaybill_update_ids.filtered(lambda t: t.state == "pending" and t.kind == "partb")
         if pending:
-            raise UserError(_("Complete the Part-B tasks with evidence before the trip moves (BR-EWB-05): %s",
+            raise UserError(_("Complete the Part-B tasks with evidence before the trip moves: %s",
                               ", ".join(pending.mapped("ewaybill_id.name"))))
 
     def _tms_check_start_odc(self):
@@ -499,7 +499,7 @@ class TmsOrder(models.Model):
             vals = {"reason": "start", "fleet_type": trip.fleet_type}
             if trip.fleet_type == "owned":
                 if not trip.start_odometer:
-                    raise UserError(_("Record the opening odometer before START (BR-EXE-03)."))
+                    raise UserError(_("Record the opening odometer before START."))
                 trip.planned_vehicle_id.tms_record_odometer(trip.start_odometer)
                 vals.update({
                     "vehicle_id": trip.planned_vehicle_id.id,
@@ -551,9 +551,9 @@ class TmsOrder(models.Model):
         """WF-04, BR-EWB-05: no delivery while a breakdown is open or Part-B tasks of a change are pending."""
         for trip in self:
             if trip.breakdown_ids.filtered(lambda b: b.state == "open"):
-                raise UserError(_("Resolve the open breakdown on %s first (WF-04).", trip.name))
+                raise UserError(_("Resolve the open breakdown on %s first.", trip.name))
             if trip.ewaybill_update_ids.filtered(lambda t: t.state == "pending" and t.kind == "partb"):
-                raise UserError(_("Complete the Part-B tasks with evidence before the goods move on (BR-EWB-05)."))
+                raise UserError(_("Complete the Part-B tasks with evidence before the goods move on."))
 
     def action_depart(self):
         """BR-EXE-04: Started → In Transit; blocked while Part-B tasks of a vehicle change are open."""
@@ -562,7 +562,7 @@ class TmsOrder(models.Model):
                 raise UserError(_("Only started trips depart."))
             pending = trip.ewaybill_update_ids.filtered(lambda t: t.state == "pending")
             if pending:
-                raise UserError(_("Complete the Part-B tasks with evidence before departure (BR-EWB-05)."))
+                raise UserError(_("Complete the Part-B tasks with evidence before departure."))
             if trip.state_code == "started":
                 trip._tms_move_stage("in_transit")
         return True
@@ -608,17 +608,17 @@ class TmsOrder(models.Model):
                 raise UserError(_("Only delivered trips are closed."))
             links = trip.consignment_link_ids.filtered(lambda x: x.state != "cancel")
             if any(link.pod_status != "verified" for link in links):
-                raise UserError(_("Every POD, or its outcome, must be verified first (BR-EXE-06)."))
+                raise UserError(_("Every POD, or its outcome, must be verified first."))
             if trip.expense_ids.filtered(lambda e: e.state == "draft"):
-                raise UserError(_("Approve or cancel the draft expenses first (BR-EXE-06)."))
+                raise UserError(_("Approve or cancel the draft expenses first."))
             needs_settlement = trip.advance_ids.filtered(lambda a: a.state == "posted") or trip.expense_ids.filtered(
                 lambda e: e.payment_mode == "driver_cash" and e.state == "approved")
             if needs_settlement and not trip.settlement_ids.filtered(lambda s: s.state == "done"):
-                raise UserError(_("Close the driver settlement first (BR-EXE-06)."))
+                raise UserError(_("Close the driver settlement first."))
             asg = trip.open_assignment_id
             if trip.primary_vehicle_id.tms_ownership == "owned" and asg.fleet_type == "owned":
                 if not trip.end_odometer:
-                    raise UserError(_("Record the closing odometer first (BR-EXE-06)."))
+                    raise UserError(_("Record the closing odometer first."))
                 if trip.end_odometer < (asg.odometer_out or 0.0):
                     raise UserError(_("The closing odometer is below the opening reading."))
                 asg.vehicle_id.tms_record_odometer(trip.end_odometer)

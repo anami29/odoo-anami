@@ -145,7 +145,7 @@ class TmsTripCharge(models.Model):
                               "approved_on": fields.Datetime.now()})
                 self.env["tms.override.log"].log("self_approved_charge", charge,
                                                  _("Charge %s approved on confirmation", charge.name),
-                                                 reason=_("Within the self-approval limit (BR-CHG-04)"),
+                                                 reason=_("Within the self-approval limit"),
                                                  amount=charge.amount)
                 charge._tms_on_approved()
         return True
@@ -155,7 +155,7 @@ class TmsTripCharge(models.Model):
             if charge.state != "to_approve":
                 raise UserError(_("Only charges awaiting approval are approved."))
             if not self.env.user.has_group("tms_core.group_branch_manager"):
-                raise UserError(_("A Branch Manager approves this charge (BR-CHG-04)."))
+                raise UserError(_("A Branch Manager approves this charge."))
             if charge.create_uid == self.env.user:
                 raise UserError(_("You cannot approve a charge you raised."))
             charge.write({"state": "approved", "approved_by_id": self.env.user.id,
@@ -292,6 +292,7 @@ class TmsTripExpense(models.Model):
                              default="draft", tracking=True, copy=False)
     approved_by_id = fields.Many2one("res.users", readonly=True, copy=False)
     incident_id = fields.Many2one("tms.trip.incident")
+    breakdown_id = fields.Many2one("tms.trip.breakdown", string="Breakdown", readonly=True, copy=False)
     recoverable_from = fields.Selection([("none", "Not recoverable"), ("customer", "Customer"),
                                          ("vendor", "Vendor")], default="none", required=True)
     recoverable_amount = fields.Monetary()
@@ -436,7 +437,7 @@ class TmsTripExpense(models.Model):
                 raise UserError(_("A vendor-credit expense needs the vendor it is owed to."))
             account = partner.with_company(company).property_account_payable_id
         if not account:
-            raise UserError(_("Configure the account for payment mode %s in Transport settings (BR-EXP-09).",
+            raise UserError(_("Configure the account for payment mode %s in Transport settings.",
                               dict(PAYMENT_MODES)[mode]))
         return account, partner
 
@@ -446,9 +447,9 @@ class TmsTripExpense(models.Model):
             if exp.state != "draft":
                 continue
             if not self.env.user.has_group("tms_core.group_branch_accountant"):
-                raise UserError(_("The Branch Accountant approves expenses (BR-EXP-05)."))
+                raise UserError(_("The Branch Accountant approves expenses."))
             if not exp.receipt:
-                raise UserError(_("An expense without a receipt cannot be approved (RL-05)."))
+                raise UserError(_("An expense without a receipt cannot be approved."))
             exp._tms_check_before_post()
             exp._tms_ensure_recovery_charge()
             account, partner = exp._tms_credit_account_and_partner()
@@ -512,12 +513,12 @@ class TmsDriverAdvance(models.Model):
 
     def write(self, vals):
         if self.LOCKED_AFTER_POST & set(vals) and any(adv.state != "draft" for adv in self):
-            raise UserError(_("A posted driver advance is not edited; cancel its entry instead (BR-EXP-07)."))
+            raise UserError(_("A posted driver advance is not edited; cancel its entry instead."))
         return super().write(vals)
 
     def unlink(self):
         if any(adv.state == "posted" for adv in self):
-            raise UserError(_("A posted driver advance is never deleted (BR-AUD-01)."))
+            raise UserError(_("A posted driver advance is never deleted."))
         return super().unlink()
 
     def action_post(self):

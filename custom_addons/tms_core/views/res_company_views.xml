@@ -20,7 +20,7 @@
                             <button name="action_open_unlock_wizard" type="object" string="Unlock operating mode" class="btn-secondary" invisible="not tms_mode_locked"/>
                         </group>
                     </group>
-                    <separator string="GTA GST option per financial year (BR-CFG-10)"/>
+                    <separator string="GTA GST option per financial year"/>
                     <field name="tms_gta_option_ids">
                         <list editable="bottom">
                             <field name="date_from"/>

@@ -112,7 +112,7 @@ class TmsRpcGuard(models.AbstractModel):
             return
         if not any(user.has_group(xmlid) for xmlid in roles):
             names = ", ".join(self.env.ref(xmlid).name for xmlid in roles if self.env.ref(xmlid, False))
-            raise AccessError(_("Only %(roles)s create %(model)s records (BR-BRN-07).",
+            raise AccessError(_("Only %(roles)s create %(model)s records.",
                                 roles=names, model=self.env[model_name]._description))
 
     @api.model
@@ -135,7 +135,7 @@ class TmsRpcGuard(models.AbstractModel):
                     if value == default:
                         continue
                 raise AccessError(_(
-                    "%(field)s on %(model)s changes only through its action button (BR-AUD-06).",
+                    "%(field)s on %(model)s changes only through its action button.",
                     field=field.string, model=Model._description))
             if field.type in ("one2many", "many2many") and isinstance(value, (list, tuple)):
                 for command in value:
@@ -155,7 +155,7 @@ class TmsRpcGuard(models.AbstractModel):
                 context.pop(key)
         if method == "unlink" and model_name in self._tms_admin_unlink_models() \
                 and not self.env.user.has_group("tms_core.group_tms_admin"):
-            raise AccessError(_("Only the TMS Administrator deletes %s records (BR-BRN-08).",
+            raise AccessError(_("Only the TMS Administrator deletes %s records.",
                                 self.env[model_name]._description))
         if model_name == "base_import.import" and method == "execute_import":
             # the import wizard calls load() server-side: check the target model here
@@ -183,7 +183,7 @@ class TmsRpcGuard(models.AbstractModel):
             names = guarded.get(model_name, set())
             hit = [f for f in fields_list if f.split("/")[0] in names]
             if hit:
-                raise AccessError(_("Status and approval fields cannot be imported (BR-AUD-06): %s", ", ".join(hit)))
+                raise AccessError(_("Status and approval fields cannot be imported: %s", ", ".join(hit)))
             return
         if method == "create":
             vals_list = args[0] if args else kwargs.get("vals_list") or kwargs.get("vals")
@@ -210,7 +210,7 @@ class Base(models.AbstractModel):
     def unlink(self):
         if self and not self.env.su and self._name in ADMIN_UNLINK_ALL \
                 and not self.env.user.has_group("tms_core.group_tms_admin"):
-            raise AccessError(_("Only the TMS Administrator deletes %s records (BR-BRN-08).", self._description))
+            raise AccessError(_("Only the TMS Administrator deletes %s records.", self._description))
         return super().unlink()
 
 

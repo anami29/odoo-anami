@@ -8,3 +8,4 @@ from . import tms_pnl_views
 from . import tms_pnl_close
 from . import tms_kpi
 from . import tms_guard
+from . import tms_cockpit

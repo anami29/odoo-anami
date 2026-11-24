@@ -31,7 +31,7 @@ class TmsEstimate(models.Model):
     company_id = fields.Many2one(related="order_id.company_id", store=True, string="Branch")
     currency_id = fields.Many2one(related="order_id.currency_id")
     date = fields.Date(compute="_compute_date", store=True, readonly=False,
-                       help="Costs come from the prices in force on this date (BR-EST-09).")
+                       help="Costs come from the prices in force on this date.")
     origin_id = fields.Many2one("res.partner", string="Origin", domain=[("tms_location", "=", True)], tracking=True)
     destination_id = fields.Many2one("res.partner", string="Destination", domain=[("tms_location", "=", True)],
                                      tracking=True)
@@ -45,8 +45,7 @@ class TmsEstimate(models.Model):
     line_ids = fields.One2many("tms.estimate.line", "estimate_id", string="Lines", copy=True)
     state = fields.Selection([("draft", "Draft"), ("locked", "Locked"), ("amending", "Amendment pending")],
                              default="draft", tracking=True, copy=False)
-    is_contract = fields.Boolean(help="A contract item: priced by the contract, the estimate measures cost only "
-                                      "(BR-CON-06).")
+    is_contract = fields.Boolean(help="A contract item: priced by the contract, the estimate measures cost only.")
     # totals
     estimated_cost = fields.Monetary(compute="_compute_totals", store=True)
     marked_up_total = fields.Monetary(compute="_compute_totals", store=True, string="Marked-up value")
@@ -55,7 +54,7 @@ class TmsEstimate(models.Model):
     amount = fields.Monetary(compute="_compute_totals", store=True, string="Item amount")
     rounding_difference = fields.Monetary(compute="_compute_totals", store=True)
     contribution = fields.Monetary(compute="_compute_totals", store=True,
-                                   help="Freight less estimated cost (BR-CON-26).")
+                                   help="Freight less estimated cost.")
     committed = fields.Monetary(compute="_compute_actuals")
     actual = fields.Monetary(compute="_compute_actuals")
     variance = fields.Monetary(compute="_compute_actuals")
@@ -110,7 +109,7 @@ class TmsEstimate(models.Model):
     def _tms_check_editable(self):
         for est in self:
             if est.state == "locked" and not self.env.context.get("tms_estimate_unlock"):
-                raise UserError(_("Estimate %s is locked; change it through an approved amendment (BR-EST-12).",
+                raise UserError(_("Estimate %s is locked; change it through an approved amendment.",
                                   est.name))
 
     def write(self, vals):
@@ -214,7 +213,7 @@ class TmsEstimateLine(models.Model):
     vendor_id = fields.Many2one("res.partner", string="Vendor")
     computed_unit_cost = fields.Float(compute="_compute_unit_cost", digits="Product Price")
     unit_cost = fields.Float(digits="Product Price")
-    typed_cost_reason = fields.Char(help="A typed cost needs a reason and is tracked (BR-EST-03).")
+    typed_cost_reason = fields.Char(help="A typed cost needs a reason and is tracked.")
     estimated_cost = fields.Monetary(compute="_compute_amounts", store=True)
     markup_pct = fields.Float(string="Markup %")
     marked_up = fields.Monetary(compute="_compute_amounts", store=True, string="Marked-up value")
@@ -368,22 +367,22 @@ class TmsEstimateLine(models.Model):
                 line.unit_cost = line._tms_price()
             elif not line.unplanned and line.product_id and line.unit_cost != line._tms_price() \
                     and not vals.get("typed_cost_reason") and not self.env.context.get("tms_allow_typed"):
-                raise ValidationError(_("Line %(n)02d: a typed cost needs a reason (BR-EST-03).", n=line.line_no))
+                raise ValidationError(_("Line %(n)02d: a typed cost needs a reason.", n=line.line_no))
         lines.mapped("estimate_id")._tms_push_price()
         return lines
 
     def write(self, vals):
         if "line_no" in vals:
-            raise UserError(_("Estimate line numbers never change (BR-NUM-03)."))
+            raise UserError(_("Estimate line numbers never change."))
         editable_after_lock = {"name"}
         if set(vals) - editable_after_lock and any(line.locked for line in self) \
                 and not self.env.context.get("tms_estimate_unlock"):
-            raise UserError(_("Locked estimate lines change only through an approved amendment (BR-EST-10)."))
+            raise UserError(_("Locked estimate lines change only through an approved amendment."))
         if "unit_cost" in vals:
             for line in self:
                 if abs(vals["unit_cost"] - line._tms_price()) > 0.001 and not (
                         vals.get("typed_cost_reason") or line.typed_cost_reason):
-                    raise ValidationError(_("Line %(n)02d: a typed cost needs a reason (BR-EST-03).",
+                    raise ValidationError(_("Line %(n)02d: a typed cost needs a reason.",
                                             n=line.line_no))
         res = super().write(vals)
         if "unit_cost" in vals or "typed_cost_reason" in vals:
@@ -397,7 +396,7 @@ class TmsEstimateLine(models.Model):
 
     def unlink(self):
         if any(line.locked for line in self):
-            raise UserError(_("Locked estimate lines are never deleted (BR-AUD-04)."))
+            raise UserError(_("Locked estimate lines are never deleted."))
         estimates = self.mapped("estimate_id")
         res = super().unlink()
         estimates._tms_push_price()
@@ -452,9 +451,9 @@ class TmsEstimateAmendment(models.Model):
     def action_approve(self):
         for am in self:
             if am.state != "to_approve":
-                raise UserError(_("Submit the amendment for approval first (BR-EST-12)."))
+                raise UserError(_("Submit the amendment for approval first."))
             if not self.env.user.has_group("tms_core.group_branch_manager"):
-                raise UserError(_("A Branch Manager approves estimate amendments (BR-EST-12)."))
+                raise UserError(_("A Branch Manager approves estimate amendments."))
             if am.requested_by_id == self.env.user:
                 raise UserError(_("You cannot approve your own amendment."))
             est = am.estimate_id.with_context(tms_estimate_unlock=True)
@@ -471,7 +470,7 @@ class TmsEstimateAmendment(models.Model):
             if am.state not in ("open", "to_approve"):
                 raise UserError(_("This amendment is already decided."))
             if not self.env.user.has_group("tms_core.group_branch_manager"):
-                raise UserError(_("A Branch Manager rejects estimate amendments (BR-EST-12)."))
+                raise UserError(_("A Branch Manager rejects estimate amendments."))
             est = am.estimate_id.with_context(tms_estimate_unlock=True)
             baseline = json.loads(am.baseline_json or "[]")
             by_no = {b["line_no"]: b for b in baseline if "line_no" in b}

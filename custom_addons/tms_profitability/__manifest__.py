@@ -5,7 +5,7 @@
     "summary": "Cost classes, standard rates per km, standard charge as analytic entries, truck pools and "
     "recovery variance, prepaid release, month-end close with accruals, P&L by trip, leg, customer, truck, "
     "fleet, vendor, branch and company",
-    "version": "18.0.1.2.0",
+    "version": "18.0.1.5.0",
     "category": "TMS",
     "license": "LGPL-3",
     "author": "RLFB (Riamona Luxury and Fashion Brands)",
@@ -29,7 +29,13 @@
         "views/tms_pnl_views.xml",
         "views/res_config_settings_views.xml",
         "views/menus.xml",
+        "views/tms_cockpit_views.xml",
     ],
+    "assets": {
+        "web.assets_backend": [
+            "tms_profitability/static/src/pnl/**/*",
+        ],
+    },
     "post_init_hook": "post_init_hook",
     "installable": True,
 }

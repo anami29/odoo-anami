@@ -3,7 +3,6 @@
 # * auditlog
 #
 # Translators:
-# OCA Transbot <transbot@odoo-community.org>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 11.0\n"
@@ -11,7 +10,7 @@ msgstr ""
 "POT-Creation-Date: 2017-12-06 03:40+0000\n"
 "PO-Revision-Date: 2018-06-21 03:31+0000\n"
 "Last-Translator: Rodrigo Macedo <rmsolucoeseminformatic4@gmail.com>\n"
-"Language-Team: Portuguese (Brazil) (https://www.transifex.com/oca/"
+"Language-Team: Portuguese\n"
 "teams/23907/pt_BR/)\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"

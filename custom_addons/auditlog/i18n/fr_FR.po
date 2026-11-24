@@ -4,15 +4,14 @@
 #
 # Translators:
 # Aurel <theaurel60@gmail.com>, 2017
-# OCA Transbot <transbot@odoo-community.org>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 10.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-02-22 00:54+0000\n"
 "PO-Revision-Date: 2017-02-22 00:54+0000\n"
-"Last-Translator: OCA Transbot <transbot@odoo-community.org>, 2017\n"
-"Language-Team: French (France) (https://www.transifex.com/oca/teams/23907/"
+"Last-Translator: \n"
+"Language-Team: French\n"
 "fr_FR/)\n"
 "Language: fr_FR\n"
 "MIME-Version: 1.0\n"

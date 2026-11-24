@@ -15,6 +15,7 @@ LINE_KINDS = [
     ("expense", "Trip expense"),
     ("recovery", "Recovery"),
     ("accrual", "Accrual"),
+    ("other_income", "Other income"),
 ]
 
 
@@ -190,7 +191,7 @@ class AccountMoveLine(models.Model):
             for line in self:
                 if not line.tms_overhead:
                     if not (vals.get("tms_overhead_reason") or line.tms_overhead_reason):
-                        raise UserError(_("Marking a line overhead needs a reason (BR-ACT-05)."))
+                        raise UserError(_("Marking a line overhead needs a reason."))
                     self.env["tms.override.log"].log(
                         "overhead", line.move_id, _("Line %s marked overhead", line.name or line.id),
                         reason=vals.get("tms_overhead_reason") or line.tms_overhead_reason, amount=line.balance)

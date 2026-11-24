@@ -29,7 +29,7 @@ class TmsConsignment(models.Model):
     _check_company_auto = True
 
     name = fields.Char(string="LR number", required=True, copy=False, default="/", tracking=True, index=True)
-    manual_number = fields.Boolean(help="Number typed from a printed LR book (BR-MD-12).")
+    manual_number = fields.Boolean(help="Number typed from a printed LR book.")
     date = fields.Date(required=True, default=fields.Date.context_today, tracking=True)
     company_id = fields.Many2one(
         "res.company", string="Booking branch", required=True, default=lambda s: s.env.company, tracking=True
@@ -90,7 +90,7 @@ class TmsConsignment(models.Model):
     trip_ids = fields.Many2many("tms.order", compute="_compute_trip_ids", string="Trips")
     trip_count = fields.Integer(compute="_compute_trip_ids")
     unplanned_packages = fields.Integer(compute="_compute_unplanned", store=True)
-    vehicle_number = fields.Char(string="Vehicle number", readonly=True, copy=False, help="Taken from the trip at dispatch (BR-LR-13).")
+    vehicle_number = fields.Char(string="Vehicle number", readonly=True, copy=False, help="Taken from the trip at dispatch.")
     vehicle_history = fields.Text(readonly=True, copy=False)
     vehicle_placed = fields.Boolean(compute="_compute_vehicle_placed")
     # money
@@ -99,7 +99,7 @@ class TmsConsignment(models.Model):
                                    compute_sudo=True)
     freight_invoiced = fields.Monetary(compute="_compute_invoicing", store=True)
     freight_uninvoiced = fields.Monetary(compute="_compute_invoicing", store=True, string="Freight not invoiced")
-    collected = fields.Boolean(compute="_compute_invoicing", store=True, help="To-Pay freight collected (RL-06).")
+    collected = fields.Boolean(compute="_compute_invoicing", store=True, help="To-Pay freight collected.")
     charge_ids = fields.One2many("tms.trip.charge", "consignment_id")
     claim_ids = fields.One2many("tms.damage.claim", "consignment_id")
     amendment_ids = fields.One2many("tms.consignment.amendment", "consignment_id")
@@ -113,7 +113,7 @@ class TmsConsignment(models.Model):
     cancel_reason = fields.Text(copy=False, tracking=True)
     ewaybill_required = fields.Boolean(compute="_compute_ewaybill_required")
     ewaybill_missing = fields.Boolean(compute="_compute_ewaybill_required")
-    godown_hold = fields.Boolean(readonly=True, copy=False, help="Refused goods held at the delivery branch (BR-POD-09).")
+    godown_hold = fields.Boolean(readonly=True, copy=False, help="Refused goods held at the delivery branch.")
     godown_since = fields.Date(readonly=True, copy=False)
     tbb_overdue = fields.Boolean(compute="_compute_tbb_overdue", search="_search_tbb_overdue")
 
@@ -308,7 +308,7 @@ class TmsConsignment(models.Model):
     def _check_override_reason(self):
         for lr in self:
             if lr.charged_weight_override and not lr.charged_weight_reason:
-                raise ValidationError(_("A charged weight override needs a reason (BR-LR-06)."))
+                raise ValidationError(_("A charged weight override needs a reason."))
 
     def write(self, vals):
         locked = {"consignee_id", "destination_id"}
@@ -317,7 +317,7 @@ class TmsConsignment(models.Model):
                 if lr.state not in ("draft",):
                     raise UserError(
                         _("After confirmation the consignee, destination, weight and packages change only "
-                          "through an approved LR amendment (BR-LR-17).")
+                          "through an approved LR amendment.")
                     )
         if "charged_weight_override" in vals:
             for lr in self:
@@ -353,10 +353,10 @@ class TmsConsignment(models.Model):
         if not self._tms_has_order_item() and not (self.rate_type and self.typed_rate):
             missing.append(_("a sales order item or a typed rate"))
         if missing:
-            raise UserError(_("LR %(lr)s cannot be confirmed; missing: %(m)s (BR-LR-08).", lr=self.name,
+            raise UserError(_("LR %(lr)s cannot be confirmed; missing: %(m)s.", lr=self.name,
                               m=", ".join(missing)))
         if not self._tms_has_order_item() and not self.typed_rate_reason:
-            raise UserError(_("A typed rate needs a reason (BR-MD-04)."))
+            raise UserError(_("A typed rate needs a reason."))
 
     def _tms_credit_amount(self):
         return self.freight_amount
@@ -389,10 +389,10 @@ class TmsConsignment(models.Model):
         """BR-LR-11: cancel only from Draft or Confirmed, and not once the vehicle is placed."""
         for lr in self:
             if lr.state not in ("draft", "confirmed"):
-                raise UserError(_("An LR is cancelled only from Draft or Confirmed (BR-LR-11)."))
+                raise UserError(_("An LR is cancelled only from Draft or Confirmed."))
             if lr.vehicle_placed:
                 raise UserError(
-                    _("The vehicle for LR %s is placed: remove its trip link with a reason instead (BR-LR-18).",
+                    _("The vehicle for LR %s is placed: remove its trip link with a reason instead.",
                       lr.name)
                 )
             lr.trip_link_ids.filtered(lambda link: link.state != "cancel").write({"state": "cancel"})
@@ -413,7 +413,7 @@ class TmsConsignment(models.Model):
     def action_confirm_credit_override(self):
         reason = self.env.context.get("tms_reason")
         if not reason:
-            raise UserError(_("A credit override needs a reason (BR-CRD-03)."))
+            raise UserError(_("A credit override needs a reason."))
         return self.with_context(tms_credit_override_reason=reason).action_confirm()
 
     def _tms_refresh_state(self):
@@ -577,7 +577,7 @@ class TmsConsignmentLine(models.Model):
         if protected & set(vals) and not self.env.context.get("tms_amendment"):
             if any(line.consignment_id.state != "draft" for line in self):
                 raise UserError(_("Weight and packages change after confirmation only through an approved "
-                                  "LR amendment (BR-LR-17)."))
+                                  "LR amendment."))
         return super().write(vals)
 
     @api.constrains("packages", "actual_weight")
@@ -708,7 +708,7 @@ class TmsEwaybillUpdate(models.Model):
     def action_done(self):
         for task in self:
             if not (task.evidence or task.evidence_reference):
-                raise UserError(_("Attach the portal evidence or its reference first (BR-EWB-05)."))
+                raise UserError(_("Attach the portal evidence or its reference first."))
             vals = {"state": "done", "done_by_id": self.env.user.id, "done_at": fields.Datetime.now()}
             task.write(vals)
             if task.kind == "partb" and task.ewaybill_id:
@@ -804,6 +804,6 @@ class TmsConsignmentAmendment(models.Model):
             if am.state != "to_approve":
                 raise UserError(_("Only an amendment awaiting approval is rejected."))
             if not self.env.user.has_group("tms_core.group_branch_manager"):
-                raise UserError(_("Only a Branch Manager rejects an LR amendment (BR-LR-17)."))
+                raise UserError(_("Only a Branch Manager rejects an LR amendment."))
             am.write({"state": "rejected", "approved_by_id": self.env.user.id})
         return True

@@ -85,7 +85,7 @@ class TmsPlanTripWizard(models.TransientModel):
         self.ensure_one()
         bad = self.consignment_ids.filtered(lambda lr: lr.state != "confirmed" or lr.unplanned_packages <= 0)
         if bad:
-            raise UserError(_("Only confirmed LRs with unplanned packages can be planned (BR-TRP-04): %s",
+            raise UserError(_("Only confirmed LRs with unplanned packages can be planned: %s",
                               ", ".join(bad.mapped("name"))))
         cargo = "odc" if "odc" in self.consignment_ids.mapped("tms_cargo_type") else "regular"
         trip = self.env["tms.order"].create({
@@ -257,7 +257,7 @@ class TmsBreakdownResolveWizard(models.TransientModel):
                 km_planned = self.km_planned or trip._tms_planned_km()
                 if not km_planned:
                     raise UserError(_("Enter the planned km of the replaced vehicle's leg to settle its hire pro "
-                                      "rata (BR-ASG-11)."))
+                                      "rata."))
                 memo.tms_settle_pro_rata(km_run, km_planned)
         # BR-ASG-08: Part-B tasks for every bill on board
         trip._tms_create_partb_tasks(asg.vehicle_number or "", assignment=asg)
@@ -398,7 +398,7 @@ class TmsInvoiceLrWizard(models.TransientModel):
     def _tms_create_invoices(self, lrs, invoice_date=None, consolidate=True):
         eligible = lrs.filtered(self._tms_eligible)
         if not eligible:
-            raise UserError(_("None of the selected LRs can be invoiced now (BR-INV-01..03)."))
+            raise UserError(_("None of the selected LRs can be invoiced now."))
         groups = OrderedDict()
         for lr in eligible:
             key = (lr.company_id.id, lr.billing_partner_id.commercial_partner_id.id, self._tms_gst_mode(lr),

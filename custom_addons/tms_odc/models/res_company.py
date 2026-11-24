@@ -7,7 +7,7 @@ class ResCompany(models.Model):
     _inherit = "res.company"
 
     tms_odc_enabled = fields.Boolean(string="ODC enabled", default=False,
-                                     help="Off until Operations confirm the thresholds (DC-25, OP-04).")
+                                     help="Off until Operations confirm the thresholds (DC-25).")
     tms_odc_max_width = fields.Float(string="ODC width threshold (m)", default=2.6)
     tms_odc_max_height = fields.Float(string="ODC height threshold (m)", default=3.8)
     tms_odc_max_length = fields.Float(string="ODC length threshold (m)", default=12.0)

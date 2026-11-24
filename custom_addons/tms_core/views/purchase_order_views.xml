@@ -50,7 +50,7 @@
                             <field name="tms_cancel_reason"/>
                         </group>
                     </group>
-                    <separator string="Advances (BR-HIR-04, BR-HIR-16)"/>
+                    <separator string="Advances"/>
                     <field name="tms_advance_ids">
                         <list editable="bottom">
                             <field name="kind"/>

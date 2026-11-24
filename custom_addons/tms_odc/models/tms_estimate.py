@@ -96,7 +96,7 @@ class TmsEstimate(models.Model):
     piece_ids = fields.One2many("tms.estimate.piece", "estimate_id", string="Cargo pieces", copy=True)
     route_ids = fields.One2many("tms.estimate.route", "estimate_id", string="Route by state", copy=True)
     odc_suggested = fields.Boolean(compute="_compute_odc", string="ODC suggested",
-                                   help="A piece exceeds an ODC threshold (BR-ODC-02).")
+                                   help="A piece exceeds an ODC threshold.")
     route_km = fields.Float(compute="_compute_odc", string="Route km")
     heaviest_piece = fields.Float(compute="_compute_odc", string="Heaviest piece (t)")
     rated_capacity = fields.Float(compute="_compute_odc", string="Axle / bed capacity (t)")
@@ -142,7 +142,7 @@ class TmsEstimate(models.Model):
         for est in self.filtered(lambda e: e.tms_cargo_type == "odc" and not e.is_contract):
             problems = est._tms_odc_problems()
             if problems:
-                raise UserError(_("ODC estimate %(e)s is incomplete (BR-ODC-03):\n%(p)s", e=est.name,
+                raise UserError(_("ODC estimate %(e)s is incomplete:\n%(p)s", e=est.name,
                                   p="\n".join(problems)))
 
     def _tms_sync_state_count(self):
@@ -173,13 +173,13 @@ class SaleOrderLine(models.Model):
 
     tms_odc_suggested = fields.Boolean(related="tms_estimate_id.odc_suggested", string="ODC suggested")
     tms_regular_reason = fields.Char(string="Reason to keep Regular", copy=False,
-                                     help="A piece exceeds an ODC threshold but the item stays Regular (BR-ODC-02).")
+                                     help="A piece exceeds an ODC threshold but the item stays Regular.")
 
     @api.constrains("tms_cargo_type")
     def _check_odc_enabled(self):
         for line in self:
             if line.tms_cargo_type == "odc" and not line.order_id.company_id.tms_odc_enabled:
-                raise ValidationError(_("ODC is switched off for %s (BR-CFG-13).", line.order_id.company_id.name))
+                raise ValidationError(_("ODC is switched off for %s.", line.order_id.company_id.name))
 
     def write(self, vals):
         res = super().write(vals)
@@ -204,7 +204,7 @@ class SaleOrderLine(models.Model):
         for line in self.filtered("tms_estimate_id"):
             if line.tms_cargo_type == "regular" and line.tms_odc_suggested and not line.tms_regular_reason:
                 raise UserError(_("Item %s has a piece above an ODC threshold: make it ODC or give a reason to keep "
-                                  "it Regular (BR-ODC-02).", line.tms_item_no))
+                                  "it Regular.", line.tms_item_no))
             if line.tms_cargo_type == "odc":
                 line.tms_estimate_id._tms_check_odc()
 

@@ -35,7 +35,7 @@ class ResCompany(models.Model):
     tms_operation_mode = fields.Selection(MODES, default="hybrid", required=True, string="Operating mode")
     tms_mode_locked = fields.Boolean(
         compute="_compute_tms_mode_locked",
-        help="The mode locks once a confirmed LR or trip exists (BR-CFG-04).",
+        help="The mode locks once a confirmed LR or trip exists.",
         string="Mode locked")
     tms_mode_unlocked_until_change = fields.Boolean(
         help="Set by the TMS Administrator's logged unlock; cleared by the next mode change.",
@@ -81,7 +81,7 @@ class ResCompany(models.Model):
     tms_tds_receivable_account_id = fields.Many2one("account.account", string="Customer TDS receivable")
     tms_second_language_id = fields.Many2one("res.lang", string="Second print language",
                                              context={"active_test": False},
-                                             help="BR-PRN-08: Marathi and Hindi labels are built in.")
+                                             help="Marathi and Hindi labels are built in.")
 
     def _compute_tms_mode_locked(self):
         for company in self:
@@ -106,17 +106,17 @@ class ResCompany(models.Model):
                 if company.tms_mode_locked:
                     raise UserError(
                         _("The operating mode is locked because confirmed LRs or trips exist. "
-                          "The TMS Administrator must unlock it with a reason first (BR-CFG-04).")
+                          "The TMS Administrator must unlock it with a reason first.")
                     )
                 if vals["tms_operation_mode"] == "consumer":
-                    raise UserError(_("Consumer mode is delivered in phase 2 (BR-CFG-05)."))
+                    raise UserError(_("Consumer mode is delivered in phase 2."))
             vals.setdefault("tms_mode_unlocked_until_change", False)
         if "tms_enforce_compliance" in vals and not self.env.su:
             if not self.env.user.has_group("tms_core.group_tms_admin"):
-                raise UserError(_("Only the TMS Administrator changes compliance enforcement (BR-CFG-06)."))
+                raise UserError(_("Only the TMS Administrator changes compliance enforcement."))
             if not self.env.context.get("tms_reason") and any(
                     c.tms_enforce_compliance != bool(vals["tms_enforce_compliance"]) for c in self):
-                raise UserError(_("Give the reason for switching compliance enforcement (BR-CFG-06)."))
+                raise UserError(_("Give the reason for switching compliance enforcement."))
         old = {c.id: c.tms_enforce_compliance for c in self}
         res = super().write(vals)
         if "tms_operation_mode" in vals:

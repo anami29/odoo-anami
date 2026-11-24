@@ -10,7 +10,7 @@ from odoo.addons.tms_core.models.tools import notify_detached, schedule, users_i
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
-    tms_attach_cost_sheet = fields.Boolean(string="Attach cost sheet", help="BR-QTN-13, BR-EST-07")
+    tms_attach_cost_sheet = fields.Boolean(string="Attach cost sheet", help="")
     tms_last_item_no = fields.Integer(copy=False, readonly=True, string="Last item number")
     tms_acceptance_file = fields.Binary(string="Written acceptance", attachment=True, copy=False)
     tms_acceptance_name = fields.Char(copy=False, string="Acceptance file name")
@@ -78,7 +78,7 @@ class SaleOrder(models.Model):
         if not partner.tms_credit_limit:
             missing.append(_("credit limit"))
         if missing:
-            raise UserError(_("Customer %(c)s lacks %(m)s (BR-QTN-07).", c=partner.display_name, m=", ".join(missing)))
+            raise UserError(_("Customer %(c)s lacks %(m)s.", c=partner.display_name, m=", ".join(missing)))
 
     def _tms_check_items_before_send(self):
         for order in self:
@@ -87,7 +87,7 @@ class SaleOrder(models.Model):
                 line._tms_update_approval()
             if order.tms_needs_approval:
                 raise UserError(_("Items below the markup floor or above the value limit need approval before the "
-                                  "quotation is sent (BR-QTN-05, BR-EST-08)."))
+                                  "quotation is sent."))
 
     def action_quotation_send(self):
         self._tms_check_items_before_send()
@@ -117,7 +117,7 @@ class SaleOrder(models.Model):
         if msg or self._tms_is_contract_order():
             return msg
         if self.tms_needs_approval:
-            return _("Items awaiting markup or value approval cannot be confirmed (BR-QTN-05).")
+            return _("Items awaiting markup or value approval cannot be confirmed.")
         return False
 
     def action_confirm(self):
@@ -128,16 +128,16 @@ class SaleOrder(models.Model):
             order._tms_check_customer_master()
             missing = order.order_line.filtered(lambda line: line.tms_is_movement and not line.tms_estimate_id)
             if missing:
-                raise UserError(_("Every order item has a cost estimate (BR-EST-01): %s",
+                raise UserError(_("Every order item has a cost estimate: %s",
                                   ", ".join(str(n) for n in missing.mapped("tms_item_no"))))
             # BR-QTN-12: an expired quotation does not confirm; copy it with fresh costs
             if order.tms_expired:
-                raise UserError(_("Quotation %s has expired; copy it with fresh costs (BR-QTN-12).", order.name))
+                raise UserError(_("Quotation %s has expired; copy it with fresh costs.", order.name))
             # BR-QTN-06: portal signature or written acceptance, always
             if not order.signature and not order.tms_acceptance_file \
                     and not self.env.context.get("tms_skip_acceptance"):
                 raise UserError(_("Confirm only with the customer's portal signature or the attached written "
-                                  "acceptance (BR-QTN-06)."))
+                                  "acceptance."))
             order._tms_check_items_before_send()
             order._tms_check_contract_customer()
             # BR-CRD-02 quotation confirmation
@@ -179,7 +179,7 @@ class SaleOrder(models.Model):
     # BR-QTN-10: sales orders never invoice
     def _create_invoices(self, grouped=False, final=False, date=None):
         if not self.env.context.get("tms_allow_so_invoice"):
-            raise UserError(_("Freight and charges are invoiced only from LRs (BR-QTN-10)."))
+            raise UserError(_("Freight and charges are invoiced only from LRs."))
         return super()._create_invoices(grouped=grouped, final=final, date=date)
 
     @api.depends("order_line.invoice_status")
@@ -230,7 +230,7 @@ class SaleOrder(models.Model):
     def action_confirm_credit_override(self):
         reason = self.env.context.get("tms_reason")
         if not reason:
-            raise UserError(_("A credit override needs a reason (BR-CRD-03)."))
+            raise UserError(_("A credit override needs a reason."))
         return self.with_context(tms_credit_override_reason=reason).action_confirm()
 
 
@@ -315,7 +315,7 @@ class SaleOrderLine(models.Model):
             if "price_unit" in vals:
                 for line in self.filtered(lambda line: line.tms_estimate_id and not line.tms_estimate_id.is_contract):
                     if abs(vals["price_unit"] - line.tms_estimate_id.amount) > 0.005:
-                        raise UserError(_("Item %s takes its amount from its cost estimate (BR-QTN-02).",
+                        raise UserError(_("Item %s takes its amount from its cost estimate.",
                                           line.tms_item_no))
         res = super().write(vals)
         if lane & set(vals) and not self.env.context.get("tms_estimate_push"):
@@ -366,11 +366,11 @@ class SaleOrderLine(models.Model):
             group = "tms_core.group_branch_manager" if line.tms_approval_role == "bm" \
                 else "tms_core.group_operations_head"
             if not self.env.user.has_group(group):
-                raise UserError(_("This item needs the %s's approval (BR-EST-08).",
+                raise UserError(_("This item needs the %s's approval.",
                                   dict(line._fields["tms_approval_role"].selection)[line.tms_approval_role]))
             if line.tms_estimate_id.create_uid == self.env.user or line.tms_estimate_id.line_ids.filtered(
                     lambda e: e.create_uid == self.env.user):
-                raise UserError(_("Whoever built the estimate cannot approve it (BR-EST-08, BR-BRN-09)."))
+                raise UserError(_("Whoever built the estimate cannot approve it."))
             line.write({"tms_approval_state": "approved", "tms_approved_by_id": self.env.user.id,
                         "tms_approved_amount": line.tms_estimate_id.amount})
         return True

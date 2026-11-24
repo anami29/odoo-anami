@@ -13,7 +13,7 @@
             </xpath>
             <xpath expr="//sheet" position="before">
                 <div class="alert alert-warning mb-0" role="alert" invisible="not tms_contract_awaiting">
-                    Awaiting extension (BR-CON-12): this invoice exceeds its contract's balance plus the item's own
+                    Awaiting extension: this invoice exceeds its contract's balance plus the item's own
                     reservation by <field name="tms_contract_shortfall" class="oe_inline"/>. It posts once an extension or
                     an approved excess covers it; the Branch Accountant may post the lines that fit
                     (<field name="tms_contract_fit_amount" class="oe_inline"/>).

@@ -29,7 +29,7 @@
                         <button name="action_tms_view_trips" type="object" class="oe_stat_button" icon="fa-truck" string="Trips"/>
                     </div>
                     <div class="alert alert-info" role="alert" invisible="not used">
-                        In use: record a new effective-dated rate instead of changing this one (BR-PNL-13).
+                        In use: record a new effective-dated rate instead of changing this one.
                     </div>
                     <group>
                         <group string="Class and period">
@@ -40,7 +40,7 @@
                             <field name="used" invisible="1"/>
                             <field name="currency_id" invisible="1"/>
                         </group>
-                        <group string="Annual budgets (BR-PNL-14)">
+                        <group string="Annual budgets">
                             <field name="running_budget" readonly="used"/>
                             <field name="fixed_budget" readonly="used"/>
                         </group>

@@ -3,7 +3,6 @@
 # * auditlog
 #
 # Translators:
-# OCA Transbot <transbot@odoo-community.org>, 2017
 # Frank Schellenberg <opensource@schellenberg.nl>, 2018
 msgid ""
 msgstr ""
@@ -12,7 +11,7 @@ msgstr ""
 "POT-Creation-Date: 2018-01-04 15:28+0000\n"
 "PO-Revision-Date: 2018-01-04 15:28+0000\n"
 "Last-Translator: Frank Schellenberg <opensource@schellenberg.nl>, 2018\n"
-"Language-Team: Dutch (Netherlands) (https://www.transifex.com/oca/"
+"Language-Team: Dutch\n"
 "teams/23907/nl_NL/)\n"
 "Language: nl_NL\n"
 "MIME-Version: 1.0\n"

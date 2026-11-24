@@ -24,7 +24,9 @@
         <field name="groups_id" eval="[(6, 0, [ref('group_owned_fleet_menus')])]"/>
     </record>
 
-    <menuitem id="menu_tms_exception_dashboard" name="Exception dashboard" parent="tms.dashboard" action="action_tms_kpi_dashboard" sequence="1"/>
+    <menuitem id="menu_tms_exception_dashboard" name="Exception dashboard" parent="tms.dashboard" action="action_tms_exception_dashboard" sequence="1"/>
+    <!-- the KPI cards stay one click away: alert rules and drill-downs (BR-DSH-01) -->
+    <menuitem id="menu_tms_kpi_board" name="KPI board" parent="tms.dashboard" action="action_tms_kpi_dashboard" sequence="3"/>
 
     <!-- Operations, grouped by activity: Booking, Trips, Exceptions, (ODC from tms_odc), Fleet.
          A group heading shows as a caption in the menu and hides itself when none of its items is visible. -->

@@ -55,10 +55,10 @@ class TmsContract(models.Model):
                                  domain=[("is_company", "=", True)])
     billing_partner_ids = fields.Many2many(
         "res.partner", "tms_contract_billing_partner_rel", "contract_id", "partner_id", string="Billing parties",
-        help="One per plant and GSTIN; contract LRs bill only to these (BR-CON-24).")
+        help="One per plant and GSTIN; contract LRs bill only to these.")
     branch_ids = fields.Many2many(
         "res.company", "tms_contract_branch_rel", "contract_id", "company_id", string="Releasing branches",
-        help="Branches that release items and book LRs against the one balance (BR-CON-24).")
+        help="Branches that release items and book LRs against the one balance.")
     user_id = fields.Many2one("res.users", string="Sales Executive", default=lambda s: s.env.user, tracking=True)
     po_number = fields.Char(string="Customer PO / LOI", tracking=True)
     po_date = fields.Date(string="PO / LOI date")
@@ -74,11 +74,11 @@ class TmsContract(models.Model):
     incidental_category_ids = fields.Many2many(
         "tms.category", "tms_contract_incidental_category_rel", "contract_id", "category_id",
         string="Incidentals billed at actual", domain=[("use_charge", "=", True)],
-        help="Customer charges in these categories bill at the amount of their posted bill or expense (BR-CON-07).")
+        help="Customer charges in these categories bill at the amount of their posted bill or expense.")
     claims_reduce_invoiced = fields.Boolean(
-        help="The PO lets claim credit notes reduce the amount invoiced against the value (BR-CON-09).")
+        help="The PO lets claim credit notes reduce the amount invoiced against the value.")
     opening_consumption = fields.Monetary(
-        help="Amount invoiced against the contract before go-live (BR-MIG-09).", tracking=True)
+        help="Amount invoiced against the contract before go-live.", tracking=True)
     rate_ids = fields.One2many("tms.contract.rate", "contract_id", string="Rates", copy=True)
     extension_ids = fields.One2many("tms.contract.extension", "contract_id", string="Extensions")
     excess_ids = fields.One2many("tms.contract.excess", "contract_id", string="Excess approvals")
@@ -115,7 +115,7 @@ class TmsContract(models.Model):
                                           ("half_yearly", "Half-yearly")], string="Review frequency")
     escalation_revises_released = fields.Boolean(
         string="Revision also applies to released items",
-        help="The PO revises released items too: the difference bills as a supplementary line (BR-CON-22).")
+        help="The PO revises released items too: the difference bills as a supplementary line.")
     # alerts already sent (BR-NTF-13, 15, 16, 19)
     util_alert_sent = fields.Boolean(copy=False, readonly=True)
     expiry_alert_sent = fields.Boolean(copy=False, readonly=True)
@@ -130,7 +130,7 @@ class TmsContract(models.Model):
     balance = fields.Monetary(compute="_compute_figures")
     utilisation = fields.Float(compute="_compute_figures", string="Utilisation %")
     over_contract = fields.Monetary(compute="_compute_figures", string="Over-contract",
-                                    help="Reserved or invoiced above value plus extensions (BR-CON-19).")
+                                    help="Reserved or invoiced above value plus extensions.")
     fully_reserved = fields.Boolean(compute="_compute_figures")
     item_count = fields.Integer(compute="_compute_counts")
     lr_count = fields.Integer(compute="_compute_counts")
@@ -298,12 +298,12 @@ class TmsContract(models.Model):
         if frozen & set(vals) and not self.env.context.get("tms_contract_extension"):
             for contract in self.filtered(lambda c: c.state != "draft"):
                 raise UserError(_("Contract %s is active: value, dates and customer change only through an approved "
-                                  "extension (BR-CON-13).", contract.name))
+                                  "extension.", contract.name))
         return super().write(vals)
 
     def unlink(self):
         if any(c.state != "draft" or c.order_id for c in self):
-            raise UserError(_("Activated contracts are never deleted; close them (BR-AUD-04)."))
+            raise UserError(_("Activated contracts are never deleted; close them."))
         return super().unlink()
 
     @api.constrains("date_start", "date_end")
@@ -319,11 +319,11 @@ class TmsContract(models.Model):
             if contract.state != "draft":
                 raise UserError(_("Only draft contracts are submitted."))
             if not contract.rate_ids.filtered(lambda r: not r.extension_id and not r.escalation_id):
-                raise UserError(_("A contract needs at least one rate line (BR-CON-02)."))
+                raise UserError(_("A contract needs at least one rate line."))
             if contract.value <= 0:
                 raise UserError(_("Enter the contract value."))
             if not contract.billing_partner_ids:
-                raise UserError(_("List at least one billing party (BR-CON-24)."))
+                raise UserError(_("List at least one billing party."))
             contract.submitted = True
             users = users_in_group(self.env, "tms_core.group_operations_head", contract.company_id) - self.env.user
             schedule(contract, users, _("Contract %s to approve", contract.partner_id.name))
@@ -335,9 +335,9 @@ class TmsContract(models.Model):
             if contract.state != "draft" or not contract.submitted:
                 raise UserError(_("Only submitted draft contracts are approved."))
             if not self.env.user.has_group("tms_core.group_operations_head"):
-                raise UserError(_("The Operations Head approves contracts (BR-CON-04)."))
+                raise UserError(_("The Operations Head approves contracts."))
             if self.env.user in (contract.create_uid | contract.user_id):
-                raise UserError(_("Whoever drafted the contract cannot approve it (BR-BRN-09)."))
+                raise UserError(_("Whoever drafted the contract cannot approve it."))
             name = contract.company_id._tms_contract_sequence().next_by_id(contract.date_start)
             order = self.env["sale.order"].sudo().with_company(contract.company_id).create({
                 "partner_id": contract.partner_id.id,
@@ -406,12 +406,11 @@ class TmsContract(models.Model):
         self.ensure_one()
         self._tms_update_state()
         if self.state != "active":
-            raise UserError(_("Contract %(c)s is %(s)s: no item is released until an extension is approved "
-                              "(BR-CON-11).", c=self.name, s=dict(CONTRACT_STATES)[self.state]))
+            raise UserError(_("Contract %(c)s is %(s)s: no item is released until an extension is approved.", c=self.name, s=dict(CONTRACT_STATES)[self.state]))
         if date < self.date_start or date > self.date_end:
             raise UserError(_("Contract %s is not in force on this date.", self.name))
         if self.env.company not in self.branch_ids:
-            raise UserError(_("Branch %(b)s may not release items of contract %(c)s (BR-CON-24).",
+            raise UserError(_("Branch %(b)s may not release items of contract %(c)s.",
                               b=self.env.company.name, c=self.name))
 
     # ------------------------------------------------------------------ alerts
@@ -599,7 +598,7 @@ class TmsContractRate(models.Model):
     extension_id = fields.Many2one("tms.contract.extension", ondelete="cascade", index="btree_not_null")
     escalation_id = fields.Many2one("tms.contract.escalation", ondelete="cascade", index="btree_not_null")
     escalation_per_rupee = fields.Float(string="Escalation per ₹1 of diesel",
-                                        help="Change in this rate for each rupee of diesel price change (BR-CON-22).")
+                                        help="Change in this rate for each rupee of diesel price change.")
     element_key = fields.Char(compute="_compute_element_key", store=True, index=True)
     effective = fields.Boolean(compute="_compute_effective", string="In force")
 
@@ -689,7 +688,7 @@ class TmsContractRate(models.Model):
             if rate.escalation_id and rate.escalation_id.state == "draft":
                 continue
             raise UserError(_("Contract rates change only through an approved extension carrying new rates, or "
-                              "the escalation clause (BR-CON-16)."))
+                              "the escalation clause."))
 
 
 class TmsContractExtension(models.Model):
@@ -720,7 +719,7 @@ class TmsContractExtension(models.Model):
     approved_by_id = fields.Many2one("res.users", readonly=True, copy=False)
     approved_on = fields.Datetime(readonly=True, copy=False)
     absorbed_excess = fields.Monetary(readonly=True, copy=False,
-                                      help="Open extension-awaited excess this extension consumed (BR-CON-18).")
+                                      help="Open extension-awaited excess this extension consumed.")
 
     @api.depends("rate_ids", "added_value", "contract_id.value", "contract_id.company_id.tms_contract_extension_limit")
     def _compute_approval_role(self):
@@ -741,9 +740,9 @@ class TmsContractExtension(models.Model):
             if not (ext.added_value or ext.new_date_end or ext.rate_ids):
                 raise UserError(_("An extension adds value, a new end date or new rates."))
             if not ext.file:
-                raise UserError(_("Attach the customer's amendment (BR-CON-13, AS-12)."))
+                raise UserError(_("Attach the customer's amendment."))
             if ext.rate_ids and not ext.rates_effective_date:
-                raise UserError(_("New rates need their effective date (BR-CON-16)."))
+                raise UserError(_("New rates need their effective date."))
             ext.state = "to_approve"
             group = "tms_core.group_operations_head" if ext.approval_role == "oh" else "tms_core.group_branch_manager"
             users = users_in_group(self.env, group, ext.company_id) - ext.requested_by_id
@@ -757,7 +756,7 @@ class TmsContractExtension(models.Model):
                 raise UserError(_("Submit the extension first."))
             group = "tms_core.group_operations_head" if ext.approval_role == "oh" else "tms_core.group_branch_manager"
             if not self.env.user.has_group(group):
-                raise UserError(_("This extension needs the %s's approval (BR-CON-13).",
+                raise UserError(_("This extension needs the %s's approval.",
                                   dict(self._fields["approval_role"].selection)[ext.approval_role]))
             if self.env.user == ext.requested_by_id:
                 raise UserError(_("You cannot approve an extension you requested."))
@@ -885,7 +884,7 @@ class TmsContractExcess(models.Model):
     def _check_target(self):
         for excess in self:
             if bool(excess.sale_line_id) == bool(excess.move_id):
-                raise ValidationError(_("An excess covers one item or one invoice (BR-CON-18)."))
+                raise ValidationError(_("An excess covers one item or one invoice."))
             if excess.amount <= 0:
                 raise ValidationError(_("The excess amount must be positive."))
             if excess.sale_line_id and excess.sale_line_id.tms_contract_id != excess.contract_id:
@@ -901,12 +900,12 @@ class TmsContractExcess(models.Model):
     def write(self, vals):
         if {"amount", "sale_line_id", "move_id", "contract_id"} & set(vals):
             if any(e.state not in ("draft", "requested") for e in self):
-                raise UserError(_("An approved excess never changes (BR-AUD-04)."))
+                raise UserError(_("An approved excess never changes."))
         return super().write(vals)
 
     def unlink(self):
         if any(e.state not in ("draft",) for e in self):
-            raise UserError(_("Requested excess is refused, never deleted (BR-AUD-04)."))
+            raise UserError(_("Requested excess is refused, never deleted."))
         return super().unlink()
 
     def action_request(self):
@@ -931,11 +930,11 @@ class TmsContractExcess(models.Model):
             user = self.env.user
             if not user.has_group("tms_core.group_contract_excess_approver"):
                 raise UserError(_("Only the Contract Excess Approver group (the Finance Head or a director) approves "
-                                  "an excess over the contract value (BR-CON-18, RL-10)."))
+                                  "an excess over the contract value."))
             if excess.needs_director and not user.has_group("tms_core.group_director"):
-                raise UserError(_("This excess passes the excess ceiling: a director approves it (OP-20)."))
+                raise UserError(_("This excess passes the excess ceiling: a director approves it."))
             if user == excess.requested_by_id:
-                raise UserError(_("You cannot approve an excess you requested (BR-CON-18)."))
+                raise UserError(_("You cannot approve an excess you requested."))
             excess.write({"state": "approved", "approved_by_id": user.id, "approved_on": fields.Datetime.now()})
             excess.activity_ids.action_feedback(feedback=_("Approved"))
             self.env["tms.override.log"].log(
@@ -1007,10 +1006,10 @@ class TmsContractReservation(models.Model):
                 ("tms.contract.excess", "Excess")]
 
     def write(self, vals):
-        raise UserError(_("Reservation lines are a ledger: they are never changed (BR-CON-20, BR-AUD-04)."))
+        raise UserError(_("Reservation lines are a ledger: they are never changed."))
 
     def unlink(self):
-        raise UserError(_("Reservation lines are a ledger: they are never deleted (BR-CON-20, BR-AUD-04)."))
+        raise UserError(_("Reservation lines are a ledger: they are never deleted."))
 
 
 class TmsContractEscalation(models.Model):
@@ -1069,7 +1068,7 @@ class TmsContractEscalation(models.Model):
             if rev.state != "draft":
                 continue
             if not self.env.user.has_group("tms_core.group_operations_head"):
-                raise UserError(_("The Operations Head applies escalation revisions (BR-CON-16)."))
+                raise UserError(_("The Operations Head applies escalation revisions."))
             if not rev.contract_id.escalation_clause:
                 raise UserError(_("The contract carries no escalation clause."))
             if not rev.line_ids:

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_tms_document_type" model="ir.ui.view">
+        <field name="name">sale.order.form.tms.document.type</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_tms_doc_approve" type="object" string="Approve" class="btn-primary" invisible="tms_doc_approval_state != 'to_approve'"/>
+                <button name="action_tms_approve_vehicle_fleet" type="object" string="Approve (Fleet)" invisible="not tms_vehicle_disposal or tms_fleet_approved_by_id or state not in ('draft', 'sent')" groups="tms_core.group_fleet_manager"/>
+                <button name="action_tms_approve_vehicle_finance" type="object" string="Approve (Finance)" invisible="not tms_vehicle_disposal or tms_finance_approved_by_id or state not in ('draft', 'sent')" groups="tms_core.group_finance_head"/>
+            </xpath>
+            <xpath expr="//group[@name='partner_details']" position="inside">
+                <field name="tms_document_type_id" required="1" readonly="state not in ('draft', 'sent')" options="{'no_create': True}"/>
+                <field name="tms_document_behaviour" invisible="1"/>
+                <field name="tms_vehicle_disposal" invisible="1"/>
+                <field name="tms_disposed_vehicle_id" invisible="not tms_vehicle_disposal" required="tms_vehicle_disposal" readonly="state not in ('draft', 'sent')" options="{'no_create': True}"/>
+                <field name="tms_doc_approval_state" invisible="tms_doc_approval_state == 'none'" widget="badge" decoration-warning="tms_doc_approval_state == 'to_approve'" decoration-success="tms_doc_approval_state == 'approved'"/>
+                <field name="tms_doc_approved_by_id" invisible="not tms_doc_approved_by_id"/>
+                <field name="tms_fleet_approved_by_id" invisible="not tms_vehicle_disposal"/>
+                <field name="tms_finance_approved_by_id" invisible="not tms_vehicle_disposal"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='tms_is_movement']" position="attributes">
+                <attribute name="column_invisible">parent.tms_document_behaviour == 'standard'</attribute>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_sales_order_filter_tms_document_type" model="ir.ui.view">
+        <field name="name">sale.order.search.tms.document.type</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_sales_order_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='my_sale_orders_filter']" position="after">
+                <filter name="tms_standard" string="Standard documents" domain="[('tms_document_behaviour', '=', 'standard')]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter name="group_tms_document_type" string="Document Type" context="{'group_by': 'tms_document_type_id'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

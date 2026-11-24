@@ -29,7 +29,7 @@ class PurchaseOrder(models.Model):
     tms_halting_rate = fields.Monetary(string="Halting rate per day")
     tms_advance_percent = fields.Float(string="Advance %")
     tms_vendor_liable_breakdown = fields.Boolean(
-        string="Vendor liable for breakdowns", help="BR-PNL-07: replacement add-ons are deducted from the hire bill."
+        string="Vendor liable for breakdowns", help="replacement add-ons are deducted from the hire bill."
     )
     tms_tds_treatment = fields.Selection(
         [("section", "TDS under the vendor's section"), ("declaration", "Exempt: transporter declaration on file")],
@@ -44,9 +44,9 @@ class PurchaseOrder(models.Model):
     tms_cancel_approved_by_id = fields.Many2one("res.users", readonly=True, copy=False, string="Cancellation approved by")
     tms_cancel_reason = fields.Text(copy=False, string="Cancellation reason")
     tms_full_hire_on_replacement = fields.Boolean(
-        string="Full hire if replaced", help="BR-ASG-11: the memo's terms pay the full hire after a breakdown.")
+        string="Full hire if replaced", help="the memo's terms pay the full hire after a breakdown.")
     tms_pro_rata_fraction = fields.Float(default=1.0, copy=False,
-                                         help="Share of the hire payable after a replacement (BR-ASG-11).",
+                                         help="Share of the hire payable after a replacement.",
         string="Pro-rata fraction")
 
     @api.depends("partner_id", "date_order")
@@ -72,18 +72,18 @@ class PurchaseOrder(models.Model):
         for po in self.filtered("tms_is_hire_memo"):
             vendor = po.partner_id.commercial_partner_id
             if not vendor.l10n_in_pan:
-                raise UserError(_("Vendor %s has no PAN (BR-HIR-03).", vendor.display_name))
+                raise UserError(_("Vendor %s has no PAN.", vendor.display_name))
             if not vendor.bank_ids:
-                raise UserError(_("Vendor %s has no bank details (BR-HIR-03).", vendor.display_name))
+                raise UserError(_("Vendor %s has no bank details.", vendor.display_name))
             if not po.order_line.filtered(lambda line: line.tms_hire_element == "hire"):
-                raise UserError(_("The agreed hire must be item 10 of the hire memo (BR-HIR-02)."))
+                raise UserError(_("The agreed hire must be item 10 of the hire memo."))
         return super().button_confirm()
 
     def button_cancel(self):
         """BR-HIR-15: cancelling a confirmed hire memo needs Branch Manager approval."""
         for po in self.filtered(lambda p: p.tms_is_hire_memo and p.state in ("purchase", "done")):
             if not po.tms_cancel_approved_by_id:
-                raise UserError(_("A Branch Manager must approve the cancellation first (BR-HIR-15)."))
+                raise UserError(_("A Branch Manager must approve the cancellation first."))
             advances = po.tms_advance_ids.filtered(lambda a: a.state == "posted")
             compensation = po.order_line.filtered(lambda line: line.tms_hire_element == "compensation")
             if advances and not compensation:
@@ -166,8 +166,7 @@ class PurchaseOrderLine(models.Model):
     def write(self, vals):
         if "qty_received" in vals and not self.env.context.get("tms_receive"):
             if any(line.order_id.tms_is_hire_memo and line.tms_hire_element for line in self):
-                raise UserError(_("Hire received quantity comes only from POD verification or pro-rata settlement "
-                                  "(BR-HIR-05)."))
+                raise UserError(_("Hire received quantity comes only from POD verification or pro-rata settlement."))
         return super().write(vals)
 
     def action_tms_approve_extra(self):
@@ -395,11 +394,11 @@ class TmsVendorBillMatch(models.Model):
         reason = self.env.context.get("tms_reason")
         for match in self:
             if not self.env.user.has_group("tms_core.group_finance_head"):
-                raise UserError(_("Only the Finance Head overrides a tolerance breach (BR-HIR-08)."))
+                raise UserError(_("Only the Finance Head overrides a tolerance breach."))
             if not reason:
                 raise UserError(_("An override needs a reason."))
             if not match.pod_ok:
-                raise UserError(_("PODs must be verified; the override covers tolerance only (BR-HIR-07)."))
+                raise UserError(_("PODs must be verified; the override covers tolerance only."))
             match.write({"state": "overridden", "override_by_id": self.env.user.id, "override_reason": reason})
             self.env["tms.override.log"].log("tolerance", match, _("Hire tolerance overridden on %s", match.name),
                                              reason=reason)

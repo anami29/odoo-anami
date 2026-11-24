@@ -3,7 +3,6 @@
 # * auditlog
 #
 # Translators:
-# OCA Transbot <transbot@odoo-community.org>, 2016
 # Ozge Altinisik <ozge@altinkaya.com.tr>, 2017
 msgid ""
 msgstr ""
@@ -12,7 +11,7 @@ msgstr ""
 "POT-Creation-Date: 2017-01-07 04:03+0000\n"
 "PO-Revision-Date: 2017-01-07 04:03+0000\n"
 "Last-Translator: Ozge Altinisik <ozge@altinkaya.com.tr>, 2017\n"
-"Language-Team: Turkish (Turkey) (https://www.transifex.com/oca/teams/23907/"
+"Language-Team: Turkish\n"
 "tr_TR/)\n"
 "Language: tr_TR\n"
 "MIME-Version: 1.0\n"

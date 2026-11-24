@@ -6,7 +6,7 @@
         <field name="inherit_id" ref="tms_core.tms_consignment_form"/>
         <field name="arch" type="xml">
             <xpath expr="//group[@name='typed_rate']" position="before">
-                <group string="Order item (BR-EST-13)" name="order_item">
+                <group string="Order item" name="order_item">
                     <field name="sale_line_id" readonly="state != 'draft'" options="{'no_create': True}"/>
                     <field name="sale_order_id"/>
                     <field name="movement_no" readonly="state != 'draft'" invisible="not sale_line_id"/>

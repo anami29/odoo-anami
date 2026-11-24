@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="tms_profitability.TmsTruckPnl">
+        <div class="o_action o_tms_cockpit">
+            <Layout display="{ controlPanel: {} }">
+                <t t-set-slot="layout-actions">
+                    <TmsScopeBar t-if="state.data" scope="state.data.scope" extra="facets" onChange.bind="onScope"/>
+                </t>
+                <t t-set-slot="control-panel-navigation-additional">
+                    <span t-if="state.data" class="text-muted small text-nowrap align-self-center">As of <t t-esc="state.data.scope.as_of"/></span>
+                    <button type="button" class="btn btn-secondary" t-on-click="exportCsv" t-att-disabled="!state.data">Export</button>
+                    <button type="button" class="btn btn-secondary" t-on-click="load" t-att-disabled="state.loading">Refresh</button>
+                </t>
+                <t t-set="d" t-value="state.data"/>
+                <div t-if="d" class="o_tms_page">
+                    <t t-set="k" t-value="tiles"/>
+                    <div class="o_tms_kpis four">
+                        <div class="o_tms_kpi static">
+                            <div class="hd"><span>Truck revenue</span></div>
+                            <div class="v" t-esc="inr(k.revenue)"/>
+                            <div class="pl"><t t-esc="k.trips"/> trips delivered in <t t-esc="d.scope.period_label"/></div>
+                        </div>
+                        <div class="o_tms_kpi static">
+                            <div class="hd"><span>Trip expenses</span></div>
+                            <div class="v" t-esc="negative(k.trip_exp)"/>
+                            <div class="pl">replacement add-ons <t t-esc="negative(k.addon)"/></div>
+                        </div>
+                        <div class="o_tms_kpi static">
+                            <div class="hd"><span>Truck expenses</span></div>
+                            <div class="v" t-esc="negative(k.truck)"/>
+                            <div class="pl">owned trucks only: running and fixed costs booked to the truck</div>
+                        </div>
+                        <div class="o_tms_kpi static">
+                            <div class="hd"><span>Operating result</span></div>
+                            <div t-attf-class="v {{resultClass(k.result)}}"><t t-esc="sg(k.result)"/> <small t-esc="pct(k.margin)"/></div>
+                            <div class="pl"><t t-esc="d.below_zero"/> of <t t-esc="k.trucks"/> trucks below zero</div>
+                        </div>
+                    </div>
+
+                    <div class="o_tms_grid" style="grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr)">
+                        <section class="o_tms_panel">
+                            <div class="o_tms_panel_h"><div class="ttl">Trucks · <t t-esc="d.scope.period_label"/></div><span class="text-muted small">Click a truck for its statement, trips and bills</span></div>
+                            <table class="o_tms_list sm pick">
+                                <thead><tr><th>Truck</th><th>Fleet</th><th class="num">Trips</th><th class="num">Revenue</th><th class="num">Trip expenses</th><th class="num">Truck expenses</th><th class="num" style="width: 260px">Operating result</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="rows" t-as="r" t-key="r.id" t-att-class="{on: r.on}" t-on-click="() => this.pick(r)">
+                                        <td class="text-nowrap fw-medium"><t t-esc="r.reg"/><span class="sub" t-esc="r.who"/></td>
+                                        <td><span t-attf-class="o_tms_badge {{r.owned ? 'b-info' : 'b-muted'}}" t-esc="r.fleet"/></td>
+                                        <td class="num" t-esc="r.trips"/>
+                                        <td class="num" t-esc="inr(r.revenue)"/>
+                                        <td class="num"><t t-esc="negative(r.trip_exp)"/><span t-if="r.addon" class="sub">incl. add-on <t t-esc="negative(r.addon)"/></span></td>
+                                        <td class="num" t-esc="r.owned ? negative(r.truck) : '—'"/>
+                                        <td class="num">
+                                            <div class="o_tms_res">
+                                                <div class="o_tms_rbar"><div class="ax"/><div class="b" t-attf-style="left: {{r.bl}}%; width: {{r.bw}}%; background: {{r.bc}}"/><span t-if="r.capped" class="cap">›</span></div>
+                                                <span t-att-class="resultClass(r.result)" t-esc="sg(r.result)"/>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr t-if="!rows.length"><td colspan="7" class="text-muted py-3">No truck has revenue or cost in this branch and month.</td></tr>
+                                </tbody>
+                                <tfoot t-if="rows.length"><tr>
+                                    <td colspan="2"><t t-esc="d.scope.company_name"/> · <t t-esc="d.scope.period_label"/></td>
+                                    <td class="num" t-esc="k.trips"/><td class="num" t-esc="inr(k.revenue)"/><td class="num" t-esc="negative(k.trip_exp)"/>
+                                    <td class="num" t-esc="negative(k.truck)"/><td class="num"><span t-att-class="resultClass(k.result)" t-esc="sg(k.result)"/></td>
+                                </tr></tfoot>
+                            </table>
+                            <div class="text-muted small px-3 py-2">Bars run to ±₹50,000; › marks a result beyond. A trip joins the month it is delivered<t t-if="d.transit_note">; on the road now: <t t-esc="d.transit_note"/></t>.</div>
+                        </section>
+
+                        <t t-set="s" t-value="d.detail"/>
+                        <section class="o_tms_panel">
+                            <t t-if="s">
+                                <div class="o_tms_panel_h"><div class="ttl"><a t-if="s.vehicle_open" href="#" t-on-click.prevent="() => this.open(s.vehicle_open)" t-esc="s.reg"/><t t-else="" t-esc="s.reg"/> <span t-attf-class="o_tms_badge {{s.owned ? 'b-info' : 'b-muted'}}" t-esc="s.fleet"/> <span class="text-muted small fw-normal" t-esc="s.who"/></div></div>
+                                <div class="o_tms_panel_b d-flex flex-column gap-2">
+                                    <div class="fw-medium text-dark">Period P&amp;L · <t t-esc="d.scope.period_label"/> <span class="text-muted small fw-normal">trip and truck expenses against truck revenue</span></div>
+                                    <table class="o_tms_st">
+                                        <tbody>
+                                            <tr t-foreach="s.statement" t-as="x" t-key="x_index" t-attf-class="{{x.kind || ''}} {{x.addon ? 'addon' : ''}}">
+                                                <td><t t-esc="x.label"/><t t-if="x.kind === 'tot' and x.margin !== null and x.margin !== undefined"> · <t t-esc="pct(x.margin)"/></t><div t-if="x.ref" class="ref" t-esc="x.ref"/></td>
+                                                <td t-if="x.kind !== 'sec'" t-attf-class="num {{x.muted ? 'text-muted' : ''}} {{x.kind === 'tot' ? resultClass(x.value) : ''}}" t-esc="x.kind === 'tot' ? sg(x.value) : (x.value &lt; 0 ? negative(x.value) : inr(x.value))"/>
+                                                <td t-else=""/>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div t-if="s.note" class="o_tms_note"><i class="fa fa-info-circle mt-1"/><span><b t-esc="s.note.head"/> <t t-esc="s.note.text"/></span></div>
+                                </div>
+                            </t>
+                            <div t-else="" class="o_tms_panel_b text-muted">Pick a truck.</div>
+                        </section>
+                    </div>
+
+                    <div t-if="s" class="o_tms_grid half">
+                        <section class="o_tms_panel">
+                            <div class="o_tms_panel_h"><div class="ttl">Trip P&amp;L · <t t-esc="s.reg"/></div><span class="text-muted small">Trip expenses only · click a trip to filter its bills</span></div>
+                            <table class="o_tms_list sm pick">
+                                <thead><tr><th>Trip</th><th>Route</th><th>Delivered</th><th class="num">Revenue</th><th class="num">Trip expenses</th><th class="num">Replacement add-on</th><th class="num">Trip result</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="s.trips" t-as="x" t-key="x.id" t-att-class="{on: state.trip === x.id}" t-on-click="() => this.pickTrip(x)">
+                                        <td class="text-nowrap fw-medium"><a href="#" t-on-click.prevent.stop="() => this.open(x.trip_open)" t-esc="x.trip"/><span class="sub" t-esc="x.so"/></td>
+                                        <td t-esc="x.route"/><td class="text-nowrap" t-esc="x.delivered"/>
+                                        <td class="num" t-esc="inr(x.revenue)"/><td class="num" t-esc="negative(x.exp)"/>
+                                        <td class="num"><t t-esc="x.addon ? negative(x.addon) : '—'"/><span class="sub" t-esc="x.addon_vehicle"/></td>
+                                        <td class="num"><span t-att-class="resultClass(x.result)" t-esc="sg(x.result)"/></td>
+                                    </tr>
+                                    <tr t-if="!s.trips.length"><td colspan="7" class="text-muted py-2">No trip delivered in the period.</td></tr>
+                                </tbody>
+                                <tfoot t-if="s.trips.length"><tr>
+                                    <td colspan="3"><t t-esc="s.trips.length"/> trip<t t-if="s.trips.length > 1">s</t> · no truck expenses</td>
+                                    <td class="num" t-esc="inr(s.trip_totals.revenue)"/><td class="num" t-esc="negative(s.trip_totals.exp)"/>
+                                    <td class="num" t-esc="s.trip_totals.addon ? negative(s.trip_totals.addon) : '—'"/>
+                                    <td class="num"><span t-att-class="resultClass(s.trip_totals.result)" t-esc="sg(s.trip_totals.result)"/></td>
+                                </tr></tfoot>
+                            </table>
+                        </section>
+
+                        <section class="o_tms_panel">
+                            <div class="o_tms_panel_h">
+                                <div class="ttl">Bills and expenses · <t t-esc="s.reg"/></div>
+                                <div class="o_tms_seg">
+                                    <button type="button" t-att-class="{on: state.cf === 'all'}" t-on-click="() => this.setFilter('all')">All</button>
+                                    <button type="button" t-att-class="{on: state.cf === 'trip'}" t-on-click="() => this.setFilter('trip')">Trip</button>
+                                    <button type="button" t-att-class="{on: state.cf === 'truck'}" t-on-click="() => this.setFilter('truck')">Truck</button>
+                                </div>
+                            </div>
+                            <div class="o_tms_bl_wrap">
+                                <table class="o_tms_list sm">
+                                    <thead><tr><th>Document</th><th>Date</th><th>Line</th><th>Class</th><th>Booked to</th><th class="num">Amount</th></tr></thead>
+                                    <tbody>
+                                        <tr t-foreach="bills.rows" t-as="b" t-key="b_index">
+                                            <td class="text-nowrap"><a href="#" class="font-monospace small" t-on-click.prevent="() => this.open(b.doc_open)" t-esc="b.doc"/></td>
+                                            <td class="text-nowrap" t-esc="b.date"/>
+                                            <td class="o_tms_ln" t-att-title="b.label + ' · ' + b.payee"><t t-esc="b.label"/> <span class="text-muted small">· <t t-esc="b.payee"/></span></td>
+                                            <td class="text-nowrap"><span t-attf-class="o_tms_cl {{b.cls_key}}" t-esc="b.cls"/></td>
+                                            <td class="text-nowrap" t-esc="b.to"/>
+                                            <td class="num" t-esc="inr(b.amount)"/>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-muted small px-3 py-2 border-top" t-esc="billNote"/>
+                        </section>
+                    </div>
+                </div>
+            </Layout>
+        </div>
+    </t>
+
+</templates>

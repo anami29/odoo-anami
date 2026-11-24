@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Standard sales, purchases and their approvals (BR-DOC-13, BR-DOC-14, BR-DOC-15) -->
+    <record id="tms_core.group_branch_accountant" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman_all_leads'))]"/>
+    </record>
+    <record id="tms_core.group_branch_manager" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('purchase.group_purchase_user'))]"/>
+    </record>
+    <record id="tms_core.group_fleet_manager" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman_all_leads'))]"/>
+    </record>
+    <record id="tms_core.group_finance_head" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('purchase.group_purchase_user'))]"/>
+    </record>
+</odoo>

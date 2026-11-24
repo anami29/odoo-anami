@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_category_transport" model="product.category">
+        <field name="name">Transport services</field>
+    </record>
+    <record id="product_category_scrap" model="product.category">
+        <field name="name">Scrap</field>
+    </record>
+    <record id="fleet_vehicle_state_sold" model="fleet.vehicle.state">
+        <field name="name">Sold</field>
+        <field name="sequence">90</field>
+    </record>
+
+    <data noupdate="1">
+        <record id="seq_scrap_sale" model="ir.sequence">
+            <field name="name">Scrap sale</field>
+            <field name="code">tms.document.type.scrap</field>
+            <field name="prefix">SCR/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <record id="seq_vehicle_sale" model="ir.sequence">
+            <field name="name">Vehicle sale</field>
+            <field name="code">tms.document.type.vehicle</field>
+            <field name="prefix">VEH/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- invoices and bills first: the order types name them -->
+        <record id="doc_type_trn_inv" model="tms.document.type">
+            <field name="code">TRN-INV</field>
+            <field name="name">Freight invoice</field>
+            <field name="applies_to">out_invoice</field>
+            <field name="behaviour">transport</field>
+            <field name="is_default" eval="True"/>
+            <field name="sequence">10</field>
+            <field name="note">LR invoicing; default for customer invoices.</field>
+        </record>
+        <record id="doc_type_gen_inv" model="tms.document.type">
+            <field name="code">GEN-INV</field>
+            <field name="name">Standard invoice</field>
+            <field name="applies_to">out_invoice</field>
+            <field name="behaviour">standard</field>
+            <field name="sequence">20</field>
+            <field name="group_ids" eval="[(6, 0, [ref('tms_core.group_branch_accountant'), ref('tms_core.group_branch_manager'), ref('tms_core.group_finance_head'), ref('tms_core.group_tms_admin')])]"/>
+            <field name="note">Invoices of standard sales orders.</field>
+        </record>
+        <record id="doc_type_trn_bill" model="tms.document.type">
+            <field name="code">TRN-BILL</field>
+            <field name="name">Transport bill</field>
+            <field name="applies_to">in_invoice</field>
+            <field name="behaviour">transport</field>
+            <field name="is_default" eval="True"/>
+            <field name="sequence">10</field>
+            <field name="note">Default for vendor bills; bills against estimate lines and trucks.</field>
+        </record>
+        <record id="doc_type_gen_bill" model="tms.document.type">
+            <field name="code">GEN-BILL</field>
+            <field name="name">Standard bill</field>
+            <field name="applies_to">in_invoice</field>
+            <field name="behaviour">standard</field>
+            <field name="sequence">20</field>
+            <field name="group_ids" eval="[(6, 0, [ref('tms_core.group_branch_accountant'), ref('tms_core.group_branch_manager'), ref('tms_core.group_finance_head'), ref('tms_core.group_tms_admin')])]"/>
+            <field name="note">Bills of standard purchase orders.</field>
+        </record>
+
+        <record id="doc_type_trn_so" model="tms.document.type">
+            <field name="code">TRN-SO</field>
+            <field name="name">Transport sales order</field>
+            <field name="applies_to">sale</field>
+            <field name="behaviour">transport</field>
+            <field name="is_default" eval="True"/>
+            <field name="sequence">10</field>
+            <field name="invoice_type_id" ref="doc_type_trn_inv"/>
+            <field name="note">Default for sales orders.</field>
+        </record>
+        <record id="doc_type_gen_so" model="tms.document.type">
+            <field name="code">GEN-SO</field>
+            <field name="name">Standard sales order</field>
+            <field name="applies_to">sale</field>
+            <field name="behaviour">standard</field>
+            <field name="sequence">20</field>
+            <field name="invoice_type_id" ref="doc_type_gen_inv"/>
+            <field name="group_ids" eval="[(6, 0, [ref('tms_core.group_branch_accountant'), ref('tms_core.group_branch_manager'), ref('tms_core.group_finance_head'), ref('tms_core.group_tms_admin')])]"/>
+            <field name="note">Picked explicitly.</field>
+        </record>
+        <record id="doc_type_scr_so" model="tms.document.type">
+            <field name="code">SCR-SO</field>
+            <field name="name">Scrap sale</field>
+            <field name="applies_to">sale</field>
+            <field name="behaviour">standard</field>
+            <field name="sequence">30</field>
+            <field name="invoice_type_id" ref="doc_type_gen_inv"/>
+            <field name="sequence_id" ref="seq_scrap_sale"/>
+            <field name="product_category_ids" eval="[(6, 0, [ref('product_category_scrap')])]"/>
+            <field name="approval_limit">50000</field>
+            <field name="approver_group_ids" eval="[(6, 0, [ref('tms_core.group_branch_manager')])]"/>
+            <field name="group_ids" eval="[(6, 0, [ref('tms_core.group_branch_accountant'), ref('tms_core.group_branch_manager'), ref('tms_core.group_finance_head'), ref('tms_core.group_tms_admin')])]"/>
+            <field name="note">Own series SCR/YYYY/NNNN; Scrap category only. The approval limit of 50,000 is the proposed value: confirm it.</field>
+        </record>
+        <record id="doc_type_veh_so" model="tms.document.type">
+            <field name="code">VEH-SO</field>
+            <field name="name">Vehicle sale</field>
+            <field name="applies_to">sale</field>
+            <field name="behaviour">standard</field>
+            <field name="sequence">40</field>
+            <field name="invoice_type_id" ref="doc_type_gen_inv"/>
+            <field name="sequence_id" ref="seq_vehicle_sale"/>
+            <field name="vehicle_disposal" eval="True"/>
+            <field name="approver_group_ids" eval="[(6, 0, [ref('tms_core.group_fleet_manager'), ref('tms_core.group_finance_head')])]"/>
+            <field name="group_ids" eval="[(6, 0, [ref('tms_core.group_branch_accountant'), ref('tms_core.group_branch_manager'), ref('tms_core.group_finance_head'), ref('tms_core.group_tms_admin')])]"/>
+            <field name="note">Picked explicitly; own series VEH/YYYY/NNNN; names the owned vehicle sold.</field>
+        </record>
+
+        <record id="doc_type_trn_po" model="tms.document.type">
+            <field name="code">TRN-PO</field>
+            <field name="name">Transport purchase</field>
+            <field name="applies_to">purchase</field>
+            <field name="behaviour">transport</field>
+            <field name="is_default" eval="True"/>
+            <field name="sequence">10</field>
+            <field name="invoice_type_id" ref="doc_type_trn_bill"/>
+            <field name="note">Default for purchase orders; hire memos and purchases against estimate lines.</field>
+        </record>
+        <record id="doc_type_gen_po" model="tms.document.type">
+            <field name="code">GEN-PO</field>
+            <field name="name">Standard purchase</field>
+            <field name="applies_to">purchase</field>
+            <field name="behaviour">standard</field>
+            <field name="sequence">20</field>
+            <field name="invoice_type_id" ref="doc_type_gen_bill"/>
+            <field name="group_ids" eval="[(6, 0, [ref('tms_core.group_branch_accountant'), ref('tms_core.group_branch_manager'), ref('tms_core.group_finance_head'), ref('tms_core.group_tms_admin'), ref('tms_core.group_dispatcher')])]"/>
+            <field name="note">Picked explicitly.</field>
+        </record>
+        <record id="doc_type_amc_po" model="tms.document.type">
+            <field name="code">AMC-PO</field>
+            <field name="name">Annual maintenance contract</field>
+            <field name="applies_to">purchase</field>
+            <field name="behaviour">standard</field>
+            <field name="sequence">30</field>
+            <field name="invoice_type_id" ref="doc_type_gen_bill"/>
+            <field name="is_amc" eval="True"/>
+            <field name="group_ids" eval="[(6, 0, [ref('tms_core.group_branch_accountant'), ref('tms_core.group_branch_manager'), ref('tms_core.group_finance_head'), ref('tms_core.group_tms_admin')])]"/>
+            <field name="note">Picked explicitly; blanket order for office-asset AMCs; truck AMCs stay Transport.</field>
+        </record>
+    </data>
+</odoo>

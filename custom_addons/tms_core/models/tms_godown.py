@@ -8,21 +8,21 @@ class TmsConsignment(models.Model):
     _inherit = "tms.consignment"
 
     godown_delivered_on = fields.Datetime(readonly=True, copy=False,
-                                          help="Refused goods delivered later from the godown (BR-LR-10).")
+                                          help="Refused goods delivered later from the godown.")
     return_of_id = fields.Many2one("tms.consignment", string="Return of", readonly=True, copy=False, index=True)
     return_lr_ids = fields.One2many("tms.consignment", "return_of_id", string="Return LRs")
 
     def _tms_check_godown(self):
         for lr in self:
             if not lr.godown_hold:
-                raise UserError(_("LR %s has no refused goods held in the godown (BR-POD-09).", lr.name))
+                raise UserError(_("LR %s has no refused goods held in the godown.", lr.name))
 
     def action_deliver_from_godown(self):
         """BR-LR-10: a refused LR moves on to Delivered once its goods are accepted."""
         self._tms_check_godown()
         for lr in self:
             if lr.freight_basis == "topay" and not lr.collected:
-                raise UserError(_("To-Pay LR %s is released only after its freight is collected (RL-06).", lr.name))
+                raise UserError(_("To-Pay LR %s is released only after its freight is collected.", lr.name))
             lr._tms_raise_godown_demurrage()
             lr.sudo().write({"godown_hold": False, "godown_delivered_on": fields.Datetime.now(),
                              "delivered_on": lr.delivered_on or fields.Datetime.now()})

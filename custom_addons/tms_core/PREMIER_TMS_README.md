@@ -4,10 +4,10 @@ These addons implement BRD-TMS-001 v1.2 (*Transport Management System on Odoo 18
 
 | | |
 |---|---|
-| Release | 18.0.1.2.0 (screens aligned with the agreed mockup TMS-OD18-001; gap analysis TMS-UIG-001; see #10) |
+| Release | 18.0.1.5.0 (TMS-UIG-001 #7 closed: Document Types, breakdown repair cost as a trip expense, the Trip money menu kept, bundled base modules' texts; see #10). 18.0.1.4.0 removed requirement codes from screens (#11); 18.0.1.3.0 built the one-page Exception dashboard, Sales order P&L and Truck P&L to the agreed mockup TMS-OD18-001 (#12) |
 | Author | RLFB (Riamona Luxury and Fashion Brands), [www.riamona.com](https://www.riamona.com) |
 | Licence | LGPL-3. Two dependencies are AGPL-3; see #9. |
-| Tests | 147 automated tests across the five modules, all passing with every module installed together |
+| Tests | 177 automated tests across the six modules, all passing with every module installed together |
 
 ## 1. Package contents
 
@@ -24,23 +24,27 @@ addons/
                       prepaid release, month-end close with accruals, P&L views (#18)
   tms_contract        Value-capped sales contracts, reservations, invoice gate, extensions,
                       excess approvals, escalation, contract P&L (#8.4, WF-11, #23.7)
+  tms_document_type   Document Types on sales orders, purchase orders, invoices and bills: Transport
+                      or Standard; scrap and vehicle sales, office AMCs (CR-04, BRD #7.4)
 third_party/
-  stock-logistics-transport/tms       community tms 18.0.1.1.0, pinned (commit a9b47c8), unmodified (SD-01)
-  server-tools/auditlog               community auditlog 18.0.2.0.9, pinned (commit 126afd2), unmodified (SD-08)
+  stock-logistics-transport/tms       community tms 18.0.1.1.0, pinned (commit a9b47c8); code unmodified,
+                                      descriptive texts edited (see #9) (SD-01)
+  server-tools/auditlog               community auditlog 18.0.2.0.9, pinned (commit 126afd2); code unmodified,
+                                      descriptive texts edited (see #9) (SD-08)
 README.md
 ```
 
 Dependency chain:
 
 ```
-tms_core  ← tms_estimate ← tms_odc
-                         ← tms_profitability
-                         ← tms_contract
+tms_core  ← tms_estimate ← tms_odc            ┐
+                         ← tms_profitability  ├ ← tms_document_type
+                         ← tms_contract       ┘
 ```
 
-`tms_core` depends on `tms`, `auditlog`, `account_fleet`, `purchase`, `l10n_in`, `l10n_in_withholding`, `mail` and `auth_totp_mail_enforce`. `tms_estimate` adds `crm`, `sale_management` and `sale_crm`. Every module other than `tms` and `auditlog` is standard Odoo 18 CE. No extra Python packages are needed.
+`tms_core` depends on `tms`, `auditlog`, `account_fleet`, `purchase`, `l10n_in`, `l10n_in_withholding`, `mail` and `auth_totp_mail_enforce`. `tms_estimate` adds `crm`, `sale_management` and `sale_crm`; `tms_document_type` adds `purchase_requisition`. Every module other than `tms` and `auditlog` is standard Odoo 18 CE. No extra Python packages are needed.
 
-The BRD names four modules. `tms_core` is the fifth: it carries the operations layer (LR to invoice) that the other four extend through hooks.
+The BRD names four modules. `tms_core` is the fifth: it carries the operations layer (LR to invoice) that the other four extend through hooks. `tms_document_type` is the sixth: change request CR-04, kept apart so that the transport modules stay unchanged for Transport documents.
 
 ## 2. Tested environment
 
@@ -58,10 +62,11 @@ The BRD names four modules. `tms_core` is the fifth: it carries the operations l
    addons_path = /opt/odoo/odoo/addons,/opt/odoo/addons,/opt/tms/third_party/stock-logistics-transport,/opt/tms/third_party/server-tools,/opt/tms/addons
    ```
 2. Restart Odoo and update the Apps list.
-3. On a database whose main company is in India (so the Indian chart loads), install **TMS Sales Contracts**, **TMS ODC** and **TMS Profitability**. Odoo installs `tms_core`, `tms_estimate`, `tms` and `auditlog` with them. From the command line:
+3. On a database whose main company is in India (so the Indian chart loads), install **TMS Document Types**. Odoo installs the other five TMS modules, `tms` and `auditlog` with it. From the command line:
    ```
-   odoo-bin -c odoo.conf -d <db> -i tms_contract,tms_odc,tms_profitability --stop-after-init
+   odoo-bin -c odoo.conf -d <db> -i tms_document_type --stop-after-init
    ```
+   Installing it on a database that already holds orders, invoices and bills gives each of them its Transport type.
 4. Set an outgoing mail server and `mail.default.from`. Activities work without one, but the notification emails of #20 need it.
 
 Installation leaves two settings that affect every user:
@@ -87,7 +92,8 @@ Work through the list in this order. The values marked OP-x are placeholders unt
 | 10 | Settings › Transport › ODC | Turn ODC on per branch; set the width, height, length and weight thresholds and ODC km per day (OP-04, OP-05). |
 | 11 | Settings › Transport › Profitability | Capitalisation threshold, revenue dating (OP-14), empty-return rule, review interval and flag. Then enter standard rates per vehicle class (Finance Head) and truck cost categories. |
 | 12 | Settings › Transport › Contracts | Contract series, utilisation and expiry alerts, extension limit, excess ceiling, run-on days. |
-| 13 | Settings › Technical › Scheduled actions | Check the 12 `TMS:` crons are active: compliance reminders, DSR overdue, daily customer DSR (09:00 IST), POD past SLA, e-way bill expiry, godown demurrage, blocked hire bills, quotation expiry, ODC ETA, prepaid release, contract alerts, driver anonymisation. |
+| 13 | Transport › Configuration › Document types | Check the eleven seeded types; set the approval limit of Scrap sale (₹50,000 proposed, OP-23) and the journal of any type that posts in its own journal. Give head-office purchasers a personal default (Settings › Users › Document types) if they mostly buy for the office. Put products only transport may use in *Transport services*, or tick *Transport only* on them; cost items, freight and hire products carry it already. |
+| 14 | Settings › Technical › Scheduled actions | Check the 12 `TMS:` crons are active: compliance reminders, DSR overdue, daily customer DSR (09:00 IST), POD past SLA, e-way bill expiry, godown demurrage, blocked hire bills, quotation expiry, ODC ETA, prepaid release, contract alerts, driver anonymisation. |
 
 ## 5. Where things are
 
@@ -96,13 +102,14 @@ Work through the list in this order. The values marked OP-x are placeholders unt
 | CRM | Odoo's own CRM app: leads and opportunities with transport lanes, pipeline (Sales › My Pipeline), pipeline analysis (Reporting › Pipeline) |
 | Sales › Orders | Quotations and orders (Odoo's own), cost estimates |
 | Sales › Contracts | Contracts, contract items, extensions, excess approvals, reservation ledger, diesel escalation |
-| Sales › Reporting › Transport | Sales order P&L, estimate against actual, contract P&L |
+| Sales › Reporting › Transport | Sales order P&L (one page), Sales order P&L analysis (list, pivot, chart), estimate against actual, contract P&L |
 | Transport › Operations | **Booking:** consignment notes (LR), contract items (Booking Clerk), e-way bills, e-way bill tasks. **Trips:** all trips (list, kanban), planning board, daily status report, POD verification. **Exceptions:** incidents, breakdowns, damage and shortage claims. **ODC:** permits, equipment. **Fleet:** odometers |
 | Transport › Trip money | **Invoices:** freight invoices. **Charges:** charges and recoveries, trip expenses. **Driver:** driver advances, driver settlements. **Hire:** hire memos, three-way matches. **Period close:** month-end close, prepaid truck costs |
 | Transport › Master Data | Vehicles, market vehicles, insurance policies, drivers, locations, routes; **Compliance register:** vehicles and drivers (one row per holder, a column per document, gate status, Renew), compliance documents |
-| Transport › Dashboard | Exception dashboard (KPI tiles that drill down), filtered dashboard (branch, customer, vehicle, period), bills and expenses awaiting variance approval |
-| Transport › Reporting | **Registers:** LR register, DSR log, claims register, compliance expiry, override log. **Ageing and payables:** recovery ageing, receivables ageing, hire payables, TDS on hire (declarations). **Fleet:** trips, vehicle utilisation, costs. **Profitability:** trip, leg, customer, truck, fleet, vendor, branch, company, recovery statement, WIP, ledger (Trip and Truck P&L also as bar charts) |
-| Transport › Configuration | Settings, stages, master data types, standard rates, **KPI alert rules** (TMS Administrator: when each dashboard card turns red) |
+| Transport › Dashboard | Exception dashboard (one page: six tiles, exceptions requiring action, trip contribution, unbilled charges and pending recoveries, the month's breakdowns and replacements), filtered dashboard (branch, customer, vehicle, period), KPI board (KPI cards that drill down), bills and expenses awaiting variance approval |
+| Transport › Reporting | **Registers:** LR register, DSR log, claims register, compliance expiry, override log. **Ageing and payables:** recovery ageing, receivables ageing, hire payables, TDS on hire (declarations). **Fleet:** trips, vehicle utilisation, costs. **Profitability:** trip, leg, customer, truck (one page) and truck analysis, fleet, vendor, branch, company, recovery statement, WIP, ledger (Trip and Truck P&L also as bar charts) |
+| Transport › Configuration | Settings, stages, master data types, standard rates, **Document types** (TMS Administrator maintains them), **KPI alert rules** (TMS Administrator: when each dashboard card turns red) |
+| Purchase › Orders › Purchase agreements | Office-asset maintenance contracts: blanket orders of type Annual maintenance contract, with **Bill next period** |
 
 In Operations, Trip money and Reporting the bold names are group headings: they show as captions inside the menu and hide themselves when a user can open none of their items.
 
@@ -111,12 +118,12 @@ The prints of BRD #21 are on the document's **Print** menu: the LR (4 copies), t
 ## 6. Running the tests
 
 ```
-odoo-bin -c odoo.conf -d tms_test -i tms_contract,tms_odc,tms_profitability \
-  --test-enable --test-tags /tms_core,/tms_estimate,/tms_odc,/tms_profitability,/tms_contract \
+odoo-bin -c odoo.conf -d tms_test -i tms_document_type \
+  --test-enable --test-tags /tms_core,/tms_estimate,/tms_odc,/tms_profitability,/tms_contract,/tms_document_type \
   --stop-after-init
 ```
 
-Expected result: `0 failed, 0 error(s) of 147 tests`. The test companies have no mail server, so the log shows "failed sending mail … sender address" lines; they don't indicate a failure.
+Expected result: `0 failed, 0 error(s) of 177 tests`. The test companies have no mail server, so the log shows "failed sending mail … sender address" lines; they don't indicate a failure.
 
 ## 7. Controls worth knowing
 
@@ -135,19 +142,79 @@ Expected result: `0 failed, 0 error(s) of 147 tests`. The test companies have no
 | OP-22 TDS sections | Defaults are 2% under 393(1) Sl.6 for contract payments (non-individual) and 2% under 393(1) Sl.1(ii) for commission (Income-tax Act 2025). Set a vendor-level tax for individuals (1%). When the annual aggregate is crossed, TDS is deducted on the bill that crosses it, not retrospectively on earlier bills of the year. The tax advisor must confirm both points before go-live. |
 | OP-04, OP-05, OP-14, OP-19, OP-21 | ODC thresholds, revenue dating, run-on days and claim limits are settings, seeded with the BRD's working values. |
 | BR-INT-01 bank statement import (Should) | Not bundled. Add a bank-statement file import and a reconciliation widget for Odoo 18.0 Community. |
-| BR-DSH-04 spreadsheet dashboard (Should) | The exception dashboard is an Odoo kanban/list of `tms.kpi`, with drill-down and filters, rather than `spreadsheet_dashboard` data. |
+| BR-DSH-04 spreadsheet dashboard (Should) | The exception dashboard is a one-page Odoo screen whose tiles and rows open the records behind them; the KPI cards stay on the KPI board. Neither uses `spreadsheet_dashboard`. |
 | BR-NFR-13 driver PII (Should) | Licence number and file are restricted to the Fleet Manager, Dispatchers and managers, and former drivers are anonymised after the retention period (`tms_core.driver_retention_years`, default 8). A driver's phone and address sit on the shared contact record and are not restricted per field. |
 | BR-HIR-15 cancelled hire memo | The advance already paid stays as a debit balance on the vendor's payable, and the accountants get an activity to recover it or net it against the next bill. No vendor refund entry is raised, because that would count the advance twice. |
 | E-way bills (SD-10) | Phase 1 is manual, with evidence; GSP APIs come in phase 2. |
-| Profitability | The reconciliation check blocks the close at company level. Branch differences from cross-branch trips show on the branch view only. Ratio columns average when grouped. |
+| Standard invoices and e-way bills (BR-DOC-12) | A Standard invoice raises no TMS e-way bill. Odoo offers the e-way bill on the invoice once `l10n_in_edi_ewaybill` is installed and connected to the GST portal; it is not bundled. |
+| OP-23 scrap approval limit | Scrap sale is seeded with ₹50,000, the BRD's proposed value. Confirm it. |
+| KPI thresholds | The alert rules carry the BRD's working values; the client confirms them. |
+| Profitability | The reconciliation check blocks the close at company level. Branch differences from cross-branch trips show on the branch view only. |
 | Contracts | With a GST-inclusive value basis, pure-agent incidentals are grossed up as well. KPI-21 counts items held live. |
 | Updating `tms` | On a database with CRM or Calendar, `-u tms` and `-u all` fail validating the base driver form (`tms.view_tms_driver_form_inherit`), which copies the contact form and its Meetings and Opportunities buttons; the error is "schedule_meeting is not a valid action on tms.driver". This is in the base `tms` 18.0 module itself (no upstream fix at commit a9b47c8). Update the TMS by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`, which runs clean. A one-line upstream fix is to clear the button box in that base view. |
 
 ## 9. Licences
 
-The five `tms_*` addons are LGPL-3. `tms` and `auditlog` are AGPL-3, and their licence texts are in `third_party/*/LICENSE`. Because `tms_core` depends on them, a distribution of the combined work must meet AGPL-3: offer the source to users of a network deployment.
+The six `tms_*` addons are LGPL-3. `tms` and `auditlog` are AGPL-3, and their licence texts are in `third_party/*/LICENSE`. Because `tms_core` depends on them, a distribution of the combined work must meet AGPL-3: offer the source to users of a network deployment.
 
-## 10. Changes in 18.0.1.2.0
+The bundled copies of `tms` and `auditlog` are edited in their descriptive texts only (TMS-UIG-001 #7 item 9): the author is the original company (Open Source Integrators for `tms`, ABF OSIELL for `auditlog`); the upstream project's badges, issue-tracker and maintainer sections and its credits are removed from `README.rst`, `readme/` and the Apps page; translator credits in the `.po` headers are cleared. The code, the licence files and every copyright notice are unchanged.
+
+## 10. Changes in 18.0.1.5.0
+
+The open items of TMS-UIG-001 #7 are closed: item 1 (the Trip money menu keeps its name), item 2 (Document Types, change request CR-04), item 4 (breakdown repair cost) and item 9 (the bundled base modules' texts).
+
+| Area | Change |
+|---|---|
+| Document Types (new module `tms_document_type`) | Every sales order, purchase order, customer invoice and vendor bill carries a Document Type (`tms_document_type_id`, model `tms.document.type`). A **Transport** type keeps every rule of the TMS; a **Standard** type runs as plain Odoo: no cost estimate, item approval, contract check, LR, estimate line, vehicle, cost class, variance or three-way match, and *Create Invoice* works on the order. Eleven types are seeded: TRN-SO, GEN-SO, SCR-SO, VEH-SO, TRN-PO, GEN-PO, AMC-PO, TRN-INV, GEN-INV, TRN-BILL, GEN-BILL. Only the TMS Administrator maintains them |
+| Defaults | New documents take the Transport type, or the user's personal default. Documents the transport flows create (quotations from opportunities, contract orders, hire memos, LR invoices, trip and hire bills) always take the Transport type |
+| Rules on Standard documents | A Standard document refuses any transport link (trip, LR, estimate line, vehicle, cost class, hire memo, contract) and any product marked *Transport only* (cost items, freight and hire services, the *Transport services* category). A type may limit the product categories (Scrap sale: Scrap only). The type is chosen in draft only, and a Transport document with links stays Transport; every change is noted in the chatter. Invoices, bills, credit notes and down payments take the type their order or original names |
+| Numbering and approvals | Scrap sale and Vehicle sale number from their own series (SCR/YYYY/NNNN, VEH/YYYY/NNNN); a type may name the journal its invoices post in. Above a type's approval limit an order waits for an approver (Scrap sale: Branch Manager above ₹50,000). Odoo's purchase approval also accepts the Branch Manager |
+| Accounting of Standard documents | A Standard bill line books to its own branch's analytic account. Its lines post as branch overhead; Standard invoice lines post as **Other income**, a new column of the branch and company P&L. Neither reaches a trip, order, customer, truck, fleet, vendor or contract view |
+| Vehicle sale | Names the owned vehicle sold; the Fleet Manager and the Finance Head approve; refused while the vehicle has an open trip or assignment. On delivery the vehicle moves to the **Sold** stage (no longer assignable to a trip or as a replacement) and its unreleased prepaid costs release in the month of the sale |
+| Office maintenance contracts | A purchase agreement of type Annual maintenance contract carries the assets covered, the cover period, the value and the billing frequency, with a renewal activity 30 days before the end. **Bill next period** raises the period's Standard bill; a cover of more than a month goes to prepaid and releases monthly to branch overhead (prepaid schedules now take branch overhead as well as trucks). A truck AMC stays a Transport purchase spread on each truck's fixed pool |
+| Breakdown repair cost (item 4) | The towing and repair cost entered on a breakdown becomes a draft trip expense of type *Roadside repair*, linked to the breakdown, its incident and the fleet service log (*Repair expense*). A corrected cost updates the draft; a cost recoverable from the vendor is marked recoverable |
+| Trip money menu (item 1) | Kept as delivered: Transport › Trip money |
+| Bundled base modules (item 9) | Descriptive texts edited; see #9 |
+| Groups | Branch Accountant and Fleet Manager get Sales rights (standard sales, vehicle-sale approval); Branch Manager and Finance Head get Purchase rights (approvals) |
+
+Tests: 21 added. `tms_document_type`: 19 (`TestDocumentType`, `TestDocumentTypePnl`), one per group of cases UT-DOC-01 to UT-DOC-36. `tms_core`: 2 in `TestUiBreakdown` (repair cost booked as an expense; none when the cost is zero). The no-code scan now covers `tms_document_type` too.
+
+Upgrade from 18.0.1.4.0: update the five modules and install the sixth: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract -i tms_document_type`. Installing it gives every existing order, invoice and bill its Transport type.
+
+## 11. Changes in 18.0.1.4.0
+
+Decision 10 of TMS-UIG-001 #7 is closed: users no longer see requirement codes. Codes such as `BR-…`, `KPI-…`, `OP-…`, `WF-…` and BRD section references are removed from every field label, help tooltip, placeholder, selection value, button, menu, error and warning message, chatter note and Apps page. The code stays only where a tester or developer looks for it: this README, the tester's manual TMS-UM-001, the test specification UTS-TMS-001, code comments and the tests.
+
+| Area | Change |
+|---|---|
+| Messages | About 370 texts across the five modules lose their code, for example "Audit records are read-only (BR-AUD-03)." now reads "Audit records are read-only." The wording is otherwise unchanged |
+| Tooltips | A help text that held only codes is removed, so the field shows no tooltip |
+| KPI board | The KPI `code` is hidden on the KPI cards, the KPI list and the alert-rule list. It stays on the record as a technical key; the seeded KPI data is unchanged |
+| Apps pages | The module descriptions drop their BRD references and show version 18.0.1.4.0 |
+
+No data model change. The 153 existing tests pass unchanged, since none of them matched a message by its code.
+
+Tests: 3 added in `tms_core` (`TestNoRequirementCodes`, post-install). With all five modules installed, they scan every field label and tooltip, selection value, menu, action, model name, module summary and view of the five modules (labels, tooltips, placeholders, titles, confirmations and visible text, not XML comments) and fail on any requirement code or BRD section reference. The scan found 13 texts the first pass had missed (codes on a continuation line of a message, and three `#18.3` tooltips); they are fixed.
+
+Upgrade from 18.0.1.3.0 by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`. Labels and help texts update on upgrade; no migration script is needed.
+
+## 12. Changes in 18.0.1.3.0
+
+The Exception dashboard, Sales order P&L and Truck P&L are now the one-page screens of the agreed mockup TMS-OD18-001 (TMS-UIG-001 #7, decision 3: one page, replacing the KPI board as the first screen). Each page has a Branch and Period filter, Refresh, and an "As of" time; the P&L pages also export their main table as CSV. Every tile, row and link opens the records behind it, under the user's own access rights.
+
+| Area | Change |
+|---|---|
+| Exception dashboard | Transport › Dashboard › Exception dashboard. Six tiles: active breakdowns, vehicle replacements this month, open damage claims with their exposure, unbilled charges and recoveries (customer and vendor), PODs awaiting verification (with the vendor bill they hold), trips delayed in transit. **Exceptions requiring action**, most urgent first: breakdowns on the road, unverified PODs, hire bills held by the three-way match, claims to approve or complete, expired compliance documents (with the trip they block), documents expiring within 30 days, delays; each with its **Next action**. **Trip contribution** of the last eight delivered trips (open trips hatched, with approved commitments and unbilled charges; totals count closed trips only). **Unbilled charges and pending recoveries**. **Breakdowns and replacements** of the month as cards |
+| KPI board | The KPI cards move to Transport › Dashboard › KPI board; alert rules and drill-downs are unchanged |
+| Sales order P&L | Sales › Reporting › Transport › Sales order P&L. Tiles: revenue, direct cost and contribution against plan, and orders over the variance tolerance. One row per sales order with trips started in the month, plus one row for LRs without an order (walk-in, To-Pay); revenue, direct cost, cost variance and contribution, each with its plan. **Margin · planned to actual** chart. For the chosen order: why actual differs from plan, **cost by element** (planned, actual, over plan; estimate lines by cost item, or item/line for ODC) and the trips on the order with their cost plan spread by charged weight. Direct cost includes the standard charge of owned trucks. The list, pivot and chart stay as Sales order P&L analysis |
+| Truck P&L | Transport › Reporting › Profitability › Truck P&L. Tiles: truck revenue, trip expenses (with replacement add-ons), truck expenses, operating result and the trucks below zero. One row per truck with its operating result bar. For the chosen truck: the period statement (revenue by trip, trip expenses and add-ons, truck expenses, operating result, and any standard charge not yet matched), its trip P&L, and its bills and expenses filtered All / Trip / Truck or by trip. Figures tie to the truck P&L view. The list, pivot and chart stay as Truck P&L analysis |
+| Defect | Posting a vendor bill line that names a truck (every trip bill line does) created a fleet service log in state New, which then counted as an open workshop job and refused the truck on its next trip ("has an open breakdown or service log"). Service logs created from bill lines no longer block a truck; workshop jobs and breakdown service logs still do |
+
+Tests: 6 added in `tms_profitability` (`TestUiCockpit`, `TestUiCockpitPages`). They seed one branch month (closed and open trips, a held hire bill, a breakdown on the road, a market replacement, a delay, a claim, unbilled charges, an expired and an expiring document), check each page's figures against the P&L views as a branch manager, and check that a bill-created service log does not block a truck. `TestUiCockpitPages` opens the three pages in a browser when `TMS_SHOT_DIR` and `TMS_SHOT_SCRIPT` are set; otherwise it is skipped.
+
+Upgrade from 18.0.1.2.0 by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`. The menus move to the new pages on upgrade.
+
+## 13. Changes in 18.0.1.2.0
 
 Screens aligned with the agreed mockup TMS-OD18-001, from the gap analysis TMS-UIG-001. Items that wait for a client decision are listed at the end.
 
@@ -164,11 +231,11 @@ Screens aligned with the agreed mockup TMS-OD18-001, from the gap analysis TMS-U
 | Charts and P&L | Bar charts for Trip, Sales order and Truck P&L; Truck P&L opens on this month by truck with a Below-zero filter; Sales order P&L groups by order. Ratio columns (margin %, recovery %, per-km, utilisation) on group rows are now sum over sum, not averages |
 | Defects | GSTIN, then PAN, customer match on lead conversion; KPI cards turn red by each card's own rule (Configuration › KPI alert rules); compliance security days default 15 on new databases; Consumer mode no longer offered; Return to origin hidden (phase 2); claim credit note linked to the LR invoice; incident claims linked to their POD line; bill-only columns hidden on customer invoices; Approve variance hidden on customer invoices; Hire payables and Bills awaiting variance open the bill list; amounts in hire-bill messages in Indian format |
 
-Waiting for a client decision (TMS-UIG-001 #7): Document Types, the one-page exception dashboard, the name of the Trip money menu, how the breakdown repair cost is booked, requirement codes in screen labels, and the base module's author text in Apps.
+Waiting for a client decision (TMS-UIG-001 #7) at this release (all closed in 18.0.1.5.0, see #10): Document Types, the one-page exception dashboard (built in 18.0.1.3.0, see #12), the name of the Trip money menu, how the breakdown repair cost is booked, requirement codes in screen labels (closed in 18.0.1.4.0, see #11), and the base module's author text in Apps.
 
 Upgrade from 18.0.1.1.x by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`. Existing databases keep their compliance security days and KPI alert settings; new databases get 15 days and the rules above.
 
-## 11. Changes in 18.0.1.1.1 and 18.0.1.1.2
+## 14. Changes in 18.0.1.1.1 and 18.0.1.1.2
 
 | Area | Change | Cases |
 |---|---|---|
@@ -178,7 +245,7 @@ Upgrade from 18.0.1.1.x by module name: `-u tms_core,tms_estimate,tms_odc,tms_pr
 
 Upgrade from 18.0.1.1.0 or 18.0.1.1.1 by module name: `-u tms_core,tms_estimate,tms_odc,tms_profitability,tms_contract`.
 
-## 12. Changes in 18.0.1.1.0
+## 15. Changes in 18.0.1.1.0
 
 Fixes found while writing the tester manual (TMS-UM-001). Each has a regression test; the suite is now 93 tests.
 

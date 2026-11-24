@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="tms_core.tms_order_form_tms_core"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='ledger']/group" position="after">
-                <group string="Profitability (BR-LED-05, BR-PNL-17)" name="tms_profitability">
+                <group string="Profitability" name="tms_profitability">
                     <group>
                         <field name="tms_pnl_revenue"/>
                         <field name="tms_pnl_recoveries"/>

@@ -536,6 +536,7 @@
                 <field name="trip_margin" sum="Total"/>
                 <field name="recovery_variance" sum="Total"/>
                 <field name="overhead" sum="Total"/>
+                <field name="other_income" sum="Total"/>
                 <field name="branch_result" sum="Total"/>
                 <field name="truck_view" sum="Total"/>
                 <field name="check_difference" sum="Total"/>

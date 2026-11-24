@@ -28,15 +28,15 @@ class AccountAnalyticLine(models.Model):
 
     def write(self, vals):
         if not self.env.context.get("tms_close_run") and self.filtered("tms_std_side"):
-            raise UserError(_("Standard charge entries change only through the month-end close (BR-PNL-22)."))
+            raise UserError(_("Standard charge entries change only through the month-end close."))
         return super().write(vals)
 
     def unlink(self):
         std = self.filtered("tms_std_side")
         if std and not self.env.context.get("tms_close_run"):
-            raise UserError(_("Standard charge entries change only through the month-end close (BR-PNL-22)."))
+            raise UserError(_("Standard charge entries change only through the month-end close."))
         if std.filtered(lambda line: line.tms_close_id.state == "closed"):
-            raise UserError(_("The standard charge of a closed period is frozen (BR-PNL-22)."))
+            raise UserError(_("The standard charge of a closed period is frozen."))
         return super().unlink()
 
 
@@ -46,7 +46,7 @@ class FleetVehicle(models.Model):
     tms_analytic_account_id = fields.Many2one("account.analytic.account", string="Vehicle analytic account",
                                               readonly=True, copy=False)
     tms_review_flag = fields.Boolean(string="Flagged for repair-or-replace review", tracking=True, copy=False,
-                                     help="BR-PNL-21: adverse running spending variance in consecutive closed months.")
+                                     help="adverse running spending variance in consecutive closed months.")
     tms_review_flag_date = fields.Date(readonly=True, copy=False, string="Review flag date")
 
     @api.model_create_multi
@@ -78,5 +78,5 @@ class TmsCategory(models.Model):
     _inherit = "tms.category"
 
     truck_category_id = fields.Many2one("tms.truck.category", string="Truck cost category",
-                                        help="BR-PNL-03: the pool a truck running or fixed expense of this type "
+                                        help="the pool a truck running or fixed expense of this type "
                                              "lands in.")

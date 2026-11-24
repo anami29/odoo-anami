@@ -12,10 +12,10 @@
             </xpath>
             <xpath expr="//notebook" position="before">
                 <div class="alert alert-warning" role="alert" invisible="not odc_suggested or tms_cargo_type == 'odc'">
-                    A commodity line is above an ODC threshold: make the LR ODC or give a reason to keep it Regular (BR-ODC-02).
+                    A commodity line is above an ODC threshold: make the LR ODC or give a reason to keep it Regular.
                 </div>
                 <div class="alert alert-danger" role="alert" invisible="not ewaybill_validity_mismatch">
-                    An e-way bill's portal validity does not match the expected validity (BR-ODC-04, #23.5).
+                    An e-way bill's portal validity does not match the expected validity.
                 </div>
             </xpath>
             <xpath expr="//field[@name='line_ids']/list/field[@name='piece_length']" position="attributes">

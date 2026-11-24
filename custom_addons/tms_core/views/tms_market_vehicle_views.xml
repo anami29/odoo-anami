@@ -35,7 +35,7 @@
                             <field name="vehicle_id"/>
                         </group>
                     </group>
-                    <separator string="Documents (BR-CMP-05)"/>
+                    <separator string="Documents"/>
                     <field name="compliance_document_ids" context="{'default_market_vehicle_id': id}">
                         <list editable="bottom">
                             <field name="type_id"/>

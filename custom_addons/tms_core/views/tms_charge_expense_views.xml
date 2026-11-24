@@ -126,6 +126,7 @@
                             <field name="tms_cost_class" readonly="state != 'draft'"/>
                             <field name="tms_overhead_reason" invisible="tms_cost_class != 'overhead'"/>
                             <field name="incident_id"/>
+                            <field name="breakdown_id" invisible="not breakdown_id"/>
                             <field name="recoverable_from"/>
                             <field name="recoverable_amount" invisible="recoverable_from == 'none'"/>
                             <field name="charge_id"/>
@@ -134,7 +135,7 @@
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                     </group>
-                    <group string="Fuel (BR-EXP-04)" invisible="not is_fuel">
+                    <group string="Fuel" invisible="not is_fuel">
                         <field name="is_fuel" invisible="1"/>
                         <field name="fuel_litres"/>
                         <field name="fuel_rate"/>

@@ -42,7 +42,7 @@ class TmsDamageClaim(models.Model):
     )
     responsible_partner_id = fields.Many2one("res.partner")
     responsible_driver_id = fields.Many2one("tms.driver")
-    recovery_amount = fields.Monetary(help="Share borne by the responsible party (BR-CLM-06).")
+    recovery_amount = fields.Monetary(help="Share borne by the responsible party.")
     evidence = fields.Binary(attachment=True)
     evidence_name = fields.Char()
     notice_date = fields.Date(string="Customer notice date", tracking=True)
@@ -130,7 +130,7 @@ class TmsDamageClaim(models.Model):
             if not self._is_oh():
                 raise UserError(_("Only the Operations Head accepts carrier liability on an owner's-risk LR."))
             if not reason:
-                raise UserError(_("Give the reason for accepting carrier liability (BR-AUD-06)."))
+                raise UserError(_("Give the reason for accepting carrier liability."))
             claim.owner_risk_accepted_by_id = self.env.user
             self.env["tms.override.log"].log("claim", claim, _("Owner's-risk liability accepted"), reason=reason)
 
@@ -141,7 +141,7 @@ class TmsDamageClaim(models.Model):
             if not self._is_oh():
                 raise UserError(_("Only the Operations Head admits a late notice."))
             if not reason:
-                raise UserError(_("Give the reason for admitting the late notice (BR-AUD-06)."))
+                raise UserError(_("Give the reason for admitting the late notice."))
             claim.timebar_admitted_by_id = self.env.user
             self.env["tms.override.log"].log("claim", claim, _("Time-barred notice admitted"), reason=reason)
 
@@ -161,28 +161,28 @@ class TmsDamageClaim(models.Model):
             if claim.state != "under_review":
                 raise UserError(_("Submit the claim for review first."))
             if claim.create_uid == self.env.user:
-                raise UserError(_("Whoever raised a claim cannot approve it (BR-CLM-04)."))
+                raise UserError(_("Whoever raised a claim cannot approve it."))
             amount = claim.approved_amount or claim.estimated_amount
             if not amount:
                 raise UserError(_("Enter the approved amount."))
             limit = claim.company_id.tms_claim_bm_limit
             if amount > limit and not self._is_oh():
-                raise UserError(_("Claims above %s are approved by the Operations Head (BR-CLM-04).", limit))
+                raise UserError(_("Claims above %s are approved by the Operations Head.", limit))
             if not self.env.user.has_group("tms_core.group_branch_manager") and not self._is_oh():
-                raise UserError(_("A Branch Manager or the Operations Head approves claims (BR-CLM-04)."))
+                raise UserError(_("A Branch Manager or the Operations Head approves claims."))
             lr = claim.consignment_id
             # the claimed trip link's POD or outcome, else every POD of the LR
             verified = claim.pod_link_id.pod_status == "verified" if claim.pod_link_id \
                 else lr.pod_status == "verified"
             if not verified:
-                raise UserError(_("The LR's POD or outcome must be verified first (BR-CLM-04, BR-POD-08)."))
+                raise UserError(_("The LR's POD or outcome must be verified first."))
             if claim.owner_risk and not claim.owner_risk_accepted_by_id:
-                raise UserError(_("An owner's-risk LR needs the Operations Head to accept liability (BR-CLM-09)."))
+                raise UserError(_("An owner's-risk LR needs the Operations Head to accept liability."))
             if claim.time_barred and not claim.timebar_admitted_by_id:
-                raise UserError(_("The notice is time-barred; the Operations Head must admit it (BR-CLM-11)."))
+                raise UserError(_("The notice is time-barred; the Operations Head must admit it."))
             if claim.cap_amount and amount > claim.cap_amount and not claim.cap_override_by_id:
                 raise UserError(_("The amount exceeds the declared value or the carrier liability limit "
-                                  "(%s); the Operations Head must approve with a reason (BR-CLM-10).", claim.cap_amount))
+                                  "(%s); the Operations Head must approve with a reason.", claim.cap_amount))
             claim.write({"approved_amount": amount, "state": "approved", "approved_by_id": self.env.user.id})
             claim._tms_create_credit_note()
             claim._tms_create_recovery()
@@ -296,5 +296,5 @@ class TmsInsurerClaim(models.Model):
         recs = super().create(vals_list)
         for rec in recs:
             if rec.claim_id.state not in ("approved", "settled"):
-                raise UserError(_("An insurer claim is raised from an approved claim (BR-CLM-07)."))
+                raise UserError(_("An insurer claim is raised from an approved claim."))
         return recs

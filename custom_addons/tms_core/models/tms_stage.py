@@ -25,14 +25,14 @@ class TmsStage(models.Model):
 
     def write(self, vals):
         if "tms_code" in vals and not self.env.context.get("tms_seed"):
-            raise UserError(_("Technical stage codes cannot be changed (BR-EXE-02)."))
+            raise UserError(_("Technical stage codes cannot be changed."))
         if "stage_type" in vals and self.filtered("tms_code"):
-            raise UserError(_("Coded stages keep their type (BR-EXE-02)."))
+            raise UserError(_("Coded stages keep their type."))
         return super().write(vals)
 
     def unlink(self):
         if self.filtered("tms_code"):
-            raise UserError(_("Coded stages cannot be deleted (BR-EXE-02)."))
+            raise UserError(_("Coded stages cannot be deleted."))
         return super().unlink()
 
     @api.model

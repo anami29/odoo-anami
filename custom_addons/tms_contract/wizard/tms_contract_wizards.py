@@ -73,7 +73,7 @@ class TmsContractExcessWizard(models.TransientModel):
     def action_request(self):
         self.ensure_one()
         if self.cover == "extension" and not self.expected_cover_date:
-            raise UserError(_("Give the date the customer's extension is expected (BR-CON-18)."))
+            raise UserError(_("Give the date the customer's extension is expected."))
         excess = self.env["tms.contract.excess"].create({
             "contract_id": self.contract_id.id, "sale_line_id": self.sale_line_id.id, "move_id": self.move_id.id,
             "amount": self.amount, "reason": self.reason, "cover": self.cover,
@@ -98,7 +98,7 @@ class TmsContractPartialPostWizard(models.TransientModel):
     def action_confirm(self):
         self.ensure_one()
         if not self.env.user.has_group("tms_core.group_branch_accountant"):
-            raise UserError(_("The Branch Accountant posts part of a held invoice (BR-CON-12)."))
+            raise UserError(_("The Branch Accountant posts part of a held invoice."))
         new_move = self.move_id._tms_split_held(self.reason)
         return {"type": "ir.actions.act_window", "res_model": "account.move", "res_id": new_move.id,
                 "view_mode": "form"}
@@ -138,7 +138,7 @@ class TmsContractItemAmendWizard(models.TransientModel):
     def action_apply(self):
         self.ensure_one()
         if not self.env.user.has_group("tms_core.group_operations_head"):
-            raise UserError(_("The Operations Head approves contract item amendments (BR-CON-23)."))
+            raise UserError(_("The Operations Head approves contract item amendments."))
         item = self.sale_line_id.sudo()
         if item.tms_release_state != "released":
             raise UserError(_("Only released items are amended; edit a draft item directly."))
@@ -161,7 +161,7 @@ class TmsContractItemAmendWizard(models.TransientModel):
         increase = after["target"] - before["target"]
         if increase > before["balance_j"] + 0.005:
             raise UserError(_("The amendment adds %(a).2f to item %(i)s but the contract balance is %(b).2f: it needs "
-                              "an extension or an approved excess first (BR-CON-23).", a=increase, i=item.tms_item_no,
+                              "an extension or an approved excess first.", a=increase, i=item.tms_item_no,
                               b=before["balance_j"]))
         item._tms_sync_reservation("amendment", source=item, note=self.reason)
         item.order_id.message_post(body=_("Item %(i)s amended: freight %(o).2f → %(n).2f. %(r)s", i=item.tms_item_no,

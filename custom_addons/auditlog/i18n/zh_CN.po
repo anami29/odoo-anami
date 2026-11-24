@@ -3,7 +3,6 @@
 # * auditlog
 #
 # Translators:
-# OCA Transbot <transbot@odoo-community.org>, 2016
 # Jeffery Chen Fan <jeffery9@gmail.com>, 2016
 msgid ""
 msgstr ""
@@ -12,7 +11,7 @@ msgstr ""
 "POT-Creation-Date: 2016-11-26 01:45+0000\n"
 "PO-Revision-Date: 2024-06-16 11:08+0000\n"
 "Last-Translator: xtanuiha <feihu.zhang@live.com>\n"
-"Language-Team: Chinese (China) (https://www.transifex.com/oca/teams/23907/"
+"Language-Team: Chinese\n"
 "zh_CN/)\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"

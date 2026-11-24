@@ -20,10 +20,10 @@ class ResCompany(models.Model):
 
     tms_hire_tds_tax_id = fields.Many2one(
         "account.tax", string="TDS on hire", domain=[("l10n_in_tds_tax_type", "=", "purchase")],
-        help="BR-HIR-10: default TDS tax for hire items; a vendor may carry its own.")
+        help="default TDS tax for hire items; a vendor may carry its own.")
     tms_commission_tds_tax_id = fields.Many2one(
         "account.tax", string="TDS on broker commission", domain=[("l10n_in_tds_tax_type", "=", "purchase")],
-        help="BR-HIR-13")
+        help="")
 
     def tms_hire_tds_tax(self, partner=None):
         self.ensure_one()
@@ -62,7 +62,7 @@ class ResPartner(models.Model):
     tms_tds_tax_id = fields.Many2one(
         "account.tax", string="TDS tax on hire", company_dependent=True,
         domain=[("l10n_in_tds_tax_type", "=", "purchase")],
-        help="BR-HIR-10: this vendor's section and rate (e.g. 1% for an individual contractor). "
+        help="this vendor's section and rate (e.g. 1% for an individual contractor). "
              "Empty uses the branch default.")
 
 
@@ -144,7 +144,7 @@ class AccountMove(models.Model):
             if not company.l10n_in_withholding_account_id:
                 account = (company.parent_ids - company).l10n_in_withholding_account_id[-1:]
                 if not account:
-                    raise UserError(_("Configure the TDS account in the accounting settings (BR-HIR-10)."))
+                    raise UserError(_("Configure the TDS account in the accounting settings."))
                 company.sudo().l10n_in_withholding_account_id = account
             wizard = self.env["l10n_in.withhold.wizard"].sudo().with_company(company).with_context(
                 active_model="account.move", active_ids=move.ids).create({"withhold_line_ids": withhold_lines})

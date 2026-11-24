@@ -41,7 +41,7 @@
                             <field name="driver_id" readonly="state != 'draft'"/>
                             <field name="payment_mode"/>
                         </group>
-                        <group string="S = advances − driver-cash expenses + recoveries (#23.3)">
+                        <group string="S = advances − driver-cash expenses + recoveries">
                             <field name="advance_total"/>
                             <field name="cash_expense_total"/>
                             <field name="recovery_total"/>

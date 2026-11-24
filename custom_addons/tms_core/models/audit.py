@@ -17,12 +17,12 @@ class AuditlogLog(models.Model):
 
     def write(self, vals):
         if not self.env.context.get("tms_auditlog_internal"):
-            raise UserError(_("Audit records are read-only (BR-AUD-03)."))
+            raise UserError(_("Audit records are read-only."))
         return super().write(vals)
 
     def unlink(self):
         if not self.env.context.get("tms_auditlog_vacuum"):
-            raise UserError(_("Audit records are kept 8 years and cannot be deleted (BR-AUD-03)."))
+            raise UserError(_("Audit records are kept 8 years and cannot be deleted."))
         return super().unlink()
 
 
@@ -30,11 +30,11 @@ class AuditlogLogLine(models.Model):
     _inherit = "auditlog.log.line"
 
     def write(self, vals):
-        raise UserError(_("Audit records are read-only (BR-AUD-03)."))
+        raise UserError(_("Audit records are read-only."))
 
     def unlink(self):
         if not self.env.context.get("tms_auditlog_vacuum"):
-            raise UserError(_("Audit records are kept 8 years and cannot be deleted (BR-AUD-03)."))
+            raise UserError(_("Audit records are kept 8 years and cannot be deleted."))
         return super().unlink()
 
 
@@ -92,10 +92,10 @@ class MailTrackingValue(models.Model):
 
     def write(self, vals):
         if not self.env.su:
-            raise UserError(_("Tracked changes are read-only (BR-AUD-03)."))
+            raise UserError(_("Tracked changes are read-only."))
         return super().write(vals)
 
     def unlink(self):
         if not self.env.su:
-            raise UserError(_("Tracked changes are kept and cannot be deleted (BR-AUD-03)."))
+            raise UserError(_("Tracked changes are kept and cannot be deleted."))
         return super().unlink()

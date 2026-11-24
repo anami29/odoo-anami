@@ -11,7 +11,7 @@
                     <t t-name="card">
                         <div t-attf-class="#{record.alert.raw_value ? 'border-start border-4 border-danger ps-2' : 'ps-2'}">
                             <div class="d-flex justify-content-between">
-                                <field name="code" class="text-muted small"/>
+                                <field name="code" invisible="1"/>
                                 <field name="alert_rule" class="text-muted small"/>
                             </div>
                             <field name="name" class="fw-bold fs-5"/>
@@ -32,7 +32,7 @@
         <field name="model">tms.kpi</field>
         <field name="arch" type="xml">
             <list create="0">
-                <field name="code"/>
+                <field name="code" column_invisible="1"/>
                 <field name="name"/>
                 <field name="value_count"/>
                 <field name="value_amount"/>
@@ -43,7 +43,7 @@
         </field>
     </record>
     <record id="action_tms_kpi_dashboard" model="ir.actions.act_window">
-        <field name="name">Exception dashboard</field>
+        <field name="name">KPI board</field>
         <field name="res_model">tms.kpi</field>
         <field name="view_mode">kanban,list</field>
     </record>
@@ -54,7 +54,7 @@
         <field name="priority">90</field>
         <field name="arch" type="xml">
             <list create="0" delete="0" editable="bottom">
-                <field name="code" readonly="1"/>
+                <field name="code" column_invisible="1"/>
                 <field name="name" readonly="1"/>
                 <field name="alert_rule" readonly="1"/>
                 <field name="alert_mode"/>

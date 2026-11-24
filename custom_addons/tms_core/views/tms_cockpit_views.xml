@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- TMS-UIG-001 decision 3: the one-page exception dashboard replaces the KPI board as the managers' first screen -->
+    <record id="action_tms_exception_dashboard" model="ir.actions.client">
+        <field name="name">Exception Dashboard</field>
+        <field name="tag">tms_exception_dashboard</field>
+    </record>
+</odoo>

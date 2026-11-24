@@ -7,10 +7,10 @@
             <form string="Release contract item">
                 <div class="alert alert-warning" role="alert" invisible="not shortfall">
                     The budget exceeds the balance by <field name="shortfall" class="oe_inline"/>: the item is held until a
-                    customer extension or an approved excess covers it (BR-CON-10).
+                    customer extension or an approved excess covers it.
                 </div>
                 <div class="alert alert-warning" role="alert" invisible="not below_floor or markup_approved">
-                    Below the markup floor: a Branch Manager approves before release (BR-CON-26).
+                    Below the markup floor: a Branch Manager approves before release.
                 </div>
                 <group>
                     <group>
@@ -73,7 +73,7 @@
         <field name="arch" type="xml">
             <form string="Post the lines that fit">
                 <p>The lines that fit the contract balance post now; the rest move to a new draft invoice marked Awaiting
-                    extension (BR-CON-12). The partial posting is logged.</p>
+                    extension. The partial posting is logged.</p>
                 <group>
                     <field name="move_id"/>
                     <field name="fit_amount"/>
@@ -95,7 +95,7 @@
         <field name="arch" type="xml">
             <form string="Amend contract item">
                 <p>Km, units, rate lines and equipment substitution. Any increase is checked against the balance and
-                    logged as an amendment reservation line (BR-CON-23).</p>
+                    logged as an amendment reservation line.</p>
                 <group>
                     <group>
                         <field name="sale_line_id"/>

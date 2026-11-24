@@ -154,7 +154,7 @@
                             <field name="gate_result"/>
                         </group>
                     </group>
-                    <separator string="Gate snapshot (BR-CMP-09)"/>
+                    <separator string="Gate snapshot"/>
                     <field name="gate_snapshot"/>
                     <field name="gate_messages"/>
                 </sheet>
@@ -215,6 +215,7 @@
                             <field name="repair_cost"/>
                             <field name="currency_id" invisible="1"/>
                             <field name="cost_responsibility"/>
+                            <field name="expense_id"/>
                             <field name="service_log_id"/>
                             <field name="incident_id"/>
                             <field name="replacement_assignment_id"/>

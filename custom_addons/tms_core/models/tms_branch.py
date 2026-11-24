@@ -34,7 +34,7 @@ class ResCompany(models.Model):
         source = Journal.search([("company_id", "in", self.parent_ids.ids), ("type", "=", journal_type)],
                                 order="company_id desc", limit=1)
         if not source:
-            raise UserError(_("No %(type)s journal to copy for branch %(branch)s (BR-BRN-04).",
+            raise UserError(_("No %(type)s journal to copy for branch %(branch)s.",
                               type=journal_type, branch=self.name))
         prefix = (self.tms_branch_code or str(self.id))[:4].upper()
         code = prefix + AUTO_TYPES[journal_type]
@@ -78,7 +78,7 @@ class AccountMove(models.Model):
             if move.journal_id.company_id != company:
                 raise UserError(_(
                     "Strict branch accounting: %(doc)s belongs to %(branch)s and must post in its journal, "
-                    "not %(journal)s (BR-BRN-04).",
+                    "not %(journal)s.",
                     doc=move.display_name, branch=company.name, journal=move.journal_id.display_name))
         return res
 

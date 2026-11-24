@@ -30,7 +30,7 @@ class TmsConsignment(models.Model):
                 notify_detached(self.env, lr._name, lr.id, users.ids, _("Typed-rate LR for a contract customer"),
                                 _("LR %(lr)s, contract %(c)s", lr=lr.name, c=", ".join(contracts.mapped("name"))))
                 raise UserError(_("%(p)s holds Active contract %(c)s: book against a released contract item, or have "
-                                  "a Branch Manager approve the typed rate with a reason (BR-CON-15).",
+                                  "a Branch Manager approve the typed rate with a reason.",
                                   p=contracts[:1].partner_id.display_name, c=", ".join(contracts.mapped("name"))))
         return res
 
@@ -40,7 +40,7 @@ class TmsConsignment(models.Model):
             return self.env["tms.reason.wizard"].open_for(self, "action_tms_approve_contract_rate",
                                                           _("Approve typed rate for a contract customer"))
         if not self.env.user.has_group("tms_core.group_branch_manager"):
-            raise UserError(_("A Branch Manager approves this (BR-CON-15)."))
+            raise UserError(_("A Branch Manager approves this."))
         for lr in self:
             if lr.state != "draft":
                 raise UserError(_("Approve the typed rate before confirmation."))
@@ -57,27 +57,26 @@ class TmsConsignment(models.Model):
             item = lr.sale_line_id.sudo()
             contract = item.tms_contract_id
             if item.tms_release_state != "released":
-                raise UserError(_("LRs book only against a released contract item; item %(i)s is %(s)s "
-                                  "(BR-CON-11).", i=item.tms_item_no,
+                raise UserError(_("LRs book only against a released contract item; item %(i)s is %(s)s.", i=item.tms_item_no,
                                   s=dict(item._fields["tms_release_state"].selection)[item.tms_release_state]))
             if contract.state in ("draft", "closed"):
                 raise UserError(_("Contract %s is not open for booking.", contract.name))
             date = lr.date or fields.Date.context_today(self)
             runon = contract.company_id.tms_contract_runon_days
             if date > contract.date_end + timedelta(days=runon):
-                raise UserError(_("Contract %(c)s ended on %(d)s and its %(n)s run-on days are over (BR-CON-11).",
+                raise UserError(_("Contract %(c)s ended on %(d)s and its %(n)s run-on days are over.",
                                   c=contract.name, d=contract.date_end, n=runon))
             if date < contract.date_start:
                 raise UserError(_("Contract %s has not started.", contract.name))
             if lr.company_id not in contract.branch_ids:
-                raise UserError(_("Branch %(b)s may not book LRs against contract %(c)s (BR-CON-24).",
+                raise UserError(_("Branch %(b)s may not book LRs against contract %(c)s.",
                                   b=lr.company_id.name, c=contract.name))
             if lr.freight_basis == "topay":
-                raise UserError(_("Contract LRs are To-Be-Billed or Paid; To-Pay is refused (BR-CON-24)."))
+                raise UserError(_("Contract LRs are To-Be-Billed or Paid; To-Pay is refused."))
             party = lr.billing_partner_id
             if party and party not in contract.billing_partner_ids and \
                     party.parent_id not in contract.billing_partner_ids:
-                raise UserError(_("%(p)s is not a billing party of contract %(c)s (BR-CON-24).",
+                raise UserError(_("%(p)s is not a billing party of contract %(c)s.",
                                   p=party.display_name, c=contract.name))
 
     @api.model_create_multi
@@ -127,7 +126,7 @@ class TmsConsignmentAmendment(models.Model):
             if not (item.tms_contract_id and am.is_diversion and am.diversion_km):
                 continue
             if not self.env.user.has_group("tms_core.group_operations_head"):
-                raise UserError(_("A diversion on contract item %s needs the Operations Head (BR-CON-23).",
+                raise UserError(_("A diversion on contract item %s needs the Operations Head.",
                                   item.tms_item_no))
             item = item.sudo()
             figs_before = item._tms_item_figures()
@@ -138,8 +137,7 @@ class TmsConsignmentAmendment(models.Model):
             figs = item._tms_item_figures()
             increase = figs["target"] - figs_before["target"]
             if increase > figs_before["balance_j"] + 0.005:
-                raise UserError(_("The diversion adds %(a).2f to item %(i)s but the contract balance is %(b).2f "
-                                  "(BR-CON-23).", a=increase, i=item.tms_item_no, b=figs_before["balance_j"]))
+                raise UserError(_("The diversion adds %(a).2f to item %(i)s but the contract balance is %(b).2f.", a=increase, i=item.tms_item_no, b=figs_before["balance_j"]))
             item._tms_sync_reservation("amendment", source=am, consignment=lr,
                                        note=_("Diversion of %.0f km", am.diversion_km))
             item.tms_contract_id._tms_after_change()
@@ -157,13 +155,12 @@ class TmsEstimate(models.Model):
             if item.tms_release_state != "released":
                 continue
             if not self.env.user.has_group("tms_core.group_operations_head"):
-                raise UserError(_("Amending released contract item %s needs the Operations Head (BR-CON-23).",
+                raise UserError(_("Amending released contract item %s needs the Operations Head.",
                                   item.tms_item_no))
             figs = item._tms_item_figures()
             increase = figs["target"] - figs["reserved"]
             if increase > figs["balance_j"] + 0.005:
-                raise UserError(_("The amendment adds %(a).2f to item %(i)s but the contract balance is %(b).2f "
-                                  "(BR-CON-23).", a=increase, i=item.tms_item_no, b=figs["balance_j"]))
+                raise UserError(_("The amendment adds %(a).2f to item %(i)s but the contract balance is %(b).2f.", a=increase, i=item.tms_item_no, b=figs["balance_j"]))
             item._tms_sync_reservation("amendment", source=amendment, note=amendment.reason)
             item.tms_contract_id._tms_after_change()
         return res
@@ -189,7 +186,7 @@ class TmsTripCharge(models.Model):
     tms_cost_line_id = fields.Many2one(
         "account.move.line", string="Cost bill line",
         domain=[("move_id.move_type", "=", "in_invoice"), ("display_type", "=", "product")],
-        help="The bill whose posted amount an incidental charge on a contract bills at (BR-CON-07).")
+        help="The bill whose posted amount an incidental charge on a contract bills at.")
     tms_contract_id = fields.Many2one(related="consignment_id.sale_line_id.tms_contract_id", string="Contract")
     tms_contract_incidental = fields.Boolean(compute="_compute_tms_contract_incidental",
                                              string="Contract incidental")
@@ -234,7 +231,7 @@ class TmsTripCharge(models.Model):
         for charge in noncontract:
             if not self.env.user.has_group("tms_core.group_operations_head"):
                 raise UserError(_("Charge %s is outside the contract's incidental categories: the Operations Head "
-                                  "approves it before it bills under the contract (BR-CON-07).", charge.name))
+                                  "approves it before it bills under the contract.", charge.name))
             if charge.create_uid == self.env.user:
                 raise UserError(_("You cannot approve a charge you raised."))
             charge.write({"state": "approved", "approved_by_id": self.env.user.id,
@@ -348,7 +345,7 @@ class TmsInvoiceLrWizard(models.TransientModel):
             actual = charge._tms_contract_actual_cost()
             if actual is None:
                 raise UserError(_("Incidental charge %s bills at the amount of its posted bill or expense: post the "
-                                  "cost document first (BR-CON-07).", charge.name))
+                                  "cost document first.", charge.name))
             vals["price_unit"] = actual
             vals["name"] += _(" (at actual)")
         return vals

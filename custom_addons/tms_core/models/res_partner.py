@@ -19,7 +19,7 @@ class ResPartner(models.Model):
     tms_credit_limit = fields.Monetary(string="TMS credit limit", currency_field="currency_id")
     tms_unregistered = fields.Boolean(string="Unregistered for GST")
     tms_credit_from_submission = fields.Boolean(
-        string="Credit days count from submission", help="BR-INV-13"
+        string="Credit days count from submission", help=""
     )
     # BR-MD-16
     tms_free_hours_loading = fields.Float(string="Free hours at loading", default=0.0)

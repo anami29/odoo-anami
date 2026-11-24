@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="tms_core.TmsExceptionDashboard">
+        <div class="o_action o_tms_cockpit">
+            <Layout display="{ controlPanel: {} }">
+                <t t-set-slot="layout-actions">
+                    <TmsScopeBar t-if="state.data" scope="state.data.scope" onChange.bind="onScope"/>
+                </t>
+                <t t-set-slot="control-panel-navigation-additional">
+                    <span t-if="state.data" class="text-muted small text-nowrap align-self-center">As of <t t-esc="state.data.scope.as_of"/></span>
+                    <button type="button" class="btn btn-secondary" t-on-click="load" t-att-disabled="state.loading">Refresh</button>
+                </t>
+                <t t-set="d" t-value="state.data"/>
+                <div t-if="state.data" class="o_tms_page">
+
+                    <div class="o_tms_kpis">
+                        <t t-foreach="d.tiles" t-as="tile" t-key="tile.key">
+                            <a href="#" class="o_tms_kpi" t-on-click.prevent="() => this.open(tile.action)" t-att-data-key="tile.key">
+                                <div class="hd"><span t-esc="tile.label"/><t t-call="tms_core.TmsIcon"><t t-set="icon" t-value="tile.icon"/></t></div>
+                                <div class="v" t-esc="tileValue(tile)"/>
+                                <div class="s" t-esc="tileSub(tile)"/>
+                            </a>
+                        </t>
+                    </div>
+
+                    <div class="o_tms_grid">
+                        <section class="o_tms_panel">
+                            <div class="o_tms_panel_h">
+                                <div class="ttl">Exceptions requiring action</div>
+                                <a href="#" class="small" t-on-click.prevent="() => this.open({model: 'tms.trip.incident', name: 'Incidents', domain: [['state', '=', 'open']]})">All incidents</a>
+                            </div>
+                            <table class="o_tms_list sm">
+                                <thead><tr><th>Exception</th><th>Reference</th><th>Detail</th><th>Since</th><th>Next action</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="d.exceptions" t-as="x" t-key="x_index">
+                                        <td><span t-attf-class="o_tms_badge b-{{x.badge}}" t-esc="x.kind"/></td>
+                                        <td class="text-nowrap"><a href="#" t-on-click.prevent="() => this.open(x.open)" t-esc="x.ref"/></td>
+                                        <td t-esc="fillText(x.detail)"/>
+                                        <td class="text-nowrap" t-esc="x.since"/>
+                                        <td class="text-nowrap"><a href="#" t-on-click.prevent="() => this.open(x.next_open)" t-esc="x.next"/></td>
+                                    </tr>
+                                    <tr t-if="!d.exceptions.length"><td colspan="5" class="text-muted py-3">Nothing needs action in this branch.</td></tr>
+                                </tbody>
+                            </table>
+                        </section>
+
+                        <section class="o_tms_panel">
+                            <t t-set="ch" t-value="chart"/>
+                            <div class="o_tms_panel_h">
+                                <div class="ttl">Trip contribution · last <t t-esc="d.contribution.bars.length || 8"/> delivered trips</div>
+                                <a t-if="d.contribution.ledger and ch" href="#" class="small" t-on-click.prevent="() => this.open(d.contribution.ledger)">P&amp;L ledger</a>
+                            </div>
+                            <div class="o_tms_panel_b">
+                                <div class="text-muted small mb-2">Net contribution per trip, ₹ = revenue − trip costs + recoveries. Hatched: still open, unposted figures included; totals count closed trips only.</div>
+                                <div t-if="!ch" class="text-muted py-3">No delivered trips yet.</div>
+                                <div t-else="" class="o_tms_cb">
+                                    <div class="o_tms_cb_grid" aria-hidden="true">
+                                        <t t-foreach="ch.ticks" t-as="g" t-key="g_index">
+                                            <div t-attf-class="o_tms_cb_gl {{g.zero ? 'zero' : ''}}" t-attf-style="left: {{g.x}}%"/>
+                                        </t>
+                                    </div>
+                                    <t t-foreach="ch.bars" t-as="b" t-key="b.trip">
+                                        <div t-attf-class="o_tms_cb_row {{state.hover === b.i ? 'hv' : ''}}"
+                                             t-on-mouseenter="() => this.state.hover = b.i" t-on-mouseleave="() => this.state.hover = -1">
+                                            <div class="o_tms_cb_lbl"><a href="#" t-on-click.prevent="() => this.open(b.trip_open)" t-esc="b.trip"/><span t-esc="b.route"/></div>
+                                            <div class="o_tms_cb_track"><div t-attf-class="o_tms_cb_bar {{b.cls}}" t-attf-style="left: {{b.left}}%; width: {{b.width}}%"/></div>
+                                            <div t-attf-class="o_tms_cb_val {{b.value &lt; 0 ? 'neg' : ''}}" t-esc="b.label"/>
+                                        </div>
+                                    </t>
+                                    <div class="o_tms_cb_axis">
+                                        <div/>
+                                        <div class="o_tms_cb_ticks">
+                                            <t t-foreach="ch.ticks" t-as="g" t-key="g_index"><span t-attf-style="left: {{g.x}}%" t-esc="g.label"/></t>
+                                        </div>
+                                        <div/>
+                                    </div>
+                                    <div t-if="hovered" class="o_tms_tip" t-attf-style="top: {{Math.min(hovered.i * 30 + 28, 150)}}px">
+                                        <div class="h"><t t-esc="hovered.trip"/> · <t t-esc="hovered.route"/></div>
+                                        <div class="ln"><span>Revenue</span><b t-esc="inr(hovered.revenue)"/></div>
+                                        <div class="ln"><span>Trip costs</span><b t-esc="inr(hovered.cost)"/></div>
+                                        <div class="ln"><span>Recoveries</span><b t-esc="hovered.recoveries ? '+' + inr(hovered.recoveries) : '—'"/></div>
+                                        <div class="ln tot"><span>Contribution</span><b t-esc="signed(hovered.value)"/></div>
+                                        <div t-if="hovered.open" class="text-muted mt-1">Open: approved commitments and unbilled charges included until the trip is closed.</div>
+                                    </div>
+                                </div>
+                                <div t-if="ch" class="o_tms_panel_foot">
+                                    <span><t t-esc="d.contribution.closed"/> closed · total <b t-esc="inr(d.contribution.total)"/><t t-if="d.contribution.open"> · <t t-esc="d.contribution.open"/> open, not in totals</t></span>
+                                    <span>average <b t-esc="inr(d.contribution.average)"/> per closed trip</span>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="o_tms_grid">
+                        <section class="o_tms_panel">
+                            <div class="o_tms_panel_h">
+                                <div class="ttl">Unbilled charges &amp; pending recoveries</div>
+                                <a href="#" class="small" t-on-click.prevent="() => this.open({model: 'tms.trip.charge', name: 'Charges', domain: []})">Charges &amp; expenses register</a>
+                            </div>
+                            <table class="o_tms_list sm">
+                                <thead><tr><th>Trip</th><th>Source</th><th>Party</th><th>Recover from</th><th class="num">Amount</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="d.recoveries.rows" t-as="r" t-key="r_index">
+                                        <td class="text-nowrap"><a t-if="r.trip_open" href="#" t-on-click.prevent="() => this.open(r.trip_open)" t-esc="r.trip"/><t t-else="" t-esc="r.trip"/></td>
+                                        <td><t t-esc="r.source"/> <a href="#" class="o_tms_doc" t-on-click.prevent="() => this.open(r.doc_open)" t-esc="r.doc"/></td>
+                                        <td t-esc="r.party"/>
+                                        <td><span t-attf-class="o_tms_badge {{r.from_key === 'customer' ? 'b-info' : 'b-brand'}}" t-esc="r.from"/></td>
+                                        <td class="num" t-esc="inr(r.amount)"/>
+                                        <td class="text-muted" t-esc="r.status"/>
+                                    </tr>
+                                    <tr t-if="!d.recoveries.rows.length"><td colspan="6" class="text-muted py-3">No approved charge is waiting to be billed or deducted.</td></tr>
+                                </tbody>
+                                <tfoot t-if="d.recoveries.rows.length">
+                                    <tr><td colspan="4"><t t-esc="d.recoveries.count"/> items · customer charges <t t-esc="inr(d.recoveries.customer)"/> · vendor and other recoveries <t t-esc="inr(d.recoveries.other)"/></td><td class="num" t-esc="inr(d.recoveries.total)"/><td/></tr>
+                                </tfoot>
+                            </table>
+                        </section>
+
+                        <section class="o_tms_panel">
+                            <div class="o_tms_panel_h"><div class="ttl">Breakdowns &amp; replacements · <t t-esc="d.scope.period_label"/></div></div>
+                            <div class="o_tms_panel_b d-flex flex-column gap-2">
+                                <div t-if="!d.breakdowns.length" class="text-muted py-2">No breakdowns this month.</div>
+                                <div t-foreach="d.breakdowns" t-as="bd" t-key="bd.id" class="o_tms_card">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="#" class="fw-medium" t-on-click.prevent="() => this.open(bd.open)"><t t-esc="bd.name"/> · <t t-esc="bd.trip"/></a>
+                                        <span t-attf-class="o_tms_badge b-{{bd.badge}}" t-esc="bd.label"/>
+                                    </div>
+                                    <div class="mt-1" t-esc="bd.line1"/>
+                                    <div t-esc="bd.line2"/>
+                                    <div class="text-muted small mt-1">
+                                        <t t-esc="bd.foot_head"/>
+                                        <t t-if="bd.repair"> · repair <t t-esc="inr(bd.repair)"/></t>
+                                        <t t-if="bd.hire"> · replacement hire <t t-esc="inr(bd.hire)"/></t>
+                                        <t t-if="bd.moved"> · <t t-esc="bd.moved"/></t>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </Layout>
+        </div>
+    </t>
+
+</templates>

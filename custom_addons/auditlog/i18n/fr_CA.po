@@ -3,7 +3,6 @@
 # * auditlog
 #
 # Translators:
-# OCA Transbot <transbot@odoo-community.org>, 2016
 # Adriana Ierfino <adriana.ierfino@savoirfairelinux.com>, 2016
 # Martin Malorni <mm@microcom.ca>, 2016
 msgid ""
@@ -13,7 +12,7 @@ msgstr ""
 "POT-Creation-Date: 2016-11-26 01:45+0000\n"
 "PO-Revision-Date: 2016-11-26 01:45+0000\n"
 "Last-Translator: Martin Malorni <mm@microcom.ca>, 2016\n"
-"Language-Team: French (Canada) (https://www.transifex.com/oca/teams/23907/"
+"Language-Team: French\n"
 "fr_CA/)\n"
 "Language: fr_CA\n"
 "MIME-Version: 1.0\n"

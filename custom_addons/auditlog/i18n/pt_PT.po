@@ -3,7 +3,6 @@
 # * auditlog
 #
 # Translators:
-# OCA Transbot <transbot@odoo-community.org>, 2016
 # Pedro Castro Silva <pedrocs@sossia.pt>, 2016
 msgid ""
 msgstr ""
@@ -12,7 +11,7 @@ msgstr ""
 "POT-Creation-Date: 2016-11-26 01:45+0000\n"
 "PO-Revision-Date: 2016-11-26 01:45+0000\n"
 "Last-Translator: Pedro Castro Silva <pedrocs@sossia.pt>, 2016\n"
-"Language-Team: Portuguese (Portugal) (https://www.transifex.com/oca/"
+"Language-Team: Portuguese\n"
 "teams/23907/pt_PT/)\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"

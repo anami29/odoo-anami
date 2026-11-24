@@ -98,7 +98,7 @@ class TmsPnlClose(models.Model):
         user = self.env.user
         if finance_only:
             if not user.has_group("tms_core.group_finance_head"):
-                raise UserError(_("The Finance Head closes the period (#18.3 step 5)."))
+                raise UserError(_("The Finance Head closes the period."))
         elif not (user.has_group("tms_core.group_finance_head")
                   or user.has_group("tms_core.group_branch_accountant")):
             raise UserError(_("The Branch Accountant or the Finance Head runs the month-end close."))
@@ -112,7 +112,7 @@ class TmsPnlClose(models.Model):
 
     def unlink(self):
         if self.filtered(lambda c: c.state == "closed"):
-            raise UserError(_("A closed period is never deleted (BR-AUD-04)."))
+            raise UserError(_("A closed period is never deleted."))
         for close in self:
             close.sudo()._tms_clear_run()
         return super().unlink()
@@ -123,7 +123,7 @@ class TmsPnlClose(models.Model):
         self._tms_check_role()
         for close in self:
             if close.state == "closed":
-                raise UserError(_("Period %s is closed and frozen (BR-PNL-22).", close.name))
+                raise UserError(_("Period %s is closed and frozen.", close.name))
             run = close.sudo().with_context(tms_close_run=True)
             run._tms_clear_run()
             run._tms_step_release()
@@ -355,7 +355,7 @@ class TmsPnlClose(models.Model):
             if run._tms_step_reconcile():
                 close._tms_notify_difference(detached=True)
                 raise UserError(_("%(c)s cannot close: the customer view plus recovery variance differs from the "
-                                  "truck view by %(d)s (BR-PNL-31).", c=close.name, d=run.difference))
+                                  "truck view by %(d)s.", c=close.name, d=run.difference))
             reverse_date = close.date_to + relativedelta(days=1)
             for move in run.move_ids.filtered(lambda m: m.state == "draft"):
                 move.action_post()
@@ -384,7 +384,7 @@ class TmsPnlClose(models.Model):
                 if not vehicle.tms_review_flag:
                     vehicle.write({"tms_review_flag": True, "tms_review_flag_date": fields.Date.context_today(self)})
                     schedule(vehicle, users, _("Repair-or-replace review"),
-                             _("%(v)s ran over its running rate for %(n)s closed months (BR-PNL-21).",
+                             _("%(v)s ran over its running rate for %(n)s closed months.",
                                v=vehicle.display_name, n=months))
 
     def _tms_rate_review(self):
@@ -439,7 +439,7 @@ class TmsPnlCloseTruck(models.Model):
 
     def unlink(self):
         if self.filtered(lambda r: r.close_id.state == "closed"):
-            raise UserError(_("The recovery statement of a closed period is frozen (BR-PNL-22)."))
+            raise UserError(_("The recovery statement of a closed period is frozen."))
         return super().unlink()
 
 

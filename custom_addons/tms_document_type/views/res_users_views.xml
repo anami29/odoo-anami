@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_tms_document_type" model="ir.ui.view">
+        <field name="name">res.users.form.tms.document.type</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Document types" name="tms_document_types">
+                    <field name="tms_document_type_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                    <div class="text-muted">One personal default per kind of document. Documents the transport flows create still take the Transport type.</div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -24,7 +24,7 @@ class AccountAccount(models.Model):
 
     tms_pnl_exclude = fields.Boolean(
         string="Kept out of the TMS P&L",
-        help="BR-PNL-12: truck depreciation, loan instalments and interest stay out of every P&L view. "
+        help="truck depreciation, loan instalments and interest stay out of every P&L view. "
              "Depreciation accounts are always left out.")
 
 
@@ -36,7 +36,7 @@ class AccountMoveLine(models.Model):
     tms_cover_to = fields.Date(string="Cover to")
     tms_useful_life_months = fields.Integer(string="Useful life (months)")
     tms_pnl_late_date = fields.Date(string="P&L period (late line)", readonly=True, copy=False,
-                                    help="BR-PNL-22: a line naming a trip of a closed period lands here.")
+                                    help="a line naming a trip of a closed period lands here.")
     tms_expense_account_id = fields.Many2one("account.account", string="Expense account released to",
                                              readonly=True, copy=False)
     tms_prepaid_schedule_id = fields.Many2one("tms.prepaid.schedule", readonly=True, copy=False, string="Prepaid schedule")
@@ -140,50 +140,48 @@ class AccountMoveLine(models.Model):
             cls = line.tms_cost_class
             if not cls:
                 raise UserError(_("Line '%s' has no cost class: Trip direct, Truck running, Truck fixed or "
-                                  "Overhead (BR-PNL-01).", label))
+                                  "Overhead.", label))
             if cls == "trip_direct":
                 estimate_line = line.tms_estimate_line_id if "tms_estimate_line_id" in line._fields else False
                 if not line.tms_trip_id and not estimate_line:
-                    raise UserError(_("Trip direct line '%s' must name its trip (BR-PNL-02).", label))
+                    raise UserError(_("Trip direct line '%s' must name its trip.", label))
                 primary = line.tms_trip_id.primary_vehicle_id
                 if primary and line.vehicle_id and line.vehicle_id != primary:
                     raise UserError(_("Trip direct line '%(l)s' must name the trip's primary truck %(v)s; a "
-                                      "replacement goes in the replacement vehicle (BR-PNL-02, BR-PNL-06).",
+                                      "replacement goes in the replacement vehicle.",
                                       l=label, v=primary.display_name))
             elif cls in TRUCK_CLASSES:
                 if line.tms_trip_id:
                     raise UserError(_("Truck running or fixed line '%s' names no trip; the truck's trips pay "
-                                      "through the standard rate (BR-PNL-03).", label))
+                                      "through the standard rate.", label))
                 if not line.vehicle_id:
-                    raise UserError(_("Truck running or fixed line '%s' must name an owned vehicle "
-                                      "(BR-PNL-03).", label))
+                    raise UserError(_("Truck running or fixed line '%s' must name an owned vehicle.", label))
                 if line.vehicle_id.tms_ownership != "owned":
                     raise UserError(_("Line '%(l)s' books a running or fixed cost on market vehicle %(v)s; its "
-                                      "hire already pays for it (BR-PNL-09).", l=label,
+                                      "hire already pays for it.", l=label,
                                       v=line.vehicle_id.display_name))
                 cat = line.tms_truck_category_id
                 if not cat:
-                    raise UserError(_("Truck running or fixed line '%s' must name a truck cost category "
-                                      "(BR-PNL-03).", label))
+                    raise UserError(_("Truck running or fixed line '%s' must name a truck cost category.", label))
                 if "truck_%s" % cat.cost_pool != cls:
-                    raise UserError(_("Category %(c)s is in the %(p)s pool, but line '%(l)s' is %(k)s (BR-PNL-03).",
+                    raise UserError(_("Category %(c)s is in the %(p)s pool, but line '%(l)s' is %(k)s.",
                                       c=cat.name, p=dict(cat._fields["cost_pool"].selection)[cat.cost_pool], l=label,
                                       k=dict(line._fields["tms_cost_class"].selection)[cls]))
                 if cls == "truck_fixed":
                     if not (line.tms_cover_from and line.tms_cover_to) or line.tms_cover_to < line.tms_cover_from:
-                        raise UserError(_("Truck fixed line '%s' needs its cover period (#18.2).", label))
+                        raise UserError(_("Truck fixed line '%s' needs its cover period.", label))
                 else:
                     threshold_lines |= line
             elif cls == "overhead":
                 if line.tms_trip_id or line.vehicle_id:
                     raise UserError(_("Overhead line '%s' names a branch or head office, and no vehicle or "
-                                      "trip (BR-PNL-04).", label))
+                                      "trip.", label))
         for line in threshold_lines:
             threshold = line.company_id.tms_capitalisation_threshold
             if threshold and line.balance >= threshold and line.tms_useful_life_months < 1 \
                     and not line.tms_expense_account_id:
                 raise UserError(_("Repair '%(l)s' of %(a)s is at or above the capitalisation threshold %(t)s: "
-                                  "enter its useful life in months (BR-PNL-11).", l=line.name or "",
+                                  "enter its useful life in months.", l=line.name or "",
                                   a=line.balance, t=threshold))
 
     def _tms_pnl_prepaid_redirect(self):
@@ -307,7 +305,7 @@ class AccountMove(models.Model):
                 if (line._tms_pnl_subject() or line.tms_cost_class) and \
                         Close._tms_is_closed(line._tms_pnl_branch(), line.date):
                     raise UserError(_("The P&L period of %(d)s is closed for %(b)s; date line '%(l)s' in the "
-                                      "next open period (BR-PNL-22).", d=line.date,
+                                      "next open period.", d=line.date,
                                       b=line._tms_pnl_branch().name, l=line.name or ""))
         return res
 
@@ -338,7 +336,7 @@ class AccountMove(models.Model):
                 date = line._tms_pnl_date()
                 if date and Close._tms_is_closed(line._tms_pnl_branch(), date):
                     raise UserError(_("%(m)s is in the closed P&L period of %(d)s; reverse it instead "
-                                      "(BR-PNL-22, BR-AUD-04).", m=move.name, d=date))
+                                      ".", m=move.name, d=date))
         return super().button_draft()
 
 
@@ -362,19 +360,17 @@ class TmsTripExpense(models.Model):
         for exp in self.sudo():
             cls = exp.tms_cost_class
             if not cls:
-                raise UserError(_("Expense %s has no cost class (BR-PNL-01).", exp.name))
+                raise UserError(_("Expense %s has no cost class.", exp.name))
             if cls in TRUCK_CLASSES:
                 vehicle = exp.vehicle_id
                 if not vehicle:
-                    raise UserError(_("Expense %s books a truck cost and must name the owned vehicle "
-                                      "(BR-PNL-03).", exp.name))
+                    raise UserError(_("Expense %s books a truck cost and must name the owned vehicle.", exp.name))
                 if vehicle.tms_ownership != "owned":
-                    raise UserError(_("Expense %(e)s books a running or fixed cost on market vehicle %(v)s "
-                                      "(BR-PNL-09).", e=exp.name, v=vehicle.display_name))
+                    raise UserError(_("Expense %(e)s books a running or fixed cost on market vehicle %(v)s.", e=exp.name, v=vehicle.display_name))
                 if not exp.tms_truck_category_id:
-                    raise UserError(_("Expense %s must name a truck cost category (BR-PNL-03).", exp.name))
+                    raise UserError(_("Expense %s must name a truck cost category.", exp.name))
             elif cls == "trip_direct" and not exp.trip_id and not exp.estimate_line_id:
-                raise UserError(_("Trip direct expense %s must name its trip (BR-PNL-02).", exp.name))
+                raise UserError(_("Trip direct expense %s must name its trip.", exp.name))
         return res
 
     def _tms_expense_line_vals(self):

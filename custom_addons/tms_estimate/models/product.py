@@ -31,7 +31,7 @@ class TmsCostCategory(models.Model):
     sequence = fields.Integer(default=10)
     default_basis = fields.Selection(COST_BASES, default="lump", required=True)
     default_markup = fields.Float(string="Default markup %")
-    incidental = fields.Boolean(help="Billed at actual on a contract (BR-CON-07).")
+    incidental = fields.Boolean(help="Billed at actual on a contract.")
     charge_category_id = fields.Many2one(
         "tms.category", string="Charge category", domain=[("use_charge", "=", True)],
         help="The charge category an incidental is billed under at actual.",
@@ -52,11 +52,11 @@ class ProductTemplate(models.Model):
     tms_default_markup = fields.Float(string="Default markup %", compute="_compute_tms_default_markup",
                                       store=True, readonly=False)
     tms_rated_capacity = fields.Float(string="Rated capacity per unit (t)",
-                                      help="For axles and trailer beds (BR-ODC-03).")
+                                      help="For axles and trailer beds.")
     tms_equipment_kind = fields.Selection(EQUIPMENT_KINDS, string="Equipment kind")
     tms_owned_truck = fields.Boolean(string="Owned-truck running",
                                      help="Priced at the standard rate per km in force on the estimate date "
-                                          "(BR-EST-03, BR-PNL-15).")
+                                          ".")
     tms_vehicle_class_id = fields.Many2one("tms.vehicle.class", string="Vehicle class")
 
     @api.depends("tms_cost_category_id")
@@ -85,7 +85,7 @@ class ResCompany(models.Model):
     tms_estimate_variance_tolerance = fields.Float(string="Estimate variance tolerance %", default=5.0)
     tms_quotation_validity_days = fields.Integer(string="Quotation validity (days)", default=15)
     tms_cost_pricelist_id = fields.Many2one("product.pricelist", string="Cost pricelist",
-                                            help="Cost of owned equipment and internal items (BR-MD-14).")
+                                            help="Cost of owned equipment and internal items.")
     tms_default_km_per_day = fields.Float(string="Planned km per day", default=300.0)
 
 

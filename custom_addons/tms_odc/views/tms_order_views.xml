@@ -7,7 +7,7 @@
         <field name="arch" type="xml">
             <xpath expr="//div[hasclass('oe_title')]" position="after">
                 <div class="alert alert-warning" role="alert" invisible="tms_cargo_type != 'odc' or not odc_start_gaps">
-                    <strong>ODC gaps before START (BR-ODC-05, BR-ODC-06)</strong>
+                    <strong>ODC gaps before START</strong>
                     <field name="odc_start_gaps" readonly="1" class="d-block"/>
                 </div>
             </xpath>
@@ -32,7 +32,7 @@
                             <button name="action_approve_route_survey" type="object" string="Approve route survey" invisible="survey_approved or not survey_file or state_code not in ('draft', 'confirmed')" groups="tms_core.group_fleet_manager,tms_core.group_operations_head" colspan="2"/>
                         </group>
                     </group>
-                    <separator string="Equipment (BR-ODC-05)"/>
+                    <separator string="Equipment"/>
                     <field name="equipment_ids" readonly="state_code not in ('draft', 'confirmed')" context="{'default_trip_id': id}">
                         <list editable="bottom" decoration-danger="not filled" decoration-warning="substituted and not approved_by_id">
                             <field name="sequence" widget="handle"/>
@@ -54,7 +54,7 @@
                             <button name="action_approve_substitution" type="object" icon="fa-check" title="Approve substitution" invisible="not substituted or approved_by_id" groups="tms_core.group_operations_head"/>
                         </list>
                     </field>
-                    <separator string="Permits (BR-ODC-06)"/>
+                    <separator string="Permits"/>
                     <field name="permit_ids" readonly="state_code in ('done', 'cancel')" context="{'default_trip_id': id, 'default_puller_plate': odc_puller_plate}">
                         <list editable="bottom">
                             <field name="state_id" options="{'no_create': True}"/>

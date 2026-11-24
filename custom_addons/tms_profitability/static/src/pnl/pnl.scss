@@ -1,0 +1,285 @@
+// Sales order P&L and Truck P&L, to the approved mockup.
+
+.o_tms_cockpit {
+    // margin dumbbell
+    .o_tms_db {
+        position: relative;
+    }
+    .o_tms_db_grid {
+        position: absolute;
+        left: 200px;
+        right: 122px;
+        top: 0;
+        pointer-events: none;
+    }
+    .o_tms_db_row {
+        position: relative;
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr) 112px;
+        align-items: center;
+        height: 38px;
+        border-radius: 3px;
+        &.on {
+            background: #ece9f5;
+        }
+    }
+    .o_tms_db_lbl {
+        font-size: 13px;
+        color: #212529;
+        padding-left: 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        span {
+            display: block;
+            font-size: 11.5px;
+            color: #6c757d;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+    .o_tms_db_trk {
+        position: relative;
+        height: 38px;
+        margin: 0 10px;
+        .ln {
+            position: absolute;
+            top: 18px;
+            height: 2px;
+        }
+        .pp,
+        .aa {
+            position: absolute;
+            top: 13px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .pp {
+            border: 2px solid #6c757d;
+            background: #fff;
+        }
+        .aa {
+            background: #2a78d6;
+            box-shadow: 0 0 0 2px #fff;
+        }
+    }
+    .o_tms_db_val {
+        text-align: right;
+        font-size: 12.5px;
+        padding-right: 6px;
+        white-space: nowrap;
+    }
+    .o_tms_db_axis {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr) 112px;
+        .o_tms_cb_ticks {
+            margin: 0 10px;
+        }
+        font-size: 11.5px;
+        color: #6c757d;
+        margin-top: 2px;
+    }
+
+    // cost-element bullets
+    .o_tms_bl_row {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr) 230px;
+        align-items: center;
+        height: 34px;
+        border-radius: 3px;
+        &.hv {
+            background: #f3f1f8;
+        }
+    }
+    .o_tms_bl_lbl {
+        font-size: 13px;
+        color: #212529;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-left: 6px;
+    }
+    .o_tms_bl_trk {
+        position: relative;
+        height: 34px;
+        .base {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 16px;
+            height: 1px;
+            background: #eceef0;
+        }
+        .act,
+        .over {
+            position: absolute;
+            top: 9px;
+            height: 16px;
+            border-radius: 0 4px 4px 0;
+        }
+        .act {
+            left: 0;
+            background: #2a78d6;
+        }
+        .over {
+            background: #eb6834;
+        }
+        .plan {
+            position: absolute;
+            top: 4px;
+            height: 26px;
+            width: 2px;
+            background: #343a40;
+            box-shadow: 0 0 0 1px #fff;
+        }
+    }
+    .o_tms_bl_val {
+        text-align: right;
+        font-size: 12.5px;
+        padding-right: 8px;
+        white-space: nowrap;
+        b {
+            font-weight: 500;
+            color: #212529;
+        }
+    }
+
+    // truck result bars
+    .o_tms_res {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 92px;
+        align-items: center;
+        gap: 8px;
+    }
+    .o_tms_rbar {
+        position: relative;
+        height: 14px;
+        .ax {
+            position: absolute;
+            left: 50%;
+            top: -4px;
+            bottom: -4px;
+            width: 1px;
+            background: #adb5bd;
+        }
+        .b {
+            position: absolute;
+            top: 2px;
+            height: 10px;
+            border-radius: 2px;
+        }
+        .cap {
+            position: absolute;
+            right: -2px;
+            top: -1px;
+            font-size: 11px;
+            line-height: 16px;
+        }
+    }
+
+    // period statement
+    .o_tms_st {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        td {
+            padding: 6px 4px;
+            border-bottom: 1px solid #f1f3f5;
+            vertical-align: top;
+        }
+        td.num {
+            text-align: right;
+            white-space: nowrap;
+            width: 120px;
+        }
+        tr.sec td {
+            padding-top: 12px;
+            font-weight: 500;
+            color: #495057;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            border-bottom: 1px solid #dee2e6;
+        }
+        tr.sum td {
+            font-weight: 500;
+            color: #212529;
+            border-bottom: 1px solid #dee2e6;
+        }
+        tr.tot td {
+            font-weight: 600;
+            font-size: 14px;
+            color: #212529;
+            border-top: 2px solid #343a40;
+            border-bottom: none;
+            padding-top: 9px;
+        }
+        tr.addon td {
+            background: #fff8e8;
+        }
+        .ref {
+            font-size: 11.5px;
+            color: #6c757d;
+        }
+    }
+
+    // bills list
+    .o_tms_seg {
+        display: inline-flex;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        overflow: hidden;
+        button {
+            border: none;
+            background: #fff;
+            padding: 4px 10px;
+            font-size: 12.5px;
+            color: #495057;
+            cursor: pointer;
+        }
+        button + button {
+            border-left: 1px solid #ced4da;
+        }
+        button.on {
+            background: #71639e;
+            color: #fff;
+        }
+    }
+    .o_tms_bl_wrap {
+        max-height: 318px;
+        overflow-y: auto;
+        thead th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+        }
+    }
+    .o_tms_ln {
+        max-width: 240px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .o_tms_cl {
+        display: inline-block;
+        font-size: 11.5px;
+        line-height: 18px;
+        padding: 0 7px;
+        border-radius: 9px;
+        white-space: nowrap;
+        &.trip {
+            background: #e3effc;
+            color: #1e5ba8;
+        }
+        &.truck {
+            background: #f1ebfa;
+            color: #5b3f99;
+        }
+        &.add {
+            background: #fdecd9;
+            color: #9a4a0b;
+        }
+    }
+}

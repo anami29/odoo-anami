@@ -84,11 +84,11 @@ class TmsTripConsignment(models.Model):
         for link in self.filtered(lambda x: x.state == "active"):
             lr = link.consignment_id
             if lr.state not in ("confirmed", "dispatched"):
-                raise ValidationError(_("Only confirmed LRs can be linked to a trip (BR-TRP-04)."))
+                raise ValidationError(_("Only confirmed LRs can be linked to a trip."))
             planned = sum(lr.trip_link_ids.filtered(lambda x: x.state == "active").mapped("packages"))
             if link.packages <= 0 or planned > lr.total_packages:
                 raise ValidationError(
-                    _("LR %(lr)s has only %(n)s unplanned packages (BR-TRP-04, BR-LR-14).", lr=lr.name,
+                    _("LR %(lr)s has only %(n)s unplanned packages.", lr=lr.name,
                       n=lr.total_packages - planned + link.packages)
                 )
 
@@ -112,7 +112,7 @@ class TmsTripConsignment(models.Model):
 
     def unlink(self):
         if any(link.trip_id.state_code not in ("draft", False) for link in self):
-            raise UserError(_("Remove a link with a reason instead of deleting it (BR-LR-18)."))
+            raise UserError(_("Remove a link with a reason instead of deleting it."))
         return super().unlink()
 
     def _compute_pod_overdue(self):
@@ -138,7 +138,7 @@ class TmsTripConsignment(models.Model):
             link.trip_id._tms_check_moving()
             lr = link.consignment_id
             if lr.freight_basis == "topay" and not lr.collected:
-                raise UserError(_("To-Pay LR %s is released only after its freight is collected (RL-06).", lr.name))
+                raise UserError(_("To-Pay LR %s is released only after its freight is collected.", lr.name))
             link.write({
                 "outcome": "delivered",
                 "delivered_at": link.delivered_at or fields.Datetime.now(),
@@ -159,7 +159,7 @@ class TmsTripConsignment(models.Model):
         """BR-POD-08: Not delivered (loss) or Refused, on evidence."""
         for link in self:
             if not link.outcome_evidence:
-                raise UserError(_("Attach the evidence first: FIR, surveyor report or refusal note (BR-POD-08)."))
+                raise UserError(_("Attach the evidence first: FIR, surveyor report or refusal note."))
             link.write({"outcome": outcome, "delivered_at": link.delivered_at or fields.Datetime.now(),
                         "pod_status": "uploaded", "uploaded_by_id": self.env.user.id,
                         "uploaded_on": fields.Datetime.now()})
@@ -223,10 +223,10 @@ class TmsTripConsignment(models.Model):
     def _tms_check_verifier(self):
         user = self.env.user
         if not user.has_group("tms_core.group_pod_verifier"):
-            raise UserError(_("Only a POD Verifier verifies or rejects PODs (BR-POD-03)."))
+            raise UserError(_("Only a POD Verifier verifies or rejects PODs."))
         for link in self:
             if link.uploaded_by_id == user:
-                raise UserError(_("You cannot verify a POD you uploaded (BR-POD-03, BR-BRN-09)."))
+                raise UserError(_("You cannot verify a POD you uploaded."))
 
     def action_verify_pod(self):
         self._tms_check_verifier()
@@ -244,7 +244,7 @@ class TmsTripConsignment(models.Model):
     def action_reject_pod(self):
         reason = self.env.context.get("tms_reason")
         if not reason:
-            raise UserError(_("A rejection needs a reason (BR-POD-02)."))
+            raise UserError(_("A rejection needs a reason."))
         self._tms_check_verifier()
         self.write({"pod_status": "rejected", "reject_reason": reason})
         return True
@@ -333,7 +333,7 @@ class TmsTripAssignment(models.Model):
         [("pass", "Passed"), ("warn", "Passed with warnings"), ("fail", "Failed"), ("not_enforced", "Not enforced")],
         readonly=True,
     )
-    gate_snapshot = fields.Text(readonly=True, help="Documents checked and their dates (BR-CMP-09).")
+    gate_snapshot = fields.Text(readonly=True, help="Documents checked and their dates.")
     gate_messages = fields.Text(readonly=True)
     odometer_out = fields.Float()
     odometer_in = fields.Float()
@@ -355,7 +355,7 @@ class TmsTripAssignment(models.Model):
     def _check_one_open(self):
         for asg in self.filtered(lambda a: a.state == "open"):
             if self.search_count([("trip_id", "=", asg.trip_id.id), ("state", "=", "open"), ("id", "!=", asg.id)]):
-                raise ValidationError(_("A trip has at most one open assignment (BR-ASG-02)."))
+                raise ValidationError(_("A trip has at most one open assignment."))
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -369,13 +369,13 @@ class TmsTripAssignment(models.Model):
         immutable = {"trip_id", "sequence", "vehicle_id", "market_vehicle_id", "driver_id", "reason", "date_from",
                      "fleet_type"}
         if immutable & set(vals):
-            raise UserError(_("Assignment lines are append-only (BR-ASG-02)."))
+            raise UserError(_("Assignment lines are append-only."))
         if any(asg.state == "closed" for asg in self) and set(vals) - {"odometer_in", "date_to", "state"}:
-            raise UserError(_("Closed assignment lines cannot change (BR-ASG-02)."))
+            raise UserError(_("Closed assignment lines cannot change."))
         return super().write(vals)
 
     def unlink(self):
-        raise UserError(_("Assignment lines are never deleted (BR-ASG-02)."))
+        raise UserError(_("Assignment lines are never deleted."))
 
 
 class TmsTripDsr(models.Model):
@@ -393,7 +393,7 @@ class TmsTripDsr(models.Model):
     consignment_id = fields.Many2one(
         "tms.consignment", string="LR (stop)", domain="[('trip_link_ids.trip_id', '=', trip_id)]",
         help="The LR whose loading or unloading stop this line times; detention is charged to its billing party "
-             "(BR-CHG-09). Empty: the trip's first LR.")
+             ". Empty: the trip's first LR.")
     eta = fields.Datetime(string="ETA")
     remark = fields.Text()
     source = fields.Selection([("manual", "Control Room"), ("driver", "Driver call"), ("gps", "GPS")],
@@ -404,9 +404,9 @@ class TmsTripDsr(models.Model):
     def _check_status(self):
         for dsr in self:
             if dsr.status.startswith("delayed") and not dsr.remark:
-                raise ValidationError(_("A Delayed DSR status needs a remark (RL-03)."))
+                raise ValidationError(_("A Delayed DSR status needs a remark."))
             if dsr.status in ODC_DSR and dsr.trip_id.tms_cargo_type != "odc":
-                raise ValidationError(_("Halted statuses apply to ODC trips only (BR-EXE-09)."))
+                raise ValidationError(_("Halted statuses apply to ODC trips only."))
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -467,6 +467,8 @@ class TmsTripBreakdown(models.Model):
         required=True,
     )
     service_log_id = fields.Many2one("fleet.vehicle.log.services", readonly=True)
+    # TMS-UIG-001 #7 item 4: the repair cost of record is a trip expense; the service log keeps the workshop history
+    expense_id = fields.Many2one("tms.trip.expense", string="Repair expense", readonly=True, copy=False)
     incident_id = fields.Many2one("tms.trip.incident", readonly=True)
     replacement_assignment_id = fields.Many2one("tms.trip.assignment", readonly=True)
     state = fields.Selection([("open", "Open"), ("resolved", "Resolved"), ("cancel", "Cancelled")], default="open",
@@ -564,9 +566,45 @@ class TmsTripBreakdown(models.Model):
             if bd.service_log_id:
                 bd.service_log_id.write({"state": "done", "tms_downtime_hours": bd.downtime_hours,
                                          "amount": bd.repair_cost})
+            bd._tms_book_repair_expense()
             if bd.incident_id and bd.incident_id.state == "open" and not bd.incident_id.moves_money:
                 bd.incident_id.state = "resolved"
 
+
+    def write(self, vals):
+        res = super().write(vals)
+        if "repair_cost" in vals and not self.env.context.get("tms_repair_sync"):
+            self.filtered(lambda bd: bd.state == "resolved")._tms_book_repair_expense()
+        return res
+
+    def _tms_book_repair_expense(self):
+        """The towing and repair cost is booked as a draft trip expense (Roadside repair) on the trip, linked to
+        the breakdown, its incident and the fleet service log; a later change of the cost follows the draft."""
+        category = self.env.ref("tms_core.tms_category_roadside_repair")
+        for bd in self:
+            exp = bd.expense_id
+            if exp:
+                if exp.state == "draft" and bd.repair_cost and abs(exp.amount - bd.repair_cost) > 0.005:
+                    exp.amount = bd.repair_cost
+                continue
+            if not bd.repair_cost or bd.repair_cost <= 0:
+                continue
+            vals = {
+                "trip_id": bd.trip_id.id,
+                "category_id": category.id,
+                "amount": bd.repair_cost,
+                "date": (bd.resumed_at or bd.reported_at or fields.Datetime.now()).date(),
+                "incident_id": bd.incident_id.id,
+                "breakdown_id": bd.id,
+                "vehicle_id": bd.vehicle_id.id,
+            }
+            if bd.cost_responsibility == "vendor":
+                vals.update({"recoverable_from": "vendor", "recoverable_amount": bd.repair_cost})
+            exp = self.env["tms.trip.expense"].sudo().create(vals)
+            bd.with_context(tms_repair_sync=True).expense_id = exp
+            if bd.service_log_id:
+                bd.service_log_id.tms_expense_id = exp
+            bd.message_post(body=_("Repair cost booked as trip expense %s (draft).", exp.name))
 
 class TmsTripIncident(models.Model):
     """BR-INC-01..05: incidents record events; they never carry money themselves."""
@@ -591,7 +629,7 @@ class TmsTripIncident(models.Model):
     )
     responsible_partner_id = fields.Many2one("res.partner")
     estimated_amount = fields.Monetary(currency_field="currency_id",
-                                       help="For the record only; no ledger or P&L reads it (BR-INC-03).")
+                                       help="For the record only; no ledger or P&L reads it.")
     currency_id = fields.Many2one(related="company_id.currency_id")
     moves_money = fields.Boolean(compute="_compute_moves_money", store=True, readonly=False)
     reported_by_id = fields.Many2one("res.users", default=lambda s: s.env.user, readonly=True)
@@ -602,7 +640,7 @@ class TmsTripIncident(models.Model):
     claim_id = fields.Many2one("tms.damage.claim")
     breakdown_id = fields.Many2one("tms.trip.breakdown")
 
-    _sql_constraints = [("claim_uniq", "unique(claim_id)", "A claim belongs to one incident (BR-INC-05).")]
+    _sql_constraints = [("claim_uniq", "unique(claim_id)", "A claim belongs to one incident.")]
 
     @api.depends("category_id", "trip_id")
     def _compute_name(self):
@@ -618,10 +656,9 @@ class TmsTripIncident(models.Model):
         """BR-INC-04, RL-04: an incident that moves money resolves only with its realising document."""
         for inc in self:
             if inc.moves_money and not (inc.expense_ids or inc.charge_ids or inc.claim_id):
-                raise UserError(_("Link or create the expense, charge or claim that realises this incident first "
-                                  "(BR-INC-04)."))
+                raise UserError(_("Link or create the expense, charge or claim that realises this incident first."))
             if inc.category_id.code in ("DAMAGE", "SHORTAGE") and not inc.claim_id:
-                raise UserError(_("Damage and Shortage incidents link to exactly one claim (BR-INC-05)."))
+                raise UserError(_("Damage and Shortage incidents link to exactly one claim."))
             inc.state = "resolved"
         return True
 

@@ -8,7 +8,7 @@ class ResConfigSettings(models.TransientModel):
     tms_mode_locked = fields.Boolean(related="company_id.tms_mode_locked")
     tms_enforce_compliance = fields.Boolean(related="company_id.tms_enforce_compliance", readonly=False)
     tms_enforce_reason = fields.Char(string="Reason for the switch",
-                                     help="BR-CFG-06: required when compliance enforcement is switched; logged.")
+                                     help="required when compliance enforcement is switched; logged.")
     tms_strict_branch_accounting = fields.Boolean(related="company_id.tms_strict_branch_accounting", readonly=False)
     tms_hire_tolerance_amount = fields.Monetary(related="company_id.tms_hire_tolerance_amount", readonly=False)
     tms_hire_tolerance_percent = fields.Float(related="company_id.tms_hire_tolerance_percent", readonly=False)

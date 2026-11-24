@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="tms_profitability.TmsSoPnl">
+        <div class="o_action o_tms_cockpit">
+            <Layout display="{ controlPanel: {} }">
+                <t t-set-slot="layout-actions">
+                    <TmsScopeBar t-if="state.data" scope="state.data.scope" extra="facets" onChange.bind="onScope"/>
+                </t>
+                <t t-set-slot="control-panel-navigation-additional">
+                    <span t-if="state.data" class="text-muted small text-nowrap align-self-center">As of <t t-esc="state.data.scope.as_of"/></span>
+                    <button type="button" class="btn btn-secondary" t-on-click="exportCsv" t-att-disabled="!state.data">Export</button>
+                    <button type="button" class="btn btn-secondary" t-on-click="load" t-att-disabled="state.loading">Refresh</button>
+                </t>
+                <t t-set="d" t-value="state.data"/>
+                <div t-if="d" class="o_tms_page">
+                    <t t-set="k" t-value="d.tiles"/>
+                    <div class="o_tms_kpis four">
+                        <div class="o_tms_kpi static">
+                            <div class="hd"><span>Revenue</span></div>
+                            <div class="v" t-esc="inr(k.rev_a)"/>
+                            <div class="d-flex justify-content-between"><span class="pl">planned <t t-esc="inr(k.rev_p)"/></span>
+                                <span t-attf-class="o_tms_dl {{trendClass(k.rev_a - k.rev_p, false)}}" t-esc="k.rev_p ? signedPct((k.rev_a - k.rev_p) / k.rev_p * 100) : '—'"/></div>
+                        </div>
+                        <div class="o_tms_kpi static">
+                            <div class="hd"><span>Direct cost</span></div>
+                            <div class="v" t-esc="inr(k.cost_a)"/>
+                            <div class="d-flex justify-content-between"><span class="pl">planned <t t-esc="inr(k.cost_p)"/></span>
+                                <span t-attf-class="o_tms_dl {{trendClass(k.cost_a - k.cost_p, true)}}" t-esc="k.cost_p ? signedPct((k.cost_a - k.cost_p) / k.cost_p * 100) : '—'"/></div>
+                        </div>
+                        <div class="o_tms_kpi static">
+                            <div class="hd"><span>Contribution</span></div>
+                            <div class="v"><t t-esc="inr(k.con_a)"/> <small t-esc="pct(k.m_a)"/></div>
+                            <div class="d-flex justify-content-between"><span class="pl">planned <t t-esc="inr(k.con_p)"/> · <t t-esc="pct(k.m_p)"/></span>
+                                <span t-attf-class="o_tms_dl {{trendClass(k.con_a - k.con_p, false)}}" t-esc="signed(k.con_a - k.con_p)"/></div>
+                        </div>
+                        <div class="o_tms_kpi static">
+                            <div class="hd"><span>Sales orders over plan</span><span class="pl">tolerance <t t-esc="d.tolerance"/>%</span></div>
+                            <div class="v"><t t-esc="k.over"/> <small>of <t t-esc="k.orders"/></small></div>
+                            <div class="pl">cost above plan by more than <t t-esc="d.tolerance"/>%<t t-if="k.over_list">: <t t-esc="k.over_list"/></t></div>
+                        </div>
+                    </div>
+
+                    <div class="o_tms_grid wide">
+                        <section class="o_tms_panel">
+                            <div class="o_tms_panel_h"><div class="ttl">Sales orders · planned against actual</div><span class="text-muted small">Click a row for its cost elements and trips</span></div>
+                            <table class="o_tms_list sm pick">
+                                <thead><tr><th>Sales Order</th><th>Customer</th><th>Type</th><th class="num">Trips</th><th class="num">Revenue</th><th class="num">Direct cost</th><th class="num">Cost variance</th><th class="num">Contribution</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="d.rows" t-as="r" t-key="r.key" t-att-class="{on: r.key === d.selected}" t-on-click="() => this.pick(r)">
+                                        <td class="text-nowrap fw-medium" t-esc="r.so"/>
+                                        <td t-esc="r.customer"/>
+                                        <td class="text-nowrap"><span t-attf-class="o_tms_badge b-{{r.type_badge}}" t-esc="r.type"/></td>
+                                        <td class="num" t-esc="r.trips"/>
+                                        <td class="num"><span t-esc="inr(r.rev_a)"/><span class="sub" t-esc="r.planned ? 'plan ' + inr(r.rev_p) : 'no plan'"/></td>
+                                        <td class="num"><span t-esc="inr(r.cost_a)"/><span class="sub" t-esc="r.planned ? 'plan ' + inr(r.cost_p) : 'no plan'"/></td>
+                                        <td class="num"><t t-if="r.planned"><span t-attf-class="o_tms_dl {{trendClass(r.var, true)}}" t-esc="signed(r.var)"/><span class="sub" t-esc="signedPct(r.var_pct)"/></t><t t-else="">—</t></td>
+                                        <td class="num"><span><t t-esc="inr(r.con_a)"/> · <t t-esc="pct(r.m_a)"/></span><span class="sub" t-esc="r.planned ? 'plan ' + inr(r.con_p) + ' · ' + pct(r.m_p) : ''"/></td>
+                                    </tr>
+                                    <tr t-if="!d.rows.length"><td colspan="8" class="text-muted py-3">No trip started in this branch and month.</td></tr>
+                                </tbody>
+                                <tfoot t-if="d.rows.length"><tr>
+                                    <td colspan="3"><t t-esc="d.scope.company_name"/> · <t t-esc="d.scope.period_label"/></td>
+                                    <td class="num" t-esc="d.totals.trips"/>
+                                    <td class="num"><span t-esc="inr(d.totals.rev_a)"/><span class="sub">plan <t t-esc="inr(k.rev_p)"/></span></td>
+                                    <td class="num"><span t-esc="inr(d.totals.cost_a)"/><span class="sub">plan <t t-esc="inr(k.cost_p)"/></span></td>
+                                    <td class="num"><span t-attf-class="o_tms_dl {{trendClass(d.totals.var, true)}}" t-esc="signed(d.totals.var)"/><span class="sub" t-esc="signedPct(d.totals.var_pct)"/></td>
+                                    <td class="num"><span><t t-esc="inr(d.totals.con_a)"/> · <t t-esc="pct(d.totals.m_a)"/></span><span class="sub">plan <t t-esc="inr(d.totals.con_p)"/> · <t t-esc="pct(d.totals.m_p)"/></span></td>
+                                </tr></tfoot>
+                            </table>
+                        </section>
+
+                        <section class="o_tms_panel">
+                            <div class="o_tms_panel_h"><div class="ttl">Margin · planned to actual</div></div>
+                            <div class="o_tms_panel_b">
+                                <div class="o_tms_legend mb-2"><span><i class="sw-ph"/>Planned</span><span><i class="sw-ah"/>Actual</span><span class="text-muted">line runs from plan to actual</span></div>
+                                <t t-set="db" t-value="dumbbell"/>
+                                <div class="o_tms_db">
+                                    <div class="o_tms_db_grid" t-attf-style="height: {{db.height}}px">
+                                        <t t-foreach="db.ticks" t-as="g" t-key="g_index"><div t-attf-class="o_tms_cb_gl {{g.zero ? 'zero' : ''}}" t-attf-style="left: {{g.x}}%"/></t>
+                                    </div>
+                                    <div t-foreach="db.items" t-as="it" t-key="it.key" t-attf-class="o_tms_db_row {{it.on ? 'on' : ''}}">
+                                        <div class="o_tms_db_lbl"><t t-esc="it.so"/><span t-esc="it.customer"/></div>
+                                        <div class="o_tms_db_trk">
+                                            <div class="ln" t-attf-style="left: {{it.l}}%; width: {{it.w}}%; background: {{it.worse ? '#eb6834' : '#2a78d6'}}"/>
+                                            <div t-if="it.planned" class="pp" t-attf-style="left: calc({{it.p}}% - 6px)"/>
+                                            <div class="aa" t-attf-style="left: calc({{it.a}}% - 6px)"/>
+                                        </div>
+                                        <div class="o_tms_db_val"><span class="text-muted" t-esc="it.mP"/> → <b class="fw-medium" t-esc="it.mA"/></div>
+                                    </div>
+                                    <div class="o_tms_db_axis"><div/><div class="o_tms_cb_ticks"><t t-foreach="db.ticks" t-as="g" t-key="g_index"><span t-attf-style="left: {{g.x}}%" t-esc="g.label"/></t></div><div/></div>
+                                </div>
+                                <div class="text-muted small mt-3">Margin = contribution ÷ revenue. Direct cost includes the standard charge of owned trucks (km run × class rate).</div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <t t-set="s" t-value="d.detail"/>
+                    <section t-if="s" class="o_tms_panel">
+                        <div class="o_tms_panel_h">
+                            <div class="ttl">
+                                <a t-if="s.order_open" href="#" t-on-click.prevent="() => this.open(s.order_open)" t-esc="s.so"/><t t-else="" t-esc="s.so"/>
+                                · <t t-esc="s.customer"/>
+                                <span t-attf-class="o_tms_badge b-{{s.type_badge}}" t-esc="s.type"/>
+                                <span class="text-muted small fw-normal" t-esc="s.basis"/>
+                            </div>
+                        </div>
+                        <div class="o_tms_panel_b d-flex flex-column gap-3">
+                            <div class="o_tms_note"><i class="fa fa-info-circle mt-1"/><span><b>Why actual differs from plan.</b> <t t-esc="fillText(s.drivers)"/></span></div>
+                            <div class="o_tms_grid inner">
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="fw-medium text-dark">Cost by element <span class="text-muted small fw-normal" t-esc="s.element_note"/></div>
+                                        <div class="o_tms_legend"><span><i class="sw-a"/>Actual</span><span><i class="sw-p"/>Planned</span><span><i class="sw-o"/>Over plan</span></div>
+                                    </div>
+                                    <div class="position-relative">
+                                        <div t-if="!bullets.length" class="text-muted py-2">No cost booked yet.</div>
+                                        <div t-foreach="bullets" t-as="b" t-key="b.i" t-attf-class="o_tms_bl_row {{state.hover === b.i ? 'hv' : ''}}"
+                                             t-on-mouseenter="() => this.state.hover = b.i" t-on-mouseleave="() => this.state.hover = -1">
+                                            <div class="o_tms_bl_lbl" t-att-title="b.name" t-esc="b.name"/>
+                                            <div class="o_tms_bl_trk">
+                                                <div class="base"/>
+                                                <div class="act" t-attf-style="width: {{b.aw}}%"/>
+                                                <div t-if="b.ow" class="over" t-attf-style="left: calc({{b.ox}}% + 2px); width: calc({{b.ow}}% - 2px)"/>
+                                                <div t-if="b.planned" class="plan" t-attf-style="left: calc({{b.px}}% - 1px)"/>
+                                            </div>
+                                            <div class="o_tms_bl_val"><b t-esc="inr(b.actual)"/> <span class="text-muted">/ <t t-esc="inr(b.planned)"/></span> <span t-attf-class="o_tms_dl {{b.dcls}} d-inline-block text-end" style="min-width: 64px" t-esc="signed(b.d)"/></div>
+                                        </div>
+                                        <t t-set="hb" t-value="hoverBullet"/>
+                                        <div t-if="hb" class="o_tms_tip" t-attf-style="right: 240px; top: {{Math.min(hb.i * 34 + 30, Math.max(0, bullets.length * 34 - 120))}}px">
+                                            <div class="h" t-esc="hb.name"/>
+                                            <div class="ln"><span>Planned</span><b t-esc="inr(hb.planned)"/></div>
+                                            <div class="ln"><span>Actual</span><b t-esc="inr(hb.actual)"/></div>
+                                            <div class="ln tot"><span>Variance</span><b><t t-esc="signed(hb.d)"/> · <t t-esc="hb.planned ? signedPct(hb.d / hb.planned * 100) : 'not planned'"/></b></div>
+                                            <div class="text-muted mt-1" t-esc="hb.src || 'Estimate line against posted bills and expenses'"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="fw-medium text-dark mb-2">Trips on this <t t-esc="s.key === 'none' ? 'group' : 'sales order'"/></div>
+                                    <table class="o_tms_list sm">
+                                        <thead><tr><th>Trip</th><th>Route</th><th>Stage</th><th class="num">Revenue</th><th class="num">Cost plan</th><th class="num">Cost actual</th><th class="num">Contribution</th></tr></thead>
+                                        <tbody>
+                                            <tr t-foreach="s.trips" t-as="x" t-key="x.trip">
+                                                <td class="text-nowrap fw-medium"><a href="#" t-on-click.prevent="() => this.open(x.trip_open)" t-esc="x.trip"/><span class="sub" t-esc="x.share"/></td>
+                                                <td t-esc="x.route"/>
+                                                <td class="text-nowrap"><span t-attf-class="o_tms_badge b-{{x.stage.badge}}" t-esc="x.stage.label"/></td>
+                                                <td class="num" t-esc="inr(x.revenue)"/>
+                                                <td class="num" t-esc="x.cost_plan === null or x.cost_plan === false ? '—' : inr(x.cost_plan)"/>
+                                                <td class="num" t-esc="inr(x.cost_actual)"/>
+                                                <td t-attf-class="num {{x.contribution &lt; 0 ? 'text-danger' : ''}}" t-esc="inr(x.contribution)"/>
+                                            </tr>
+                                            <tr t-if="!s.trips.length"><td colspan="7" class="text-muted py-2">No trip yet.</td></tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="text-muted small mt-2" t-esc="s.trip_note"/>
+                                    <div class="text-muted small mt-1">Trip costs are the trip ledger's direct cost and standard charge, split by charged weight on shared trips.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </Layout>
+        </div>
+    </t>
+
+</templates>

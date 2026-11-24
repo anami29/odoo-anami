@@ -14,7 +14,7 @@ class SaleOrder(models.Model):
                                       index="btree_not_null")
     tms_contract_approved_by_id = fields.Many2one(
         "res.users", string="Contract customer approval", readonly=True, copy=False,
-        help="An ordinary order for a customer with an Active contract needs Branch Manager approval (BR-CON-15).")
+        help="An ordinary order for a customer with an Active contract needs Branch Manager approval.")
 
     def _tms_is_contract_order(self):
         return bool(self.tms_contract_id) or super()._tms_is_contract_order()
@@ -36,7 +36,7 @@ class SaleOrder(models.Model):
                                 _("Customer %s holds Active contract(s) %s.") % (
                                     order.partner_id.display_name, ", ".join(contracts.mapped("name"))))
                 raise UserError(_("%(c)s holds Active contract %(k)s: an ordinary order needs Branch Manager approval "
-                                  "with a reason (BR-CON-15).", c=order.partner_id.display_name,
+                                  "with a reason.", c=order.partner_id.display_name,
                                   k=", ".join(contracts.mapped("name"))))
         return res
 
@@ -46,7 +46,7 @@ class SaleOrder(models.Model):
             return self.env["tms.reason.wizard"].open_for(self, "action_tms_approve_contract_customer",
                                                           _("Approve order for a contract customer"))
         if not self.env.user.has_group("tms_core.group_branch_manager"):
-            raise UserError(_("A Branch Manager approves this (BR-CON-15)."))
+            raise UserError(_("A Branch Manager approves this."))
         for order in self:
             order.sudo().tms_contract_approved_by_id = self.env.user
             self.env["tms.override.log"].log("contract_customer_rate", order,
@@ -74,7 +74,7 @@ class SaleOrderLine(models.Model):
     tms_released_on = fields.Date(readonly=True, copy=False, string="Released on")
     tms_released_by_id = fields.Many2one("res.users", readonly=True, copy=False, string="Released by")
     tms_freight = fields.Monetary(compute="_compute_tms_freight", store=True, currency_field="currency_id",
-                                  string="Contract freight", help="Σ rate × quantity (BR-CON-05).")
+                                  string="Contract freight", help="Σ rate × quantity.")
     tms_budget_reserved = fields.Monetary(readonly=True, copy=False, currency_field="currency_id",
                                           string="Budget at release")
     tms_supplementary_amount = fields.Monetary(readonly=True, copy=False, currency_field="currency_id",
@@ -244,11 +244,11 @@ class SaleOrderLine(models.Model):
             if lane & set(vals) and any(line.tms_release_state != "draft" for line in self
                                         if line.tms_contract_id):
                 raise UserError(_("A released contract item changes only through an amendment approved by the "
-                                  "Operations Head (BR-CON-23, OP-18)."))
+                                  "Operations Head."))
             if "price_unit" in vals and not self.env.context.get("tms_estimate_push"):
                 for line in self.filtered(lambda x: x.tms_contract_id and x.tms_is_movement):
                     if abs(vals["price_unit"] - line.tms_freight) > 0.005:
-                        raise UserError(_("Item %s takes its freight from the contract rates (BR-CON-05).",
+                        raise UserError(_("Item %s takes its freight from the contract rates.",
                                           line.tms_item_no))
         res = super().write(vals)
         if "tms_distance_km" in vals:
@@ -258,7 +258,7 @@ class SaleOrderLine(models.Model):
 
     def unlink(self):
         if any(line.tms_contract_id and line.tms_release_state != "draft" for line in self):
-            raise UserError(_("Released contract items are cancelled or closed, never deleted (BR-AUD-04)."))
+            raise UserError(_("Released contract items are cancelled or closed, never deleted."))
         return super().unlink()
 
     def _tms_movement_amount(self):
@@ -308,7 +308,7 @@ class SaleOrderLine(models.Model):
             if not migration:
                 contract._tms_check_can_release(today)
             if not line.tms_contract_rate_ids:
-                raise UserError(_("Item %s uses no contract rate line (BR-CON-05).", line.tms_item_no))
+                raise UserError(_("Item %s uses no contract rate line.", line.tms_item_no))
             contract._tms_lock()
             line._tms_refresh_rates(today)
             figs = line._tms_item_figures()
@@ -318,7 +318,7 @@ class SaleOrderLine(models.Model):
                                 _("Contract item below the markup floor"),
                                 _("Item %(i)s: markup %(m).1f%% on cost", i=line.tms_item_no, m=figs["markup_pct"]))
                 raise UserError(_("Item %(i)s earns %(m).1f%% on its estimated cost, below the markup floor: a Branch "
-                                  "Manager approves before release (BR-CON-26).", i=line.tms_item_no,
+                                  "Manager approves before release.", i=line.tms_item_no,
                                   m=figs["markup_pct"]))
             shortfall = figs["budget"] - figs["balance_j"]
             if shortfall > 0.005 and not migration:
@@ -330,7 +330,7 @@ class SaleOrderLine(models.Model):
                                 _("Release held: item %s", line.tms_item_no),
                                 _("Balance %(b).2f, budget %(B).2f, shortfall %(s).2f. Seek an extension or request "
                                   "an excess.", b=figs["balance_j"], B=figs["budget"], s=shortfall))
-                raise UserError(_("Release of item %(i)s is held (BR-CON-10): balance %(b).2f, budget %(B).2f, "
+                raise UserError(_("Release of item %(i)s is held: balance %(b).2f, budget %(B).2f, "
                                   "shortfall %(s).2f. Only a customer extension or an approved excess covers it.",
                                   i=line.tms_item_no, b=figs["balance_j"], B=figs["budget"], s=shortfall))
             if not migration:
@@ -362,10 +362,10 @@ class SaleOrderLine(models.Model):
             return self.env["tms.reason.wizard"].open_for(self, "action_tms_approve_markup",
                                                           _("Approve release below the markup floor"))
         if not self.env.user.has_group("tms_core.group_branch_manager"):
-            raise UserError(_("A Branch Manager approves this (BR-CON-26)."))
+            raise UserError(_("A Branch Manager approves this."))
         for line in self:
             if line.tms_estimate_id.create_uid == self.env.user:
-                raise UserError(_("Whoever built the estimate cannot approve it (BR-BRN-09)."))
+                raise UserError(_("Whoever built the estimate cannot approve it."))
             line.sudo().tms_markup_approved_by_id = self.env.user
             line.order_id.sudo().message_post(body=_("Item %(i)s: release below the markup floor approved. %(r)s",
                                                      i=line.tms_item_no, r=reason))
@@ -416,7 +416,7 @@ class SaleOrderLine(models.Model):
             if line.tms_release_state not in ("draft", "released"):
                 raise UserError(_("Item %s is already closed.", line.tms_item_no))
             if line.tms_lr_ids.filtered(lambda lr: lr.state != "cancel"):
-                raise UserError(_("Item %s has LRs: close it for billing instead (BR-CON-23).", line.tms_item_no))
+                raise UserError(_("Item %s has LRs: close it for billing instead.", line.tms_item_no))
             line._tms_close(_("Cancelled"), event="cancel")
         return True
 
@@ -531,10 +531,10 @@ class TmsContractItemRate(models.Model):
         for vals in vals_list:
             line = self.env["sale.order.line"].browse(vals["sale_line_id"])
             if line.tms_release_state != "draft" and not self.env.context.get("tms_contract_amend"):
-                raise UserError(_("A released item's rate lines change only through an amendment (BR-CON-23)."))
+                raise UserError(_("A released item's rate lines change only through an amendment."))
             rate = self.env["tms.contract.rate"].browse(vals["rate_id"])
             if rate.contract_id != line.tms_contract_id:
-                raise UserError(_("Use the rates of the item's own contract (SD-16)."))
+                raise UserError(_("Use the rates of the item's own contract."))
             vals.setdefault("km", line.tms_distance_km)
             est = line.tms_estimate_id
             vals.setdefault("days", est.days if est else 0.0)
@@ -548,7 +548,7 @@ class TmsContractItemRate(models.Model):
     def write(self, vals):
         if not self.env.context.get("tms_contract_amend") and any(
                 use.sale_line_id.tms_release_state != "draft" for use in self):
-            raise UserError(_("A released item's rate lines change only through an amendment (BR-CON-23)."))
+            raise UserError(_("A released item's rate lines change only through an amendment."))
         res = super().write(vals)
         if "rate_id" in vals and "rate" not in vals:
             today = fields.Date.context_today(self)
@@ -561,7 +561,7 @@ class TmsContractItemRate(models.Model):
     def unlink(self):
         if not self.env.context.get("tms_contract_amend") and any(
                 use.sale_line_id.tms_release_state != "draft" for use in self):
-            raise UserError(_("A released item's rate lines change only through an amendment (BR-CON-23)."))
+            raise UserError(_("A released item's rate lines change only through an amendment."))
         lines = self.mapped("sale_line_id")
         res = super().unlink()
         lines._tms_sync_price()

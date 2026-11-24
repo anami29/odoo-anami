@@ -62,7 +62,7 @@
                         </list>
                     </field>
                     <group>
-                        <group string="Price (#9.1)">
+                        <group string="Price">
                             <field name="estimated_cost"/>
                             <field name="marked_up_total"/>
                             <field name="markup_pct"/>

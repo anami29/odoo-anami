@@ -35,7 +35,7 @@
                     </div>
                     <div class="alert alert-danger" role="alert" invisible="difference == 0">
                         The customer view plus recovery variance differs from the truck view; the period cannot close
-                        until the difference is zero (BR-PNL-31).
+                        until the difference is zero.
                     </div>
                     <div class="alert alert-warning" role="alert" invisible="not note"><field name="note"/></div>
                     <div class="oe_title"><h1><field name="name"/></h1></div>

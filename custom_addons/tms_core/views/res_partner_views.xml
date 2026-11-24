@@ -8,7 +8,7 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Transport" name="tms" groups="tms.group_tms_user">
                     <group>
-                        <group string="Customer (BR-MD-01, BR-MD-16)">
+                        <group string="Customer">
                             <field name="tms_freight_basis"/>
                             <field name="tms_billing_cycle"/>
                             <field name="tms_credit_limit"/>
@@ -20,7 +20,7 @@
                             <field name="tms_free_hours_unloading"/>
                             <field name="tms_detention_rate"/>
                         </group>
-                        <group string="Transporter / broker (BR-MD-10)">
+                        <group string="Transporter / broker">
                             <field name="tms_is_transporter"/>
                             <field name="tms_gta_status" invisible="not tms_is_transporter"/>
                             <field name="tms_advance_percent" invisible="not tms_is_transporter"/>

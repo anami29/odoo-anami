@@ -8,13 +8,13 @@ class TmsOrder(models.Model):
     tms_analytic_account_id = fields.Many2one("account.analytic.account", string="Trip analytic account",
                                               readonly=True, copy=False)
     tms_std_rate_id = fields.Many2one("tms.std.rate", string="Standard rate", readonly=True, copy=False,
-                                      help="BR-PNL-17: the rate in force on the START date.")
+                                      help="the rate in force on the START date.")
     tms_pnl_date = fields.Date(string="P&L date", readonly=True, copy=False, index=True,
-                               help="BR-PNL-23, OP-14: dates the trip's revenue, direct cost and standard charge.")
+                               help="dates the trip's revenue, direct cost and standard charge.")
     tms_return_km = fields.Float(string="Empty return km", copy=False,
-                                 help="#18.3: left out of the charged km when the empty return does not count.")
+                                 help="Left out of the charged km when the empty return does not count.")
     tms_std_km = fields.Float(compute="_compute_tms_std_km", store=True, string="Charged km",
-                              help="BR-PNL-16, BR-PNL-18: own km of the primary owned truck, odometer at START to close.")
+                              help="own km of the primary owned truck, odometer at START to close.")
     tms_pnl_km = fields.Float(compute="_compute_tms_std_km", store=True, string="Trip km")
     tms_std_charge = fields.Monetary(compute="_compute_tms_margin", string="Standard charge")
     tms_std_charge_posted = fields.Boolean(compute="_compute_tms_margin", string="Charge posted")
@@ -114,7 +114,7 @@ class TmsOrder(models.Model):
             Close = self.env["tms.pnl.close"]
             for trip in self:
                 if trip.tms_pnl_date and Close._tms_is_closed(trip.company_id, trip.tms_pnl_date):
-                    raise UserError(_("Trip %s is in a closed P&L period (BR-PNL-22).", trip.name))
+                    raise UserError(_("Trip %s is in a closed P&L period.", trip.name))
         return super().write(vals)
 
     def action_tms_view_pnl_lines(self):

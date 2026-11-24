@@ -83,7 +83,7 @@ class TmsStdRate(models.Model):
     # ------------------------------------------------------------------ BR-PNL-13: Finance Head only
     def _tms_check_finance_head(self):
         if not self.env.su and not self.env.user.has_group("tms_core.group_finance_head"):
-            raise UserError(_("Only the Finance Head maintains standard rates (BR-PNL-13)."))
+            raise UserError(_("Only the Finance Head maintains standard rates."))
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -99,7 +99,7 @@ class TmsStdRate(models.Model):
         self._tms_check_finance_head()
         frozen = {"vehicle_class_id", "company_id", "date_from", "planned_km", "running_budget", "fixed_budget"}
         if frozen & set(vals) and any(rate.used for rate in self):
-            raise UserError(_("This rate is in use; record a new effective-dated rate instead (BR-PNL-13)."))
+            raise UserError(_("This rate is in use; record a new effective-dated rate instead."))
         res = super().write(vals)
         if {"date_from", "vehicle_class_id"} & set(vals):
             self._tms_check_backdating()
@@ -108,7 +108,7 @@ class TmsStdRate(models.Model):
     def unlink(self):
         self._tms_check_finance_head()
         if any(rate.used for rate in self):
-            raise UserError(_("A rate in use is never deleted (BR-AUD-04)."))
+            raise UserError(_("A rate in use is never deleted."))
         return super().unlink()
 
     def _tms_check_backdating(self):
@@ -124,7 +124,7 @@ class TmsStdRate(models.Model):
             ], limit=1)
             if clash:
                 raise ValidationError(_(
-                    "Trip %(t)s started on %(d)s under the earlier rate; date the new rate after it (BR-PNL-13).",
+                    "Trip %(t)s started on %(d)s under the earlier rate; date the new rate after it.",
                     t=clash.name, d=clash.date_start))
 
     @api.model

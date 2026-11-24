@@ -16,24 +16,24 @@ class ResCompany(models.Model):
     # BR-CFG-14: Settings › Transport › Profitability
     tms_capitalisation_threshold = fields.Monetary(
         string="Capitalisation threshold", default=50000.0,
-        help="BR-PNL-11: a truck repair at or above this amount is spread over its useful life. Zero disables.")
+        help="a truck repair at or above this amount is spread over its useful life. Zero disables.")
     tms_revenue_dating = fields.Selection(
         [("delivery", "Delivery date"), ("invoice", "Invoice date")], string="Revenue dating basis",
         default="delivery", required=True,
-        help="OP-14, BR-PNL-23: the date that puts a trip's revenue, direct cost and standard charge in a period.")
+        help="the date that puts a trip's revenue, direct cost and standard charge in a period.")
     tms_empty_return_in_km = fields.Boolean(
         string="Empty return counts in trip km", default=True,
-        help="#18.3: when off, the empty return km entered at close are left out of the charged km.")
+        help="When off, the empty return km entered at close are left out of the charged km.")
     tms_rate_review_months = fields.Integer(string="Rate review interval (months)", default=3)
     tms_review_flag_months = fields.Integer(
         string="Review flag after adverse months", default=3,
-        help="BR-PNL-21: consecutive closed months of adverse running spending variance that flag a truck.")
-    tms_margin_target_pct = fields.Float(string="Trip margin target %", help="KPI-13: the kickoff target.")
+        help="consecutive closed months of adverse running spending variance that flag a truck.")
+    tms_margin_target_pct = fields.Float(string="Trip margin target %", help="the kickoff target.")
     tms_prepaid_account_id = fields.Many2one("account.account", string="Prepaid truck costs account")
     tms_accrued_revenue_account_id = fields.Many2one("account.account", string="Accrued freight account")
     tms_accrued_cost_account_id = fields.Many2one("account.account", string="Accrued trip costs account")
     tms_head_office = fields.Boolean(
-        string="Head office", help="BR-PNL-32: overhead of this company is head-office cost in the company P&L.")
+        string="Head office", help="overhead of this company is head-office cost in the company P&L.")
     tms_analytic_account_id = fields.Many2one("account.analytic.account", string="Branch analytic account",
                                               readonly=True, copy=False)
 

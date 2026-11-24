@@ -35,8 +35,8 @@
                     <group>
                         <group>
                             <field name="kind" readonly="state != 'draft'"/>
-                            <field name="vehicle_id" readonly="state != 'draft'"/>
-                            <field name="category_id" readonly="state != 'draft'"/>
+                            <field name="vehicle_id" readonly="state != 'draft'" invisible="kind == 'overhead'" required="kind != 'overhead'"/>
+                            <field name="category_id" readonly="state != 'draft'" invisible="kind == 'overhead'" required="kind != 'overhead'"/>
                             <field name="cost_class"/>
                             <field name="company_id" readonly="state != 'draft'" groups="base.group_multi_company"/>
                             <field name="move_line_id"/>

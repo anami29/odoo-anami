@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- One-page P&L screens to the approved mockup; the list, pivot and graph stay as the analysis views -->
+    <record id="action_tms_so_pnl_page" model="ir.actions.client">
+        <field name="name">Sales Order P&amp;L</field>
+        <field name="tag">tms_so_pnl</field>
+    </record>
+    <record id="action_tms_truck_pnl_page" model="ir.actions.client">
+        <field name="name">Truck P&amp;L</field>
+        <field name="tag">tms_truck_pnl</field>
+    </record>
+
+    <record id="tms_estimate.menu_tms_report_so_pnl" model="ir.ui.menu">
+        <field name="action" ref="action_tms_so_pnl_page"/>
+    </record>
+    <menuitem id="menu_tms_report_so_pnl_analysis" name="Sales order P&amp;L analysis"
+              parent="tms_estimate.menu_tms_sale_reports" action="tms_estimate.action_tms_so_pnl" sequence="15"/>
+
+    <record id="menu_tms_truck_pnl" model="ir.ui.menu">
+        <field name="action" ref="action_tms_truck_pnl_page"/>
+    </record>
+    <menuitem id="menu_tms_truck_pnl_analysis" name="Truck P&amp;L analysis" parent="menu_tms_profitability"
+              action="action_tms_truck_pnl" sequence="22"/>
+</odoo>
