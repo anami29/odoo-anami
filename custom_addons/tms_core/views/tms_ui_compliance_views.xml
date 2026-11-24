@@ -167,8 +167,10 @@
     <!-- Master Data: the register replaces the flat document list, which stays as a sub-item -->
     <record id="tms_core.menu_tms_compliance_document" model="ir.ui.menu">
         <field name="name">Compliance register</field>
-        <field name="action" ref="action_tms_compliance_register"/>
+        <field name="action" ref="action_tms_compliance_register_page"/>
     </record>
+    <menuitem id="menu_tms_compliance_register_page" name="Register" parent="tms_core.menu_tms_compliance_document"
+              action="action_tms_compliance_register_page" sequence="5"/>
     <menuitem id="menu_tms_compliance_register_vehicle" name="Vehicles" parent="tms_core.menu_tms_compliance_document"
               action="action_tms_compliance_register" sequence="10"/>
     <menuitem id="menu_tms_compliance_register_driver" name="Drivers" parent="tms_core.menu_tms_compliance_document"

@@ -5,6 +5,14 @@
         <field name="model">account.move</field>
         <field name="inherit_id" ref="account.view_move_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="after">
+                <div class="alert alert-info" role="status" invisible="tms_document_behaviour != 'standard' or move_type not in ('out_invoice', 'out_refund')">
+                    Standard invoice: no LR, trip charge or transport rule. Lines come from a standard sales order or are entered directly, and post to the branch as other income.
+                </div>
+                <div class="alert alert-info" role="status" invisible="tms_document_behaviour != 'standard' or move_type not in ('in_invoice', 'in_refund')">
+                    Standard bill: no hire memo, three-way match, estimate line, vehicle or cost class. Lines carry the branch analytic account only and post to branch overhead.
+                </div>
+            </xpath>
             <xpath expr="//group[@id='header_right_group']" position="inside">
                 <field name="tms_document_type_id" invisible="move_type not in ('out_invoice', 'out_refund', 'in_invoice', 'in_refund')" required="move_type in ('out_invoice', 'out_refund', 'in_invoice', 'in_refund')" readonly="state != 'draft'" options="{'no_create': True}"/>
                 <field name="tms_document_behaviour" invisible="1"/>

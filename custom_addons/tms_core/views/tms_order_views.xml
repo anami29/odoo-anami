@@ -16,6 +16,21 @@
             <xpath expr="//button[@name='button_refresh_duration']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
+            <!-- the base module's 25 % boxes cut the hours off in the two-column sheet -->
+            <xpath expr="//div[field[@name='scheduled_duration']]" position="attributes">
+                <attribute name="class">d-flex gap-2 align-items-baseline</attribute>
+            </xpath>
+            <xpath expr="//field[@name='scheduled_duration']" position="attributes">
+                <attribute name="class">o_field_float w-auto</attribute>
+                <attribute name="widget">float_time</attribute>
+            </xpath>
+            <xpath expr="//div[field[@name='duration']]" position="attributes">
+                <attribute name="class">d-flex gap-2 align-items-baseline</attribute>
+            </xpath>
+            <xpath expr="//field[@name='duration']" position="attributes">
+                <attribute name="class">o_field_float w-auto</attribute>
+                <attribute name="widget">float_time</attribute>
+            </xpath>
             <xpath expr="//button[@name='button_end_order']" position="attributes">
                 <attribute name="invisible">state_code not in ('started', 'in_transit')</attribute>
                 <attribute name="string">End (delivered)</attribute>
@@ -32,7 +47,7 @@
             </xpath>
             <xpath expr="//button[@name='button_end_order']" position="after">
                 <button name="action_verify_pods" type="object" string="Verify POD" class="btn-primary" invisible="state_code != 'delivered' or pod_status == 'verified'" groups="tms_core.group_pod_verifier"/>
-                <button name="action_new_settlement" type="object" string="Driver settlement" invisible="state_code not in ('delivered', 'in_transit', 'started')"/>
+                <button name="action_new_settlement" type="object" string="Driver settlement" invisible="state_code not in ('delivered', 'in_transit', 'started') or current_fleet_type == 'market'"/>
                 <button name="action_done" type="object" string="Mark done" class="btn-primary" invisible="state_code != 'delivered'"/>
                 <button name="action_report_incident" type="object" string="Report incident" invisible="state_code not in ('started', 'in_transit', 'delivered')"/>
                 <button name="action_print_trip_sheet" type="object" string="Print trip sheet" invisible="state_code in ('draft', 'cancel')"/>
@@ -64,9 +79,13 @@
                 <button name="action_view_lrs_to_invoice" type="object" class="oe_stat_button" icon="fa-pencil-square-o">
                     <field name="lr_to_invoice_count" widget="statinfo" string="LRs to invoice"/>
                 </button>
-                <button name="action_view_hire_memos" type="object" class="oe_stat_button" icon="fa-handshake-o" invisible="fleet_type != 'market' and not hire_memo_count">
+                <button name="action_view_hire_memos" type="object" class="oe_stat_button" groups="purchase.group_purchase_user,account.group_account_invoice" icon="fa-handshake-o" invisible="fleet_type != 'market' and not hire_memo_count">
                     <field name="hire_memo_count" widget="statinfo" string="Hire memos"/>
                 </button>
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]/label[@for='name']" position="attributes">
+                <attribute name="string">Trip</attribute>
+                <attribute name="class"></attribute>
             </xpath>
             <xpath expr="//div[hasclass('oe_title')]/h1" position="after">
                 <div class="text-muted mb-2"><field name="trip_subtitle" readonly="1"/></div>
@@ -87,64 +106,85 @@
                 <attribute name="readonly">1</attribute>
                 <attribute name="invisible">1</attribute>
             </xpath>
+            <!-- mockup layout: Current assignment | Route & schedule, then the compliance gatekeeper -->
             <xpath expr="//field[@name='vehicle_id']/.." position="attributes">
-                <attribute name="string">Trip</attribute>
+                <attribute name="invisible">1</attribute>
             </xpath>
             <xpath expr="//field[@name='route']/.." position="attributes">
-                <attribute name="string">Route</attribute>
+                <attribute name="string">Route &amp; schedule</attribute>
             </xpath>
-            <xpath expr="//field[@name='vehicle_id']" position="before">
-                <field name="company_id" string="Branch" groups="base.group_multi_company" readonly="state_code != 'draft'"/>
-                <field name="user_id"/>
-                <field name="tms_mode"/>
-                <field name="fleet_type" readonly="state_code != 'draft' or tms_mode == 'broker'"/>
-                <field name="tms_cargo_type" readonly="state_code != 'draft'"/>
-                <field name="empty_trip" readonly="state_code != 'draft'"/>
-                <field name="primary_vehicle_id" invisible="not primary_vehicle_id"/>
-                <field name="state_code" invisible="1"/>
-                <field name="started_without_gate" invisible="1"/>
-                <field name="dsr_overdue" invisible="1"/>
+            <xpath expr="//group[@groups='!tms.group_tms_route']" position="attributes">
+                <attribute name="string">Route &amp; schedule</attribute>
             </xpath>
-            <!-- current assignment, planning and schedule -->
+            <xpath expr="//field[@name='route']" position="before">
+                <field name="company_id" string="Branch" readonly="state_code != 'draft'" options="{'no_create': True, 'no_open': True}"/>
+            </xpath>
+            <xpath expr="//group[@groups='!tms.group_tms_route']/field[@name='origin_id']" position="before">
+                <field name="company_id" string="Branch" readonly="state_code != 'draft'" options="{'no_create': True, 'no_open': True}"/>
+            </xpath>
+            <xpath expr="//field[@name='route']/.." position="inside">
+                <field name="route_detail" string=" " invisible="not route_detail" class="text-muted"/>
+                <field name="schedule_display" invisible="state_code in ('draft', 'confirmed') or not schedule_display"/>
+                <field name="actual_display" invisible="not actual_display"/>
+                <field name="diff_duration" string="Schedule variance" widget="float_time" decoration-danger="diff_duration &lt; 0" invisible="not end_trip"/>
+                <field name="tms_mode" string="Operating mode"/>
+            </xpath>
+            <xpath expr="//group[@groups='!tms.group_tms_route']" position="inside">
+                <field name="route_detail" string=" " invisible="not route_detail" class="text-muted"/>
+                <field name="schedule_display" invisible="state_code in ('draft', 'confirmed') or not schedule_display"/>
+                <field name="actual_display" invisible="not actual_display"/>
+                <field name="diff_duration" string="Schedule variance" widget="float_time" decoration-danger="diff_duration &lt; 0" invisible="not end_trip"/>
+                <field name="tms_mode" string="Operating mode"/>
+            </xpath>
+            <xpath expr="//field[@name='vehicle_id']/.." position="before">
+                <group string="Current assignment" name="current_assignment" invisible="not current_assignment_id">
+                    <field name="current_assignment_id" invisible="1"/>
+                    <field name="open_assignment_id" invisible="1"/>
+                    <field name="state_code" invisible="1"/>
+                    <field name="started_without_gate" invisible="1"/>
+                    <field name="dsr_overdue" invisible="1"/>
+                    <label for="current_fleet_type" string="Fleet type"/>
+                    <div class="d-flex flex-wrap gap-2 align-items-baseline">
+                        <field name="current_fleet_type" widget="badge" decoration-info="current_fleet_type == 'owned'" decoration-warning="current_fleet_type == 'market'"/>
+                        <field name="current_note" class="text-muted"/>
+                    </div>
+                    <field name="current_vehicle_number" string="Vehicle"/>
+                    <field name="current_broker_id" string="Broker / transporter" invisible="current_fleet_type != 'market'"/>
+                    <label for="current_hire_amount" string="Agreed hire" invisible="current_fleet_type != 'market'"/>
+                    <div class="d-flex flex-wrap gap-2 align-items-baseline" invisible="current_fleet_type != 'market'">
+                        <field name="current_hire_amount"/>
+                        <field name="current_hire_memo_id" class="text-muted" groups="purchase.group_purchase_user,account.group_account_invoice"/>
+                    </div>
+                    <field name="current_driver_label" string="Driver"/>
+                    <field name="current_position" string="Assignment"/>
+                    <field name="gate_status" widget="badge" decoration-success="gate_status == 'pass'" decoration-warning="gate_status == 'warn'" decoration-danger="gate_status == 'fail'"/>
+                </group>
+                <group string="Planned vehicle and driver" name="planned_assignment" invisible="current_assignment_id">
+                    <field name="fleet_type" readonly="state_code != 'draft' or tms_mode == 'broker'"/>
+                    <field name="planned_vehicle_id" invisible="fleet_type != 'owned'" readonly="state_code != 'draft'"/>
+                    <field name="planned_driver_id" invisible="fleet_type != 'owned'" readonly="state_code != 'draft'"/>
+                    <field name="planned_market_vehicle_id" invisible="fleet_type != 'market'" readonly="state_code != 'draft'"/>
+                    <field name="broker_id" invisible="fleet_type != 'market'" readonly="state_code != 'draft'"/>
+                    <field name="planned_hire_amount" invisible="fleet_type != 'market'" readonly="state_code != 'draft'"/>
+                    <field name="market_driver_name" invisible="fleet_type != 'market'"/>
+                    <field name="market_driver_phone" invisible="fleet_type != 'market'"/>
+                    <field name="market_driver_licence" invisible="fleet_type != 'market'"/>
+                    <field name="market_driver_licence_expiry" invisible="fleet_type != 'market'"/>
+                    <field name="gate_preview" invisible="1"/>
+                    <field name="gate_preview_text" string="Pre-start compliance" widget="badge" decoration-success="gate_preview == 'valid'" decoration-warning="gate_preview in ('warning', 'pending')" decoration-danger="gate_preview == 'failed'"/>
+                </group>
+            </xpath>
+            <!-- planning: editable schedule while draft or confirmed; afterwards the Route &amp; schedule lines show it -->
             <xpath expr="//page[@name='planning_page']/group" position="attributes">
                 <attribute name="string">Schedule</attribute>
                 <attribute name="name">tms_schedule</attribute>
             </xpath>
             <xpath expr="//group[@name='description_grp']" position="before">
-                <group name="tms_assignment_schedule">
-                    <group string="Current assignment" name="current_assignment" invisible="not current_assignment_id">
-                        <field name="current_assignment_id" invisible="1"/>
-                        <field name="open_assignment_id" invisible="1"/>
-                        <label for="current_fleet_type" string="Fleet type"/>
-                        <div class="d-flex flex-wrap gap-2 align-items-baseline">
-                            <field name="current_fleet_type" widget="badge" decoration-info="current_fleet_type == 'owned'" decoration-warning="current_fleet_type == 'market'"/>
-                            <field name="current_note" class="text-muted"/>
-                        </div>
-                        <field name="current_vehicle_number" string="Vehicle"/>
-                        <field name="current_broker_id" string="Broker / transporter" invisible="current_fleet_type != 'market'"/>
-                        <label for="current_hire_amount" string="Agreed hire" invisible="current_fleet_type != 'market'"/>
-                        <div class="d-flex flex-wrap gap-2 align-items-baseline" invisible="current_fleet_type != 'market'">
-                            <field name="current_hire_amount"/>
-                            <field name="current_hire_memo_id" class="text-muted"/>
-                        </div>
-                        <field name="current_driver_label" string="Driver"/>
-                        <field name="current_position" string="Assignment"/>
-                        <field name="gate_status" widget="badge" decoration-success="gate_status == 'pass'" decoration-warning="gate_status == 'warn'" decoration-danger="gate_status == 'fail'"/>
-                    </group>
-                    <group string="Planned vehicle and driver" name="planned_assignment" invisible="current_assignment_id">
-                        <field name="planned_vehicle_id" invisible="fleet_type != 'owned'" readonly="state_code != 'draft'"/>
-                        <field name="planned_driver_id" invisible="fleet_type != 'owned'" readonly="state_code != 'draft'"/>
-                        <field name="planned_market_vehicle_id" invisible="fleet_type != 'market'" readonly="state_code != 'draft'"/>
-                        <field name="broker_id" invisible="fleet_type != 'market'" readonly="state_code != 'draft'"/>
-                        <field name="planned_hire_amount" invisible="fleet_type != 'market'" readonly="state_code != 'draft'"/>
-                        <field name="market_driver_name" invisible="fleet_type != 'market'"/>
-                        <field name="market_driver_phone" invisible="fleet_type != 'market'"/>
-                        <field name="market_driver_licence" invisible="fleet_type != 'market'"/>
-                        <field name="market_driver_licence_expiry" invisible="fleet_type != 'market'"/>
-                        <field name="gate_preview" invisible="1"/>
-                        <field name="gate_preview_text" string="Pre-start compliance" widget="badge" decoration-success="gate_preview == 'valid'" decoration-warning="gate_preview in ('warning', 'pending')" decoration-danger="gate_preview == 'failed'"/>
-                    </group>
-                </group>
+                <group name="tms_assignment_schedule" invisible="state_code not in ('draft', 'confirmed')"/>
+                <div name="tms_gatekeeper" class="mb-3" invisible="not gate_table">
+                    <div class="o_horizontal_separator text-uppercase fw-bolder small mt-3 mb-2">Compliance gatekeeper · current assignment</div>
+                    <field name="gate_table" nolabel="1"/>
+                </div>
             </xpath>
             <xpath expr="//group[@name='tms_assignment_schedule']" position="inside">
                 <xpath expr="//page[@name='planning_page']/group" position="move"/>
@@ -154,7 +194,6 @@
                 <xpath expr="//field[@name='date_end']" position="move"/>
                 <xpath expr="//label[@for='duration']" position="move"/>
                 <xpath expr="//div[field[@name='duration']]" position="move"/>
-                <field name="diff_duration" string="Schedule variance (h)" widget="float_time" decoration-danger="diff_duration &lt; 0" invisible="not end_trip"/>
             </xpath>
             <xpath expr="//field[@name='date_start']" position="attributes">
                 <attribute name="string">Actual start</attribute>
@@ -177,13 +216,16 @@
                             <field name="lr_parties" optional="show"/>
                             <field name="lr_company_id" optional="hide"/>
                             <field name="packages" readonly="id" sum="Total"/>
-                            <field name="weight" sum="Total"/>
+                            <field name="weight" string="Planned wt (kg)" sum="Total" optional="hide"/>
+                            <field name="lr_actual_weight" sum="Total"/>
+                            <field name="lr_charged_weight" sum="Total"/>
+                            <field name="lr_ewaybill_coverage"/>
                             <field name="assignment_id" optional="hide"/>
                             <field name="delivered_at"/>
                             <field name="outcome"/>
                             <field name="lr_state" widget="badge" optional="show" decoration-info="lr_state == 'dispatched'" decoration-success="lr_state in ('delivered', 'invoiced')" decoration-danger="lr_state == 'not_delivered'" decoration-muted="lr_state in ('draft', 'confirmed', 'cancel')"/>
                             <field name="pod_status"/>
-                            <field name="remarks" optional="show"/>
+                            <field name="remarks" string="Delivery remark" optional="show"/>
                             <field name="state" column_invisible="1"/>
                             <button name="action_mark_delivered" type="object" string="Delivered" icon="fa-check" invisible="outcome or state == 'cancel' or parent.state_code not in ('started', 'in_transit')"/>
                         </list>
@@ -202,26 +244,22 @@
                         </group>
                     </group>
                 </page>
-                <page string="POD" name="pod">
-                    <field name="pod_link_ids" readonly="1" context="{'form_view_ref': 'tms_core.tms_trip_consignment_form'}">
-                        <list create="0" delete="0" decoration-muted="pod_status == 'verified'">
-                            <field name="consignment_id" string="LR"/>
-                            <field name="lr_parties" optional="hide"/>
-                            <field name="outcome"/>
-                            <field name="pod_file" filename="pod_file_name" string="POD file"/>
-                            <field name="pod_file_name" column_invisible="1"/>
-                            <field name="uploaded_by_id" string="Uploaded by"/>
-                            <field name="uploaded_on" string="Uploaded on"/>
-                            <field name="pod_status" widget="badge" decoration-muted="pod_status == 'pending'" decoration-warning="pod_status == 'uploaded'" decoration-success="pod_status == 'verified'" decoration-danger="pod_status == 'rejected'"/>
-                            <field name="verified_by_id" string="Verified by"/>
-                            <field name="verified_on" string="Verified on"/>
-                            <field name="reject_reason" optional="hide"/>
-                            <button name="action_upload_pod" type="object" string="Upload POD" icon="fa-upload" invisible="not outcome or not pod_file or pod_status not in ('pending', 'rejected')"/>
-                            <button name="action_verify_pod" type="object" string="Verify" icon="fa-check" invisible="pod_status != 'uploaded'" groups="tms_core.group_pod_verifier"/>
-                            <button name="action_open_link" type="object" string="Open" icon="fa-external-link" title="Open the POD to attach the file, upload, verify or reject it"/>
+                <page string="Status log" name="dsr">
+                    <div class="mb-2" invisible="state_code not in ('started', 'in_transit')">
+                        <button name="action_log_status" type="object" string="Log status" class="btn-secondary" icon="fa-map-marker"/>
+                    </div>
+                    <field name="dsr_ids" context="{'default_trip_id': id}" readonly="state_code not in ('started', 'in_transit')">
+                        <list editable="top">
+                            <field name="logged_at"/>
+                            <field name="location"/>
+                            <field name="status" widget="badge" decoration-danger="status in ('delayed_breakdown', 'delayed_traffic', 'delayed_other')" decoration-info="status in ('night_halt', 'at_loading', 'at_unloading')" decoration-success="status in ('on_schedule', 'departed')" decoration-warning="status in ('halted_window', 'halted_clearance')"/>
+                            <field name="consignment_id" optional="show" options="{'no_create': True}"/>
+                            <field name="eta"/>
+                            <field name="remark"/>
+                            <field name="source"/>
+                            <field name="logged_by_id" readonly="1"/>
                         </list>
                     </field>
-                    <div class="text-muted small">Attach the POD file on its form (Open). A POD Verifier other than the uploader verifies it; the trip is marked done only after every POD is verified.</div>
                 </page>
                 <page string="Assignments" name="assignments">
                     <group>
@@ -247,7 +285,7 @@
                             <field name="driver_id"/>
                             <field name="market_driver_name" optional="show"/>
                             <field name="broker_id"/>
-                            <field name="hire_memo_id" optional="show"/>
+                            <field name="hire_memo_id" optional="show" groups="purchase.group_purchase_user,account.group_account_invoice"/>
                             <field name="hire_amount" sum="Total"/>
                             <field name="currency_id" column_invisible="1"/>
                             <field name="odometer_out" optional="hide"/>
@@ -258,69 +296,44 @@
                     </field>
                     <field name="breakdown_ids" readonly="1"/>
                 </page>
-                <page string="Market vehicle documents" name="market_documents" invisible="not show_market_documents">
-                    <!-- BR-CMP-05: documents captured on the assignment pass the same gate; also needed when an
-                         owned trip is replaced by a market vehicle after a breakdown -->
-                    <field name="show_market_documents" invisible="1"/>
-                    <field name="market_document_ids" context="{'default_trip_id': id}" readonly="state_code in ('delivered', 'done', 'cancel')">
-                        <list editable="bottom">
-                            <field name="type_id"/>
-                            <field name="number"/>
-                            <field name="valid_from"/>
-                            <field name="valid_until"/>
-                            <field name="attachment" filename="attachment_name"/>
-                            <field name="attachment_name" column_invisible="1"/>
-                        </list>
-                    </field>
-                    <div class="text-muted small">Documents of the market vehicle on this trip (its own or a replacement). The compliance check reads them with the market-vehicle register when the vehicle is assigned.</div>
-                </page>
-                <page string="E-way bill tasks" name="ewaybill_tasks">
-                    <field name="ewaybill_update_ids" context="{'default_trip_id': id}"/>
-                </page>
-                <page string="Status log" name="dsr">
-                    <div class="mb-2" invisible="state_code not in ('started', 'in_transit')">
-                        <button name="action_log_status" type="object" string="Log status" class="btn-secondary" icon="fa-map-marker"/>
-                    </div>
-                    <field name="dsr_ids" context="{'default_trip_id': id}" readonly="state_code not in ('started', 'in_transit')">
-                        <list editable="top">
-                            <field name="logged_at"/>
-                            <field name="location"/>
-                            <field name="status" widget="badge" decoration-danger="status in ('delayed_breakdown', 'delayed_traffic', 'delayed_other')" decoration-info="status in ('night_halt', 'at_loading', 'at_unloading')" decoration-success="status in ('on_schedule', 'departed')" decoration-warning="status in ('halted_window', 'halted_clearance')"/>
-                            <field name="consignment_id" optional="show" options="{'no_create': True}"/>
-                            <field name="eta"/>
-                            <field name="remark"/>
-                            <field name="source"/>
-                            <field name="logged_by_id" readonly="1"/>
-                        </list>
-                    </field>
-                </page>
-                <page string="Incidents, charges, expenses" name="money">
+                <page string="Incidents" name="incidents">
                     <field name="incident_ids" context="{'default_trip_id': id}">
                         <list>
-                            <field name="category_id"/>
-                            <field name="consignment_id"/>
+                            <field name="name" string="Reference"/>
+                            <field name="category_id" string="Type"/>
+                            <field name="consignment_id" optional="show"/>
                             <field name="occurred_at"/>
-                            <field name="moves_money"/>
-                            <field name="state"/>
+                            <field name="location" optional="show"/>
+                            <field name="responsible" optional="show"/>
+                            <field name="moves_money" optional="hide"/>
+                            <field name="state" widget="badge" decoration-warning="state == 'open'" decoration-success="state == 'resolved'"/>
                         </list>
                     </field>
+                    <field name="claim_ids" readonly="1"/>
+                </page>
+                <page string="Charges" name="charges">
                     <field name="charge_ids" context="{'default_trip_id': id}">
                         <list>
-                            <field name="name"/>
+                            <field name="name" string="Reference"/>
                             <field name="consignment_id"/>
                             <field name="category_id"/>
-                            <field name="recover_from"/>
+                            <field name="recover_from" widget="badge" decoration-info="recover_from == 'customer'" decoration-warning="recover_from != 'customer'"/>
                             <field name="partner_id"/>
                             <field name="amount" sum="Total"/>
-                            <field name="state"/>
+                            <field name="billing_status" optional="show"/>
+                            <field name="state" widget="badge" decoration-success="state in ('billed', 'deducted')" decoration-info="state == 'approved'" decoration-muted="state in ('cancel', 'waived')"/>
                         </list>
                     </field>
+                </page>
+                <page string="Expenses" name="expenses">
                     <field name="expense_ids" context="{'default_trip_id': id}">
                         <list>
                             <field name="name"/>
                             <field name="date"/>
-                            <field name="category_id"/>
+                            <field name="category_id" string="Type"/>
+                            <field name="paid_to_id" optional="show"/>
                             <field name="payment_mode"/>
+                            <field name="recoverable_from" optional="show"/>
                             <field name="amount" sum="Total"/>
                             <field name="tms_cost_class"/>
                             <field name="state"/>
@@ -339,10 +352,10 @@
                         </list>
                     </field>
                     <field name="settlement_ids" readonly="1"/>
-                    <field name="claim_ids" readonly="1"/>
                 </page>
-                <page string="Trip ledger" name="ledger">
-                    <group>
+                <page string="Financials" name="ledger">
+                    <field name="ledger_html" nolabel="1"/>
+                    <group string="Posted in accounting">
                         <group string="Posted">
                             <field name="fin_revenue"/>
                             <field name="fin_recoveries"/>
@@ -354,6 +367,58 @@
                             <field name="fin_open_commitments"/>
                         </group>
                     </group>
+                </page>
+                <page string="POD" name="pod">
+                    <field name="pod_link_ids" readonly="1" context="{'form_view_ref': 'tms_core.tms_trip_consignment_form'}">
+                        <list create="0" delete="0" decoration-muted="pod_status == 'verified'">
+                            <field name="consignment_id" string="LR"/>
+                            <field name="lr_parties" optional="hide"/>
+                            <field name="outcome"/>
+                            <field name="pod_file" filename="pod_file_name" string="POD file"/>
+                            <field name="pod_file_name" column_invisible="1"/>
+                            <field name="uploaded_by_id" string="Uploaded by"/>
+                            <field name="uploaded_on" string="Uploaded on"/>
+                            <field name="pod_status" widget="badge" decoration-muted="pod_status == 'pending'" decoration-warning="pod_status == 'uploaded'" decoration-success="pod_status == 'verified'" decoration-danger="pod_status == 'rejected'"/>
+                            <field name="verified_by_id" string="Verified by"/>
+                            <field name="verified_on" string="Verified on"/>
+                            <field name="reject_reason" optional="hide"/>
+                            <button name="action_upload_pod" type="object" string="Upload POD" icon="fa-upload" invisible="not outcome or not pod_file or pod_status not in ('pending', 'rejected')"/>
+                            <button name="action_verify_pod" type="object" string="Verify" icon="fa-check" invisible="pod_status != 'uploaded'" groups="tms_core.group_pod_verifier"/>
+                            <button name="action_open_link" type="object" string="Open" icon="fa-external-link" title="Open the POD to attach the file, upload, verify or reject it"/>
+                        </list>
+                    </field>
+                    <div class="text-muted small">Attach the POD file on its form (Open). A POD Verifier other than the uploader verifies it; the trip is marked done only after every POD is verified.</div>
+                </page>
+                <page string="Market vehicle documents" name="market_documents" invisible="not show_market_documents">
+                    <!-- BR-CMP-05: documents captured on the assignment pass the same gate; also needed when an
+                         owned trip is replaced by a market vehicle after a breakdown -->
+                    <field name="show_market_documents" invisible="1"/>
+                    <field name="market_document_ids" context="{'default_trip_id': id}" readonly="state_code in ('delivered', 'done', 'cancel')">
+                        <list editable="bottom">
+                            <field name="type_id"/>
+                            <field name="number"/>
+                            <field name="valid_from"/>
+                            <field name="valid_until"/>
+                            <field name="attachment" filename="attachment_name"/>
+                            <field name="attachment_name" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <div class="text-muted small">Documents of the market vehicle on this trip (its own or a replacement). The compliance check reads them with the market-vehicle register when the vehicle is assigned.</div>
+                </page>
+                <page string="E-way bill tasks" name="ewaybill_tasks" invisible="not ewaybill_update_ids">
+                    <field name="ewaybill_update_ids" context="{'default_trip_id': id}"/>
+                </page>
+                <page string="Other info" name="other_info">
+                    <group>
+                        <group>
+                            <field name="user_id" string="Dispatcher"/>
+                            <field name="tms_cargo_type" readonly="state_code != 'draft'"/>
+                            <field name="empty_trip" readonly="state_code != 'draft'"/>
+                            <field name="primary_vehicle_id" invisible="not primary_vehicle_id" options="{'no_create': True}"/>
+                        </group>
+                        <group name="tms_other_teams"/>
+                    </group>
+                    <group name="tms_other_description"/>
                 </page>
                 <page string="Timeline" name="timeline">
                     <field name="timeline_ids" readonly="1">
@@ -367,6 +432,13 @@
                     </field>
                     <field name="cancel_reason" invisible="not cancel_reason"/>
                 </page>
+            </xpath>
+            <xpath expr="//group[@name='tms_other_teams']" position="inside">
+                <xpath expr="//field[@name='tms_team_id']" position="move"/>
+                <xpath expr="//field[@name='crew_id']" position="move"/>
+            </xpath>
+            <xpath expr="//group[@name='tms_other_description']" position="inside">
+                <xpath expr="//group[@name='description_grp']" position="move"/>
             </xpath>
         </field>
     </record>
@@ -389,6 +461,9 @@
             <xpath expr="//field[@name='stage_id']" position="attributes">
                 <attribute name="column_invisible">1</attribute>
             </xpath>
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="string">Trip</attribute>
+            </xpath>
             <xpath expr="//field[@name='name']" position="after">
                 <field name="route_display" string="Route"/>
                 <field name="current_fleet_type" widget="badge" decoration-info="current_fleet_type == 'owned'" decoration-warning="current_fleet_type == 'market'"/>
@@ -398,8 +473,8 @@
                 <field name="lr_count" string="LRs"/>
                 <field name="gate_preview" column_invisible="1"/>
                 <field name="gate_preview_text" widget="badge" decoration-success="gate_preview == 'valid'" decoration-warning="gate_preview in ('warning', 'pending')" decoration-danger="gate_preview == 'failed'" decoration-muted="gate_preview == 'not_enforced'"/>
-                <field name="last_dsr_status" widget="badge" decoration-danger="last_dsr_status in ('delayed_breakdown', 'delayed_traffic', 'delayed_other')" decoration-info="last_dsr_status in ('night_halt', 'at_loading', 'at_unloading')" decoration-success="last_dsr_status in ('on_schedule', 'departed')" decoration-warning="last_dsr_status in ('halted_window', 'halted_clearance')"/>
-                <field name="state_code" widget="badge" decoration-muted="state_code in ('draft', 'done', 'cancel')" decoration-info="state_code == 'confirmed'" decoration-primary="state_code == 'started'" decoration-warning="state_code == 'in_transit'" decoration-success="state_code == 'delivered'"/>
+                <field name="last_dsr_status" string="Latest DSR" widget="badge" decoration-danger="last_dsr_status in ('delayed_breakdown', 'delayed_traffic', 'delayed_other')" decoration-info="last_dsr_status in ('night_halt', 'at_loading', 'at_unloading')" decoration-success="last_dsr_status in ('on_schedule', 'departed')" decoration-warning="last_dsr_status in ('halted_window', 'halted_clearance')"/>
+                <field name="state_code" string="Stage" widget="badge" decoration-muted="state_code in ('draft', 'done', 'cancel')" decoration-info="state_code == 'confirmed'" decoration-primary="state_code == 'started'" decoration-warning="state_code == 'in_transit'" decoration-success="state_code == 'delivered'"/>
                 <field name="company_id" optional="hide" string="Branch"/>
                 <field name="fleet_type" optional="hide"/>
                 <field name="primary_vehicle_id" optional="hide"/>

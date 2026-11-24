@@ -1,6 +1,8 @@
 import logging
 from datetime import timedelta
 
+from dateutil.relativedelta import relativedelta
+
 from odoo import SUPERUSER_ID, _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
@@ -65,7 +67,7 @@ class TmsContract(models.Model):
     po_file = fields.Binary(string="PO / LOI file", attachment=True)
     po_filename = fields.Char()
     date_start = fields.Date(string="Start", required=True, default=fields.Date.context_today, tracking=True)
-    date_end = fields.Date(string="End", required=True, tracking=True)
+    date_end = fields.Date(string="End", required=True, tracking=True, default=lambda s: s._tms_default_date_end())
     value = fields.Monetary(string="Contract value", required=True, tracking=True)
     value_basis = fields.Selection([("untaxed", "Before GST"), ("taxed", "Including GST")], default="untaxed",
                                    required=True, tracking=True,
@@ -144,6 +146,12 @@ class TmsContract(models.Model):
     ]
 
     # ------------------------------------------------------------------ computes
+
+    @api.model
+    def _tms_default_date_end(self):
+        months = self.env.company.tms_contract_validity_months or 12
+        return fields.Date.context_today(self) + relativedelta(months=months, days=-1)
+
     @api.depends("value", "opening_consumption", "extension_ids.state", "extension_ids.added_value",
                  "excess_ids.state", "excess_ids.open_amount", "reservation_ids.amount", "item_ids.tms_release_state")
     def _compute_figures(self):

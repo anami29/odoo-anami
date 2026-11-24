@@ -4,6 +4,9 @@ from odoo import _, fields, models
 class ResCompany(models.Model):
     _inherit = "res.company"
 
+    tms_contract_validity_months = fields.Integer(string="Contract validity (months)", default=12,
+                                                  help="Default period of a new contract.")
+
     # BR-CFG-15
     tms_contract_sequence_id = fields.Many2one("ir.sequence", string="Contract series", copy=False)
     tms_contract_util_alert = fields.Float(string="Contract utilisation alert %", default=80.0)
@@ -38,6 +41,7 @@ class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
     tms_contract_sequence_id = fields.Many2one(related="company_id.tms_contract_sequence_id", readonly=False)
+    tms_contract_validity_months = fields.Integer(related="company_id.tms_contract_validity_months", readonly=False)
     tms_contract_util_alert = fields.Float(related="company_id.tms_contract_util_alert", readonly=False)
     tms_contract_expiry_days = fields.Integer(related="company_id.tms_contract_expiry_days", readonly=False)
     tms_contract_extension_limit = fields.Float(related="company_id.tms_contract_extension_limit", readonly=False)

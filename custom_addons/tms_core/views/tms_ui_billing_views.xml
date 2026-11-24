@@ -14,13 +14,31 @@
                 <button name="action_tms_apply_recoveries" type="object" string="Apply recoveries"
                         groups="account.group_account_invoice"
                         invisible="move_type != 'in_invoice' or state != 'draft' or not tms_match_state"/>
+                <button name="action_tms_add_unbilled_charges" type="object" string="Add Approved Trip Charges"
+                        groups="account.group_account_invoice"
+                        invisible="move_type != 'out_invoice' or state != 'draft' or not tms_unbilled_charge_count"/>
                 <field name="tms_match_state" widget="badge" nolabel="1"
                        decoration-danger="tms_match_state == 'hold'" decoration-success="tms_match_state == 'passed'"
                        invisible="move_type != 'in_invoice' or not tms_match_state"/>
             </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_tms_view_lrs" type="object" class="oe_stat_button" icon="fa-file-text-o"
+                        invisible="move_type not in ('out_invoice', 'out_refund') or not tms_inv_lr_count">
+                    <field name="tms_inv_lr_count" string="Consignment" widget="statinfo"/>
+                </button>
+                <button name="action_tms_view_unbilled_charges" type="object" class="oe_stat_button" icon="fa-plus-square-o"
+                        invisible="move_type != 'out_invoice' or not tms_unbilled_charge_count">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value text-warning"><field name="tms_unbilled_charge_count" readonly="1"/> unbilled</span>
+                        <span class="o_stat_text">Trip charges</span>
+                    </div>
+                </button>
+                <button name="action_tms_view_claims" type="object" class="oe_stat_button" icon="fa-clipboard"
+                        invisible="move_type not in ('in_invoice', 'in_refund') or not tms_ui_claim_count">
+                    <field name="tms_ui_claim_count" string="Recovery" widget="statinfo"/>
+                </button>
                 <button name="action_tms_view_trips" type="object" class="oe_stat_button" icon="fa-truck"
-                        invisible="move_type not in ('in_invoice', 'in_refund') or not tms_ui_trip_count">
+                        invisible="not tms_ui_trip_count">
                     <field name="tms_ui_trip_count" string="Trip" widget="statinfo"/>
                 </button>
                 <button name="action_tms_view_hire_memos" type="object" class="oe_stat_button" icon="fa-file-text-o"
@@ -31,6 +49,27 @@
             <xpath expr="//group[@id='header_left_group']" position="inside">
                 <field name="tms_hire_memo_refs" readonly="1"
                        invisible="move_type not in ('in_invoice', 'in_refund') or not tms_hire_memo_refs"/>
+                <field name="tms_tds_note" readonly="1" invisible="not tms_tds_note"/>
+                <field name="tms_billing_basis" readonly="1" invisible="not tms_billing_basis"/>
+                <field name="tms_rate_line" readonly="1" invisible="not tms_rate_line"/>
+            </xpath>
+            <xpath expr="//group[@id='header_right_group']" position="inside">
+                <field name="journal_id" string="Journal" readonly="1" options="{'no_open': True}"
+                       invisible="move_type not in ('out_invoice', 'out_refund') or not tms_billing_basis"/>
+                <field name="fiscal_position_id" readonly="1" options="{'no_open': True}"
+                       invisible="move_type not in ('in_invoice', 'in_refund') or not tms_hire_memo_refs"/>
+            </xpath>
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="after">
+                <div class="alert alert-warning" role="alert" invisible="move_type != 'out_invoice' or not tms_unbilled_note or state == 'cancel'">
+                    <field name="tms_unbilled_note" nolabel="1"/>
+                </div>
+            </xpath>
+            <xpath expr="//group[hasclass('oe_invoice_lines_tab')]" position="after">
+                <div class="text-muted small text-end" invisible="not tms_rcm_note"><field name="tms_rcm_note" nolabel="1"/></div>
+            </xpath>
+            <xpath expr="//field[@name='invoice_line_ids']/list/field[@name='name']" position="after">
+                <field name="purchase_line_id" string="Source" optional="show" readonly="1"
+                       column_invisible="parent.move_type not in ('in_invoice', 'in_refund')"/>
             </xpath>
             <xpath expr="//page[@id='other_tab']" position="before">
                 <page string="Three-way match" name="tms_three_way_match"
@@ -39,10 +78,7 @@
                         <span>Hire memo · verified POD · vendor bill. </span>
                         <field name="tms_match_tolerance_note" class="d-inline" readonly="1"/>
                     </div>
-                    <div class="mb-2">
-                        <span invisible="not tms_match_pod_ok" class="text-success">Every POD on the leg is verified.</span>
-                        <span invisible="tms_match_pod_ok" class="text-danger">Not every POD on the leg is verified yet.</span>
-                    </div>
+                    <field name="tms_pod_element" nolabel="1"/>
                     <field name="tms_match_line_ids" readonly="1" nolabel="1">
                         <list create="0" edit="0" delete="0" decoration-danger="result == 'fail'">
                             <field name="kind"/>
@@ -51,8 +87,11 @@
                             <field name="billed" sum="Total"/>
                             <field name="variance" sum="Total"/>
                             <field name="tolerance"/>
-                            <field name="result" widget="badge"
+                            <field name="result" column_invisible="1"/>
+                            <field name="result_label" widget="badge"
                                    decoration-success="result == 'pass'" decoration-danger="result == 'fail'"/>
+                            <button name="action_use_approved" type="object" string="Use approved" icon="fa-check"
+                                    invisible="result != 'fail' or kind not in ('hire', 'extra') or parent.state != 'draft'"/>
                             <field name="currency_id" column_invisible="1"/>
                         </list>
                     </field>

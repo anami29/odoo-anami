@@ -9,6 +9,9 @@ class ResConfigSettings(models.TransientModel):
     tms_enforce_compliance = fields.Boolean(related="company_id.tms_enforce_compliance", readonly=False)
     tms_enforce_reason = fields.Char(string="Reason for the switch",
                                      help="required when compliance enforcement is switched; logged.")
+    tms_pod_self_verify = fields.Boolean(related="company_id.tms_pod_self_verify", readonly=False)
+    tms_pod_self_verify_reason = fields.Char(string="Reason for the POD switch",
+                                             help="required when POD self-verification is switched; logged.")
     tms_strict_branch_accounting = fields.Boolean(related="company_id.tms_strict_branch_accounting", readonly=False)
     tms_hire_tolerance_amount = fields.Monetary(related="company_id.tms_hire_tolerance_amount", readonly=False)
     tms_hire_tolerance_percent = fields.Float(related="company_id.tms_hire_tolerance_percent", readonly=False)
@@ -42,7 +45,38 @@ class ResConfigSettings(models.TransientModel):
     @api.model_create_multi
     def create(self, vals_list):
         """BR-CFG-06: the reason typed beside the enforcement switch goes to the override log."""
-        reason = next((v.get("tms_enforce_reason") for v in vals_list if v.get("tms_enforce_reason")), False)
+        reason = next((v.get("tms_enforce_reason") or v.get("tms_pod_self_verify_reason") for v in vals_list
+                       if v.get("tms_enforce_reason") or v.get("tms_pod_self_verify_reason")), False)
         if reason:
             self = self.with_context(tms_reason=reason)
         return super().create(vals_list)
+
+
+class ResConfigSettingsUi(models.TransientModel):
+    """Settings · Transport as drawn in the agreed mockup (18.0.1.6.0): the unlock in place, the last unlock
+    reason, the documents the compliance gate requires and the LR series."""
+
+    _inherit = "res.config.settings"
+
+    tms_allow_manual_lr = fields.Boolean(related="company_id.tms_allow_manual_lr", readonly=False)
+    tms_branch_code = fields.Char(related="company_id.tms_branch_code", readonly=False)
+    tms_lr_next = fields.Char(compute="_compute_tms_settings_ui", string="Next LR number")
+    tms_last_unlock = fields.Char(compute="_compute_tms_settings_ui")
+    tms_required_docs = fields.Char(compute="_compute_tms_settings_ui")
+
+    @api.depends("company_id")
+    def _compute_tms_settings_ui(self):
+        types = self.env["tms.compliance.document.type"].sudo().search([("mandatory_for_start", "=", True)])
+        for rec in self:
+            company = rec.company_id
+            seq = company.tms_lr_sequence_id
+            rec.tms_lr_next = seq.sudo().get_next_char(seq.number_next_actual) if seq else False
+            log = self.env["tms.override.log"].sudo().search(
+                [("kind", "=", "mode_unlock"), ("res_model", "=", "res.company"), ("res_id", "=", company.id)],
+                order="id desc", limit=1) if company else self.env["tms.override.log"]
+            rec.tms_last_unlock = "%s · %s · “%s”" % (log.create_uid.name, log.create_date.strftime("%d/%m/%Y"),
+                                                      log.reason) if log else False
+            rec.tms_required_docs = " · ".join(types.mapped("name"))
+
+    def action_tms_unlock_mode(self):
+        return self.company_id.action_open_unlock_wizard()

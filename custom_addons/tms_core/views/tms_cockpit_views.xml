@@ -5,4 +5,13 @@
         <field name="name">Exception Dashboard</field>
         <field name="tag">tms_exception_dashboard</field>
     </record>
+    <!-- one-page registers as drawn in the agreed mockup (18.0.1.6.0) -->
+    <record id="action_tms_compliance_register_page" model="ir.actions.client">
+        <field name="name">Compliance Register</field>
+        <field name="tag">tms_compliance_register</field>
+    </record>
+    <record id="action_tms_charges_register_page" model="ir.actions.client">
+        <field name="name">Charges &amp; Expenses</field>
+        <field name="tag">tms_charges_register</field>
+    </record>
 </odoo>

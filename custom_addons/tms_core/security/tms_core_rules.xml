@@ -142,4 +142,47 @@
     <record id="tms.tms_order_comp_rule" model="ir.rule">
         <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
     </record>
+    <!-- Odoo limits a Fleet Officer to the vehicles they drive. Every TMS role is a Fleet Officer, and trips, LRs,
+         expenses, breakdowns and bills name vehicles, so TMS staff read every vehicle of their branches and its
+         logs; changing them stays with the Fleet Manager (branch rules still apply). -->
+    <record id="rule_tms_staff_read_fleet_vehicle" model="ir.rule">
+        <field name="name">fleet.vehicle: TMS staff read</field>
+        <field name="model_id" ref="fleet.model_fleet_vehicle"/>
+        <field name="groups" eval="[(4, ref('group_tms_staff'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_tms_staff_read_fleet_vehicle_log_services" model="ir.rule">
+        <field name="name">fleet.vehicle.log.services: TMS staff read</field>
+        <field name="model_id" ref="fleet.model_fleet_vehicle_log_services"/>
+        <field name="groups" eval="[(4, ref('group_tms_staff'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_tms_staff_read_fleet_vehicle_odometer" model="ir.rule">
+        <field name="name">fleet.vehicle.odometer: TMS staff read</field>
+        <field name="model_id" ref="fleet.model_fleet_vehicle_odometer"/>
+        <field name="groups" eval="[(4, ref('group_tms_staff'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_tms_staff_read_fleet_vehicle_log_contract" model="ir.rule">
+        <field name="name">fleet.vehicle.log.contract: TMS staff read</field>
+        <field name="model_id" ref="fleet.model_fleet_vehicle_log_contract"/>
+        <field name="groups" eval="[(4, ref('group_tms_staff'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
 </odoo>

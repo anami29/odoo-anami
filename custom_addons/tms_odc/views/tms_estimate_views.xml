@@ -16,7 +16,7 @@
                 <field name="odc_suggested" invisible="1"/>
             </xpath>
             <xpath expr="//field[@name='line_ids']" position="before">
-                <group>
+                <group invisible="tms_cargo_type != 'odc' and not piece_ids">
                     <group string="Cargo pieces">
                         <field name="piece_ids" nolabel="1" colspan="2" readonly="state == 'locked'" context="{'default_estimate_id': id}">
                             <list editable="bottom" decoration-warning="is_odc">
@@ -34,7 +34,7 @@
                         <field name="heaviest_piece"/>
                         <field name="rated_capacity"/>
                     </group>
-                    <group string="Route by state">
+                    <group string="Route by state" invisible="tms_cargo_type != 'odc'">
                         <field name="route_ids" nolabel="1" colspan="2" readonly="state == 'locked'" context="{'default_estimate_id': id}">
                             <list editable="bottom">
                                 <field name="sequence" widget="handle"/>

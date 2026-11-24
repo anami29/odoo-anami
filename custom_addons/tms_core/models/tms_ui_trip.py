@@ -120,7 +120,7 @@ class TmsOrder(models.Model):
     last_dsr_location = fields.Char(compute="_compute_last_dsr_line", store=True, string="Location")
     last_dsr_remark = fields.Text(compute="_compute_last_dsr_line", store=True, string="Latest remark")
     current_eta = fields.Datetime(compute="_compute_last_dsr_line", store=True, string="ETA")
-    delay_hours = fields.Float(compute="_compute_delay_hours", store=True, string="Delay vs plan (h)",
+    delay_hours = fields.Float(compute="_compute_delay_hours", store=True, string="Delay vs plan (h)", aggregator=None,
                                help="ETA of the latest status line minus the scheduled end, in hours.")
     next_dsr_due = fields.Datetime(compute="_compute_next_dsr_due", store=True, string="Next update due")
     dsr_customer_id = fields.Many2one("res.partner", compute="_compute_dsr_customer", store=True,
@@ -223,9 +223,11 @@ class TmsOrder(models.Model):
             uploaded = links.filtered(lambda x: x.pod_status == "uploaded")
             if uploaded:
                 last = max(uploaded.mapped("uploaded_on") or [False]) if all(uploaded.mapped("uploaded_on")) else False
+                rule = _("A POD Verifier, the uploader included, can verify it.") \
+                    if trip.company_id.tms_pod_self_verify else \
+                    _("Only a POD Verifier other than the uploader can verify it.")
                 parts.append(_(
-                    "POD uploaded%(when)s by %(who)s, verification pending. Only a POD Verifier other than the "
-                    "uploader can verify it.",
+                    "POD uploaded%(when)s by %(who)s, verification pending. %(rule)s", rule=rule,
                     when=(" " + _dt(self.env, last)) if last else "",
                     who=", ".join(uploaded.mapped("uploaded_by_id.name")) or _("an unknown user")))
             waiting = links - uploaded

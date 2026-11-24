@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================ incident -->
+    <record id="tms_trip_incident_form_tms_ui" model="ir.ui.view">
+        <field name="name">tms.trip.incident.form.tms.ui</field>
+        <field name="model">tms.trip.incident</field>
+        <field name="inherit_id" ref="tms_core.tms_trip_incident_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_resolve']" position="attributes">
+                <attribute name="string">Mark Resolved</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_create_charge']" position="attributes">
+                <attribute name="string">Create Charge</attribute>
+                <attribute name="class">btn-primary</attribute>
+                <attribute name="invisible">state != 'open' or claim_id or category_code in ('DAMAGE', 'SHORTAGE')</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_create_claim']" position="attributes">
+                <attribute name="string">Raise Damage Claim</attribute>
+                <attribute name="invisible">state != 'open' or claim_id or category_code not in ('DAMAGE', 'SHORTAGE')</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_create_expense']" position="attributes">
+                <attribute name="string">Book Expense</attribute>
+                <attribute name="invisible">state != 'open'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='state']" position="attributes">
+                <attribute name="statusbar_visible">open,resolved</attribute>
+            </xpath>
+            <xpath expr="//sheet/group" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button name="action_view_trip" type="object" class="oe_stat_button" icon="fa-truck">
+                        <div class="o_stat_info"><span class="o_stat_value"><field name="trip_id" readonly="1" options="{'no_open': True}"/></span><span class="o_stat_text">Trip</span></div>
+                    </button>
+                    <button name="action_view_lr" type="object" class="oe_stat_button" icon="fa-file-text-o" invisible="not consignment_id">
+                        <div class="o_stat_info"><span class="o_stat_value"><field name="consignment_id" readonly="1" options="{'no_open': True}"/></span><span class="o_stat_text">Consignment</span></div>
+                    </button>
+                    <button name="action_view_claim" type="object" class="oe_stat_button" icon="fa-clipboard" invisible="not claim_id">
+                        <div class="o_stat_info"><span class="o_stat_value"><field name="claim_id" readonly="1" options="{'no_open': True}"/></span><span class="o_stat_text">Claim</span></div>
+                    </button>
+                </div>
+                <div class="oe_title">
+                    <label for="name" string="Trip Incident"/>
+                    <h1><field name="name" readonly="1"/></h1>
+                    <div class="text-muted"><field name="subtitle" readonly="1"/></div>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='estimated_amount']" position="after">
+                <field name="category_code" invisible="1"/>
+                <field name="cost_amount"/>
+                <field name="customer_charge"/>
+                <field name="vendor_recovery"/>
+                <field name="treatment" widget="badge" decoration-info="treatment in ('charge_customer', 'charge_and_recover')" decoration-warning="treatment in ('recover_vendor', 'claim')" decoration-muted="treatment in ('none', 'absorb')"/>
+                <field name="realised_via" placeholder="not yet realised"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Treatment rule" name="treatment_rule">
+                    <p>An incident is the event record. Its money is realised once, in a charge (customer or transporter),
+                        an expense, a hire memo line or a damage claim, never on the incident itself.</p>
+                    <ul>
+                        <li>Customer responsible: create a charge to the billing party; it is billed on the next freight invoice.</li>
+                        <li>Transporter or broker responsible: create a recovery charge; it is deducted on the hire bill.</li>
+                        <li>Own company: book the expense; it stays in the trip's cost.</li>
+                        <li>Damage or shortage: raise a damage claim; approval issues the credit note and the recovery.</li>
+                    </ul>
+                </page>
+                <page string="Other info" name="other_info">
+                    <group>
+                        <field name="reported_by_id"/>
+                        <field name="create_date" string="Reported on"/>
+                        <field name="moves_money"/>
+                        <field name="breakdown_id"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================================================================ damage claim -->
+    <record id="tms_damage_claim_form_tms_ui" model="ir.ui.view">
+        <field name="name">tms.damage.claim.form.tms.ui</field>
+        <field name="model">tms.damage.claim</field>
+        <field name="inherit_id" ref="tms_core.tms_damage_claim_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_print_claim_note']" position="attributes">
+                <attribute name="string">Print Claim Note</attribute>
+            </xpath>
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button name="action_view_trip" type="object" class="oe_stat_button" icon="fa-truck" invisible="not trip_id">
+                        <div class="o_stat_info"><span class="o_stat_value"><field name="trip_id" readonly="1" options="{'no_open': True}"/></span><span class="o_stat_text">Trip</span></div>
+                    </button>
+                    <button name="action_view_lr" type="object" class="oe_stat_button" icon="fa-file-text-o">
+                        <div class="o_stat_info"><span class="o_stat_value"><field name="consignment_id" readonly="1" options="{'no_open': True}"/></span><span class="o_stat_text">Consignment</span></div>
+                    </button>
+                    <button name="action_view_credit_note" type="object" class="oe_stat_button" icon="fa-undo" invisible="not credit_note_id">
+                        <div class="o_stat_info"><span class="o_stat_value"><field name="credit_note_id" readonly="1" options="{'no_open': True}"/></span><span class="o_stat_text">Credit Note</span></div>
+                    </button>
+                    <button name="action_view_recovery_bill" type="object" class="oe_stat_button" icon="fa-credit-card" invisible="not recovery_bill_id">
+                        <div class="o_stat_info"><span class="o_stat_value"><field name="recovery_bill_id" readonly="1" options="{'no_open': True}"/></span><span class="o_stat_text">Vendor Bill</span></div>
+                    </button>
+                </div>
+            </xpath>
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="inside">
+                <div class="text-muted">
+                    <field name="damage_type" readonly="1" class="d-inline"/> · <field name="affected_qty" readonly="1" class="d-inline"/> packages · LR <field name="consignment_id" readonly="1" class="d-inline" options="{'no_open': True}"/>
+                </div>
+            </xpath>
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="after">
+                <div class="alert alert-info" role="status" invisible="not claim_banner">
+                    <field name="claim_banner" nolabel="1"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='claimant_id']" position="after">
+                <field name="create_uid" string="Raised by" readonly="1"/>
+                <field name="create_date" string="Raised on" readonly="1"/>
+                <field name="pod_status"/>
+            </xpath>
+            <xpath expr="//field[@name='evidence']" position="attributes">
+                <attribute name="invisible">not evidence</attribute>
+            </xpath>
+            <xpath expr="//field[@name='approved_by_id']" position="after">
+                <field name="approved_on" invisible="not approved_on"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Settlement" name="settlement">
+                    <field name="settlement_html" nolabel="1"/>
+                    <div class="text-muted small">The customer leg counts as claim cost in the trip ledger; the vendor leg feeds the three-way match as an approved recovery.</div>
+                </page>
+                <page string="Evidence" name="evidence">
+                    <field name="evidence_ids" widget="many2many_binary" nolabel="1"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================================================================ charges and expenses -->
+    <record id="tms_trip_charge_list_tms_ui" model="ir.ui.view">
+        <field name="name">tms.trip.charge.list.tms.ui</field>
+        <field name="model">tms.trip.charge</field>
+        <field name="inherit_id" ref="tms_core.tms_trip_charge_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='amount']" position="before">
+                <field name="incurred_amount" optional="show"/>
+                <field name="customer_amount" sum="Total" optional="show"/>
+                <field name="vendor_amount" sum="Total" optional="show"/>
+                <field name="treatment_label" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='amount']" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='billing_status']" position="replace">
+                <field name="billing_detail" widget="badge" decoration-info="billing_detail in ('to_invoice', 'to_deduct')" decoration-warning="billing_detail == 'on_draft'" decoration-success="billing_detail in ('invoiced', 'deducted')"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="tms_trip_charge_search_tms_ui" model="ir.ui.view">
+        <field name="name">tms.trip.charge.search.tms.ui</field>
+        <field name="model">tms.trip.charge</field>
+        <field name="inherit_id" ref="tms_core.tms_trip_charge_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='to_approve']" position="before">
+                <filter name="pending_recovery" string="Pending recovery only" domain="[('state', '=', 'approved')]"/>
+                <separator/>
+                <filter name="this_month" string="This month" domain="[('create_date', '&gt;=', (context_today() - relativedelta(day=1)).strftime('%Y-%m-%d'))]"/>
+                <filter name="period" string="Period" date="create_date"/>
+                <separator/>
+            </xpath>
+        </field>
+    </record>
+    <record id="tms_trip_expense_list_tms_ui" model="ir.ui.view">
+        <field name="name">tms.trip.expense.list.tms.ui</field>
+        <field name="model">tms.trip.expense</field>
+        <field name="inherit_id" ref="tms_core.tms_trip_expense_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='category_id']" position="attributes">
+                <attribute name="string">Type</attribute>
+            </xpath>
+            <xpath expr="//field[@name='payment_mode']" position="before">
+                <field name="paid_to_id" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='amount']" position="after">
+                <field name="recoverable_from" optional="show"/>
+                <field name="recoverable_amount" optional="show" sum="Total"/>
+                <field name="recovery_status" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='vehicle_id']" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </xpath>
+        </field>
+    </record>
+    <record id="tms_trip_expense_search" model="ir.ui.view">
+        <field name="name">tms.trip.expense.search</field>
+        <field name="model">tms.trip.expense</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="trip_id"/>
+                <field name="category_id"/>
+                <field name="paid_to_id"/>
+                <filter name="recoverable" string="Recoverable" domain="[('recoverable_from', 'not in', (False, 'none'))]"/>
+                <filter name="recovery_missing" string="Recovery not raised" domain="[('recoverable_from', 'not in', (False, 'none')), ('charge_id', '=', False)]"/>
+                <separator/>
+                <filter name="this_month" string="This month" domain="[('date', '&gt;=', (context_today() - relativedelta(day=1)).strftime('%Y-%m-%d'))]"/>
+                <filter name="period" string="Period" date="date"/>
+                <separator/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="approved" string="Approved" domain="[('state', '=', 'approved')]"/>
+                <group>
+                    <filter name="group_trip" string="Trip" context="{'group_by': 'trip_id'}"/>
+                    <filter name="group_type" string="Type" context="{'group_by': 'category_id'}"/>
+                    <filter name="group_month" string="Month" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_tms_expense" model="ir.actions.act_window">
+        <field name="search_view_id" ref="tms_trip_expense_search"/>
+    </record>
+</odoo>

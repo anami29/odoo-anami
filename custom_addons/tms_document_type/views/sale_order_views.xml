@@ -10,6 +10,11 @@
                 <button name="action_tms_approve_vehicle_fleet" type="object" string="Approve (Fleet)" invisible="not tms_vehicle_disposal or tms_fleet_approved_by_id or state not in ('draft', 'sent')" groups="tms_core.group_fleet_manager"/>
                 <button name="action_tms_approve_vehicle_finance" type="object" string="Approve (Finance)" invisible="not tms_vehicle_disposal or tms_finance_approved_by_id or state not in ('draft', 'sent')" groups="tms_core.group_finance_head"/>
             </xpath>
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="after">
+                <div class="alert alert-info" role="status" invisible="tms_document_behaviour != 'standard'">
+                    Standard document: transport rules are off. No cost estimate, rate approval or contract check; lines take any saleable product at its pricelist price and invoice from the order.
+                </div>
+            </xpath>
             <xpath expr="//group[@name='partner_details']" position="inside">
                 <field name="tms_document_type_id" required="1" readonly="state not in ('draft', 'sent')" options="{'no_create': True}"/>
                 <field name="tms_document_behaviour" invisible="1"/>

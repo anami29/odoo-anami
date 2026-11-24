@@ -119,7 +119,9 @@ class TestUiCompliance(TmsCommon):
         self.assertNotIn(market_fleet, self.env["fleet.vehicle"].search([("tms_cmp_gate_state", "in", ("blocked", "expiring", "valid"))]))
         menu = self.env.ref("tms_core.menu_tms_compliance_document")
         self.assertEqual(menu.name, "Compliance register")
-        self.assertEqual(menu.action, action)
+        # the one-page register (18.0.1.6.0); the vehicle list stays its sub-item
+        self.assertEqual(menu.action, self.env.ref("tms_core.action_tms_compliance_register_page"))
+        self.assertEqual(self.env.ref("tms_core.menu_tms_compliance_register_vehicle").action, action)
         self.assertEqual(self.env.ref("tms_core.menu_tms_report_compliance").action,
                          self.env.ref("tms_core.action_tms_compliance_document"))
         # the flat list in the register context starts on own vehicles and drivers

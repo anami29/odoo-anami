@@ -29,3 +29,5 @@ access_tms_so_pnl_line_fh,tms.so.pnl.line fh,model_tms_so_pnl_line,tms_core.grou
 access_tms_so_pnl_line_auditor,tms.so.pnl.line auditor,model_tms_so_pnl_line,tms_core.group_auditor,1,0,0,0
 access_tms_so_pnl_line_admin,tms.so.pnl.line admin,model_tms_so_pnl_line,tms_core.group_tms_admin,1,0,0,0
 access_tms_estimate_amendment_wizard_staff,tms.estimate.amendment.wizard staff,model_tms_estimate_amendment_wizard,tms_core.group_tms_staff,1,1,1,1
+access_tms_quotation_acceptance_wizard_user,tms.quotation.acceptance.wizard user,model_tms_quotation_acceptance_wizard,base.group_user,1,1,1,1
+access_tms_estimate_book_wizard_staff,tms.estimate.book.wizard staff,model_tms_estimate_book_wizard,tms_core.group_tms_staff,1,1,1,1

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- the five lost reasons of the transport pipeline (BR-CRM-03) -->
+    <record id="lost_reason_rate_high" model="crm.lost.reason"><field name="name">Rate too high</field></record>
+    <record id="lost_reason_lane" model="crm.lost.reason"><field name="name">Lane not served</field></record>
+    <record id="lost_reason_vehicle" model="crm.lost.reason"><field name="name">No vehicle on the dates</field></record>
+    <record id="lost_reason_competitor" model="crm.lost.reason"><field name="name">Customer chose another transporter</field></record>
+    <record id="lost_reason_credit" model="crm.lost.reason"><field name="name">Credit terms not accepted</field></record>
+</odoo>

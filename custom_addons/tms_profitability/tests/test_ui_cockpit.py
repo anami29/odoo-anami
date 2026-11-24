@@ -311,7 +311,9 @@ class TestUiCockpitPages(CockpitScenario, HttpCase):
         with patch.object(type(self.env["res.users"]), "_rpc_api_keys_only", lambda self: False):
             self.authenticate("boss", "boss-pass-2026")
         script = os.environ["TMS_SHOT_SCRIPT"]
+        trip = self.env["tms.order"].search([("breakdown_ids", "!=", False)], order="id desc", limit=1)
         pages = [
+            ("trip_form", "/odoo/action-tms.action_tms_operation_trip/%s" % trip.id),
             ("dashboard", "/odoo/action-tms_core.action_tms_exception_dashboard"),
             ("so_pnl", "/odoo/action-tms_profitability.action_tms_so_pnl_page"),
             ("truck_pnl", "/odoo/action-tms_profitability.action_tms_truck_pnl_page"),

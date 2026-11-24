@@ -42,6 +42,11 @@ class ResCompany(models.Model):
         string="Unlocked until the next change")
     # ---- BR-CFG-06, 07
     tms_enforce_compliance = fields.Boolean(default=True, string="Enforce compliance gate")
+    tms_pod_self_verify = fields.Boolean(
+        string="Uploader may verify own POD", default=False,
+        help="Off: a POD is verified by a POD Verifier other than its uploader. On: the uploader, if a POD "
+             "Verifier, may verify it too; each such verification is logged. Only the TMS Administrator "
+             "switches it, with a reason.")
     tms_strict_branch_accounting = fields.Boolean(default=True, string="Strict branch accounting")
     # ---- BR-CFG-08 hire variance tolerance
     tms_hire_tolerance_amount = fields.Monetary(default=250.0, currency_field="currency_id", string="Hire tolerance (₹)")
@@ -117,10 +122,27 @@ class ResCompany(models.Model):
             if not self.env.context.get("tms_reason") and any(
                     c.tms_enforce_compliance != bool(vals["tms_enforce_compliance"]) for c in self):
                 raise UserError(_("Give the reason for switching compliance enforcement."))
+        if "tms_pod_self_verify" in vals and not self.env.su:
+            if not self.env.user.has_group("tms_core.group_tms_admin"):
+                raise UserError(_("Only the TMS Administrator allows the uploader to verify a POD."))
+            if not self.env.context.get("tms_reason") and any(
+                    c.tms_pod_self_verify != bool(vals["tms_pod_self_verify"]) for c in self):
+                raise UserError(_("Give the reason for switching POD self-verification."))
         old = {c.id: c.tms_enforce_compliance for c in self}
+        old_pod = {c.id: c.tms_pod_self_verify for c in self}
         res = super().write(vals)
         if "tms_operation_mode" in vals:
             self._tms_sync_mode_menus()
+        if "tms_pod_self_verify" in vals:
+            for company in self:
+                if old_pod[company.id] != company.tms_pod_self_verify:
+                    self.env["tms.override.log"].log(
+                        "pod_self_verify_switch",
+                        company,
+                        _("POD self-verification by the uploader switched %s",
+                          "on" if company.tms_pod_self_verify else "off"),
+                        reason=self.env.context.get("tms_reason") or _("Changed by the system"),
+                    )
         if "tms_enforce_compliance" in vals:
             for company in self:
                 if old[company.id] != company.tms_enforce_compliance:
@@ -199,6 +221,13 @@ class ResCompany(models.Model):
         return self.tms_lr_sequence_id
 
     # tms_branch_journal: see tms_branch.py (BR-BRN-04)
+
+    def tms_mode_label(self):
+        """The operating mode for the top-bar badge; nothing for users outside Transport."""
+        self.ensure_one()
+        if not self.env.user.has_group("tms_core.group_tms_staff"):
+            return False
+        return dict(self._fields["tms_operation_mode"]._description_selection(self.env)).get(self.tms_operation_mode)
 
 
 class ResConfigSettings(models.TransientModel):

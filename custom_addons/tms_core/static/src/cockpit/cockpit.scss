@@ -525,3 +525,28 @@ $tms-orange: #eb6834;
         transform: translateX(-50%);
     }
 }
+
+// compliance register cells: a dot and the date, coloured by state
+.o_tms_cockpit .o_tms_list .o_tms_doc {
+    &::before {
+        content: "";
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        margin-right: 6px;
+        vertical-align: middle;
+        background: currentColor;
+    }
+    &.ok { color: #1e7e46; }
+    &.warn { color: #9a6700; font-weight: 600; }
+    &.bad { color: #b42318; font-weight: 600; }
+}
+
+// operating-mode badge in the top bar: never truncated
+.o_tms_mode_indicator .badge {
+    max-width: none;
+    overflow: visible;
+    white-space: nowrap;
+    background: rgba(255, 255, 255, 0.12);
+}

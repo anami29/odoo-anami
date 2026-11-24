@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_tms_document_type_user,tms.document.type user,model_tms_document_type,base.group_user,1,0,0,0
 access_tms_document_type_admin,tms.document.type admin,model_tms_document_type,tms_core.group_tms_admin,1,1,1,1
+access_tms_document_type_guide_user,tms.document.type.guide user,model_tms_document_type_guide,base.group_user,1,1,1,0

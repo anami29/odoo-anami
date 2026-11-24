@@ -5,6 +5,12 @@ from odoo.exceptions import ValidationError
 class FleetVehicle(models.Model):
     _inherit = "fleet.vehicle"
 
+    @api.depends("license_plate", "name")
+    def _compute_display_name(self):
+        """A truck reads as its registration number, as on the LR and the trip sheet."""
+        for vehicle in self:
+            vehicle.display_name = vehicle.license_plate or vehicle.name
+
     # BR-MD-05
     tms_payload_kg = fields.Float(string="Payload (kg)", tracking=True)
     tms_vehicle_type = fields.Char(string="Vehicle type")

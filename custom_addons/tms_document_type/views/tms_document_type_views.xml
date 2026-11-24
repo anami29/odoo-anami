@@ -5,6 +5,9 @@
         <field name="model">tms.document.type</field>
         <field name="arch" type="xml">
             <list>
+                <header>
+                    <button name="action_tms_behaviour_guide" type="object" string="What the behaviour decides" display="always" icon="fa-info-circle"/>
+                </header>
                 <field name="sequence" widget="handle"/>
                 <field name="code"/>
                 <field name="name"/>
@@ -14,6 +17,7 @@
                 <field name="invoice_type_id" optional="show"/>
                 <field name="sequence_id" optional="show"/>
                 <field name="approval_limit" optional="show"/>
+                <field name="note" optional="show"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="active" column_invisible="1"/>
             </list>
@@ -74,8 +78,28 @@
         <field name="name">Document types</field>
         <field name="res_model">tms.document.type</field>
         <field name="view_mode">list,form</field>
-        <field name="context">{'search_default_group_applies': 1}</field>
+        <field name="context">{}</field>
     </record>
     <menuitem id="menu_tms_config_document_type" name="Document types" parent="tms.config"
               action="action_tms_document_type" sequence="49" groups="tms_core.group_tms_admin,tms_core.group_branch_accountant,tms_core.group_finance_head"/>
+    <record id="tms_document_type_guide_form" model="ir.ui.view">
+        <field name="name">tms.document.type.guide.form</field>
+        <field name="model">tms.document.type.guide</field>
+        <field name="arch" type="xml">
+            <form string="What the behaviour decides" create="0" edit="0">
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light"><tr><th>What the behaviour decides</th><th>Transport</th><th>Standard</th></tr></thead>
+                    <tbody>
+                        <tr><td>Sales order items</td><td>Priced from a cost estimate per km; item approval; contract balance</td><td>Any saleable product at its pricelist price</td></tr>
+                        <tr><td>Customer invoice</td><td>Only from LRs</td><td>From the order by ordered or delivered quantity, or entered directly</td></tr>
+                        <tr><td>Purchase order and bill lines</td><td>Estimate line, vehicle and cost class; hire memo and three-way match</td><td>None of these; branch analytic account only; bill control on ordered or received quantity</td></tr>
+                        <tr><td>P&amp;L</td><td>Trip, sales order, customer, truck, fleet, vendor and contract P&amp;L</td><td>Branch and company P&amp;L only, as overhead or other income</td></tr>
+                        <tr><td>Type change</td><td colspan="2">Editable while draft; locked on confirm or post. Transport to Standard is refused once an estimate, LR, trip, contract, hire memo or estimate line is linked.</td></tr>
+                    </tbody>
+                </table>
+                <p class="text-muted small">New documents take the Transport type, or the user's personal default; documents a transport flow creates always take the Transport type. The Scrap sale accepts only the Scrap category.</p>
+                <footer><button string="Close" special="cancel" class="btn-secondary"/></footer>
+            </form>
+        </field>
+    </record>
 </odoo>

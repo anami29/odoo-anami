@@ -122,8 +122,10 @@ class TmsOrder(models.Model):
 
     @api.depends("hire_memo_ids")
     def _compute_counts(self):
+        # a count only: roles without purchase access (POD Verifier, Fleet Manager) still open the trip
+        PO = self.env["purchase.order"].sudo()
         for trip in self:
-            trip.hire_memo_count = len(trip.hire_memo_ids)
+            trip.hire_memo_count = PO.search_count([("tms_trip_id", "=", trip.id)]) if trip.id else 0
 
     @api.depends("consignment_link_ids.pod_status", "consignment_link_ids.state")
     def _compute_pod_status(self):
@@ -188,8 +190,10 @@ class TmsOrder(models.Model):
         """Posted figures from bill, expense and invoice lines that name the trip (BR-LED-02..06)."""
         MoveLine = self.env["account.move.line"].sudo()
         for trip in self:
+            # figures only: read as superuser so that roles without accounting rights still open the trip
+            src = trip.sudo()
             revenue = 0.0
-            for link in trip.consignment_link_ids.filtered(lambda x: x.state != "cancel"):
+            for link in src.consignment_link_ids.filtered(lambda x: x.state != "cancel"):
                 lr = link.consignment_id
                 share = (link.weight / lr.charged_weight) if lr.charged_weight else 1.0
                 lines = lr.invoice_line_ids.filtered(
@@ -217,7 +221,7 @@ class TmsOrder(models.Model):
             trip.fin_direct_cost = direct
             trip.fin_recoveries = recoveries
             trip.fin_contribution = revenue + recoveries - direct
-            trip.fin_open_commitments = trip._tms_open_commitments()
+            trip.fin_open_commitments = src._tms_open_commitments()
 
     def _tms_open_commitments(self):
         """BR-LED-06: unbilled hire, open PO items, approved unposted expenses, unbilled charges, unsettled claims."""

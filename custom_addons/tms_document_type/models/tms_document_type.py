@@ -42,7 +42,7 @@ class TmsDocumentType(models.Model):
     product_category_ids = fields.Many2many("product.category", string="Allowed product categories",
                                             help="Empty: any category.")
     currency_id = fields.Many2one("res.currency", default=lambda s: s.env.company.currency_id, required=True)
-    approval_limit = fields.Monetary(string="Approval limit", tracking=True,
+    approval_limit = fields.Monetary(string="Approval limit", tracking=True, aggregator=None,
                                      help="Orders above this amount before tax wait for an approver.")
     approver_group_ids = fields.Many2many("res.groups", "tms_doc_type_approver_rel", "type_id", "group_id",
                                           string="Approvers",
@@ -113,3 +113,21 @@ class TmsDocumentType(models.Model):
     def _tms_next_number(self):
         self.ensure_one()
         return self.sudo().sequence_id.next_by_id() if self.sequence_id else False
+
+
+class TmsDocumentTypeGuide(models.TransientModel):
+    """What the behaviour of a document type decides: the comparison shown from the Document Types list."""
+
+    _name = "tms.document.type.guide"
+    _description = "Document type behaviour guide"
+
+    def action_open(self):
+        return {"type": "ir.actions.act_window", "name": _("What the behaviour decides"), "res_model": self._name,
+                "res_id": self.create({}).id, "view_mode": "form", "target": "new"}
+
+
+class TmsDocumentTypeList(models.Model):
+    _inherit = "tms.document.type"
+
+    def action_tms_behaviour_guide(self):
+        return self.env["tms.document.type.guide"].action_open()

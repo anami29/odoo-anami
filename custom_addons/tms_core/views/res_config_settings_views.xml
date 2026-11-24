@@ -23,18 +23,56 @@
             </xpath>
             <xpath expr="//block[@name='general_settings_container']" position="before">
                 <block title="Operating mode and controls" name="tms_core_mode">
-                    <setting string="Operating mode" help="Hybrid or Broker. Locks once confirmed LRs or trips exist.">
-                        <field name="tms_operation_mode" readonly="tms_mode_locked"/>
-                        <div class="text-warning" invisible="not tms_mode_locked">Locked: the TMS Administrator unlocks it from the branch form with a reason.</div>
+                    <setting string="Operating mode" help="Locks once confirmed LRs or trips exist; LRs and trips keep the mode they were created in.">
+                        <field name="tms_operation_mode" widget="radio" readonly="tms_mode_locked"/>
+                        <div class="text-muted small" invisible="tms_operation_mode != 'hybrid'">Hybrid: owned fleet and hired market fleet. Default.</div>
+                        <div class="text-muted small" invisible="tms_operation_mode != 'broker'">Broker / 3PL: market fleet only; the company arranges, bills and settles.</div>
+                        <div class="alert alert-warning mt-2 mb-0 py-2" role="status" invisible="not tms_mode_locked">
+                            Locked: confirmed LRs and trips exist. Only the TMS Administrator unlocks it, with a reason that is logged.
+                            <button name="action_tms_unlock_mode" type="object" string="Unlock…" class="btn btn-link p-0 ms-1" groups="tms_core.group_tms_admin"/>
+                        </div>
+                        <div class="text-muted small mt-1" invisible="not tms_last_unlock">Last unlocked by <field name="tms_last_unlock" class="d-inline"/></div>
                     </setting>
-                    <setting string="Enforce compliance gate" help="only the TMS Administrator changes it; each change is logged.">
+                    <setting string="What the mode changes" help="Save to apply; the Transport menus follow the saved mode.">
+                        <table class="table table-sm small mb-0" invisible="tms_operation_mode != 'hybrid'">
+                            <tr><td class="fw-bold">Trip form</td><td>Fleet type: Owned or Market hire</td></tr>
+                            <tr><td class="fw-bold">Menus</td><td>Vehicles, Drivers, Insurance, Odometers and Fleet costs shown</td></tr>
+                            <tr><td class="fw-bold">Compliance</td><td>Owned fleet from the register; market vehicles on each assignment</td></tr>
+                            <tr><td class="fw-bold">Billing</td><td>Freight invoices; vendor bills with the three-way match</td></tr>
+                            <tr><td class="fw-bold">Validation</td><td>Hire memo required only on Market hire trips</td></tr>
+                        </table>
+                        <table class="table table-sm small mb-0" invisible="tms_operation_mode != 'broker'">
+                            <tr><td class="fw-bold">Trip form</td><td>Fleet type fixed to Market hire</td></tr>
+                            <tr><td class="fw-bold">Menus</td><td>Owned-fleet menus hidden (Vehicles, Drivers, Insurance, Odometers, Fleet costs)</td></tr>
+                            <tr><td class="fw-bold">Compliance</td><td>Market vehicle documents on each assignment</td></tr>
+                            <tr><td class="fw-bold">Billing</td><td>Freight invoices; every trip has a hire memo and a matched vendor bill</td></tr>
+                            <tr><td class="fw-bold">Validation</td><td>Hire memo required on every trip</td></tr>
+                        </table>
+                    </setting>
+                    <setting string="Enforce compliance gate" help="Block the start when a required document is missing or expires before the scheduled end. Only the TMS Administrator changes it; each change is logged.">
                         <field name="tms_enforce_compliance"/>
+                        <div class="text-muted small mt-1">Required at start: <field name="tms_required_docs" class="d-inline"/></div>
+                        <div class="text-danger small" invisible="tms_enforce_compliance">Off: an expired PUC or fitness certificate does not stop a trip.</div>
                         <div class="mt-2">
                             <field name="tms_enforce_reason" placeholder="Reason, required when you switch enforcement"/>
                         </div>
                     </setting>
+                    <setting string="Uploader may verify own POD" help="off by default: a second POD Verifier verifies. Only the TMS Administrator switches it; each switch and each self-verification is logged.">
+                        <field name="tms_pod_self_verify"/>
+                        <div class="mt-2">
+                            <field name="tms_pod_self_verify_reason" placeholder="Reason, required when you switch it"/>
+                        </div>
+                    </setting>
                     <setting string="Strict branch accounting" help="post in the document branch's journals.">
                         <field name="tms_strict_branch_accounting"/>
+                    </setting>
+                    <setting string="Require verified POD for vendor bills" help="Vendor bills linked to a hire memo cannot post until the trip's POD is verified. There is no switch and no override.">
+                        <span class="badge rounded-pill text-bg-light border">always on</span>
+                    </setting>
+                    <setting string="Consignment note sequence" help="One LR series per branch; a branch may allow manual numbers from printed LR books, unique per branch and year.">
+                        <div class="d-flex gap-2 align-items-baseline"><span>Branch code</span><field name="tms_branch_code" class="w-auto"/></div>
+                        <div class="text-muted small" invisible="not tms_lr_next">Next: <field name="tms_lr_next" class="d-inline"/></div>
+                        <div><field name="tms_allow_manual_lr"/><label for="tms_allow_manual_lr" string="Allow manual LR numbers"/></div>
                     </setting>
                     <setting string="Hire variance tolerance" help="the lower of the amount and the percent applies.">
                         <div class="d-flex gap-2"><field name="tms_hire_tolerance_amount"/><span>or</span><field name="tms_hire_tolerance_percent"/><span>%</span></div>

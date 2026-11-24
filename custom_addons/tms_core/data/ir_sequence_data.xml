@@ -31,7 +31,21 @@
     <record id="seq_tms_damage_claim" model="ir.sequence">
         <field name="name">Damage claim</field>
         <field name="code">tms.damage.claim</field>
-        <field name="prefix">CLM/%(year)s/</field>
+        <field name="prefix">DC/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_tms_hire_memo" model="ir.sequence">
+        <field name="name">Hire memo</field>
+        <field name="code">tms.hire.memo</field>
+        <field name="prefix">HM/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_tms_trip_incident" model="ir.sequence">
+        <field name="name">Trip incident</field>
+        <field name="code">tms.trip.incident</field>
+        <field name="prefix">INC/%(year)s/</field>
         <field name="padding">4</field>
         <field name="company_id" eval="False"/>
     </record>

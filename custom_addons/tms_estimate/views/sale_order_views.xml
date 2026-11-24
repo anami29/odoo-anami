@@ -50,9 +50,14 @@
                 <field name="tms_lr_charged_weight" optional="hide"/>
                 <field name="tms_freight_invoiced" optional="hide"/>
             </xpath>
-            <xpath expr="//field[@name='tax_totals']" position="after">
-                <field name="tms_estimated_cost" groups="tms_core.group_sales_executive,tms_core.group_planner,tms_core.group_branch_manager,tms_core.group_operations_head,tms_core.group_finance_head,tms_core.group_branch_accountant"/>
-                <field name="tms_markup_pct" groups="tms_core.group_sales_executive,tms_core.group_planner,tms_core.group_branch_manager,tms_core.group_operations_head,tms_core.group_finance_head,tms_core.group_branch_accountant"/>
+            <xpath expr="//group[@name='note_group']" position="after">
+                <group name="tms_cost_summary" groups="tms_core.group_sales_executive,tms_core.group_planner,tms_core.group_branch_manager,tms_core.group_operations_head,tms_core.group_finance_head,tms_core.group_branch_accountant">
+                    <group/>
+                    <group string="Cost and markup">
+                        <field name="tms_estimated_cost"/>
+                        <field name="tms_markup_pct"/>
+                    </group>
+                </group>
             </xpath>
         </field>
     </record>

@@ -4,7 +4,7 @@
     "name": "TMS Core (Premier Transport)",
     "summary": "LR booking, trips, compliance gate, POD, charges, expenses, "
     "claims, hire memo and three-way match, LR invoicing and credit control",
-    "version": "18.0.1.5.0",
+    "version": "18.0.1.6.0",
     "category": "TMS",
     "license": "LGPL-3",
     "author": "RLFB (Riamona Luxury and Fashion Brands)",
@@ -59,6 +59,7 @@
         "views/tms_override_log_views.xml",
         "views/tms_kpi_views.xml",
         "views/tms_cockpit_views.xml",
+        "views/tms_ui_exceptions_views.xml",
         "views/menus.xml",
         "views/tms_tds_views.xml",
         "views/tms_core_extra_views.xml",
@@ -78,6 +79,7 @@
     "assets": {
         "web.assets_backend": [
             "tms_core/static/src/cockpit/**/*",
+            "tms_core/static/src/systray/**/*",
         ],
     },
     "post_init_hook": "post_init_hook",

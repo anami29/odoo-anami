@@ -6,3 +6,5 @@ from . import test_ui_compliance
 from . import test_ui_billing
 from . import test_ui_defects
 from . import test_no_codes
+from . import test_ui_screens
+from . import test_ui_screens_d

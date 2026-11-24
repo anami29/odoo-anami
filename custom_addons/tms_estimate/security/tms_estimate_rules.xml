@@ -36,4 +36,11 @@
         <field name="global" eval="True"/>
         <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
     </record>
+    <!-- BR-CRM-01: a Sales Executive works the whole pipeline of the branch (the branch rule still applies) -->
+    <record id="rule_crm_lead_sales_executive_branch" model="ir.rule">
+        <field name="name">Pipeline: the branch's opportunities for Sales Executives</field>
+        <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="groups" eval="[(4, ref('tms_core.group_sales_executive'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
 </odoo>

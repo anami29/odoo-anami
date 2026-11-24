@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="tms_core.TmsComplianceRegister">
+        <div class="o_action o_tms_cockpit">
+            <Layout display="{ controlPanel: {} }">
+                <t t-set-slot="layout-actions">
+                    <div t-if="state.data" class="o_tms_search" role="search">
+                        <span class="o_tms_facet">
+                            <span class="k">Branch</span>
+                            <span class="v">
+                                <select class="o_tms_facet_select" t-on-change="onBranch" aria-label="Branch">
+                                    <t t-foreach="state.data.scope.branches" t-as="b" t-key="b.id">
+                                        <option t-att-value="b.id" t-att-selected="b.id === state.data.scope.company_id" t-esc="b.name"/>
+                                    </t>
+                                </select>
+                            </span>
+                        </span>
+                    </div>
+                </t>
+                <t t-set-slot="control-panel-navigation-additional">
+                    <div class="btn-group" role="group" aria-label="Filter">
+                        <button type="button" t-attf-class="btn btn-sm {{state.filter === 'all' ? 'btn-primary' : 'btn-secondary'}}" t-on-click="() => this.state.filter = 'all'">All</button>
+                        <button type="button" t-attf-class="btn btn-sm {{state.filter === 'expired' ? 'btn-primary' : 'btn-secondary'}}" t-on-click="() => this.state.filter = 'expired'">Expired</button>
+                        <button type="button" t-attf-class="btn btn-sm {{state.filter === 'expiring' ? 'btn-primary' : 'btn-secondary'}}" t-on-click="() => this.state.filter = 'expiring'">Expiring ≤ 30 days</button>
+                    </div>
+                    <span t-if="state.data" class="text-muted small text-nowrap align-self-center">as of <t t-esc="state.data.as_of"/></span>
+                </t>
+                <div t-if="state.data" class="o_tms_page">
+                    <section class="o_tms_panel">
+                        <div class="o_tms_panel_h">
+                            <div class="ttl">Owned vehicles</div>
+                            <span class="text-muted small"><t t-esc="vehicles.length"/> shown</span>
+                        </div>
+                        <table class="o_tms_list sm">
+                            <thead><tr><th>Vehicle</th><th>Model</th><th>Registration (RC)</th><th>Fitness</th><th>Permit</th><th>Insurance</th><th>PUC</th><th>Gate</th><th>Trip</th><th/></tr></thead>
+                            <tbody>
+                                <tr t-foreach="vehicles" t-as="v" t-key="v.id">
+                                    <td class="fw-bold text-nowrap" t-esc="v.plate"/>
+                                    <td t-esc="v.model"/>
+                                    <t t-foreach="['rc', 'fit', 'permit', 'ins', 'puc']" t-as="k" t-key="k">
+                                        <td class="text-nowrap"><span t-attf-class="o_tms_doc {{cellClass(v.cells[k].state)}}" t-esc="v.cells[k].text"/></td>
+                                    </t>
+                                    <td><span t-attf-class="o_tms_badge {{gateClass(v.gate_state)}}" t-esc="v.gate"/></td>
+                                    <td class="text-nowrap">
+                                        <a t-if="v.trip_open" href="#" t-on-click.prevent="() => this.open(v.trip_open)" t-esc="v.trip"/>
+                                        <span t-else="" class="text-muted" t-esc="v.status"/>
+                                    </td>
+                                    <td class="text-end"><button t-if="v.renew" type="button" class="btn btn-primary btn-sm" t-on-click="() => this.renew('fleet.vehicle', v)">Renew <t t-esc="v.renew"/></button></td>
+                                </tr>
+                                <tr t-if="!vehicles.length"><td colspan="10" class="text-muted py-3">No owned vehicle matches this filter.</td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+                    <section class="o_tms_panel mt-3">
+                        <div class="o_tms_panel_h">
+                            <div class="ttl">Drivers</div>
+                            <span class="text-muted small"><t t-esc="drivers.length"/> shown</span>
+                        </div>
+                        <table class="o_tms_list sm">
+                            <thead><tr><th>Driver</th><th>DL number</th><th>DL type</th><th>Driving licence valid until</th><th>Gate</th><th>Trip</th><th/></tr></thead>
+                            <tbody>
+                                <tr t-foreach="drivers" t-as="d" t-key="d.id">
+                                    <td class="fw-bold" t-esc="d.name"/>
+                                    <td class="text-nowrap"><code t-esc="d.dl"/></td>
+                                    <td t-esc="d.dl_type"/>
+                                    <td class="text-nowrap"><span t-attf-class="o_tms_doc {{cellClass(d.dl_state)}}" t-esc="d.dl_text"/></td>
+                                    <td><span t-attf-class="o_tms_badge {{gateClass(d.gate_state)}}" t-esc="d.gate"/></td>
+                                    <td class="text-nowrap"><a t-if="d.trip_open" href="#" t-on-click.prevent="() => this.open(d.trip_open)" t-esc="d.trip"/></td>
+                                    <td class="text-end"><button t-if="d.renew" type="button" class="btn btn-primary btn-sm" t-on-click="() => this.renew('tms.driver', d)">Renew <t t-esc="d.renew"/></button></td>
+                                </tr>
+                                <tr t-if="!drivers.length"><td colspan="7" class="text-muted py-3">No driver matches this filter.</td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+                    <p class="text-muted small mt-2" t-esc="state.data.legend"/>
+                </div>
+            </Layout>
+        </div>
+    </t>
+
+    <t t-name="tms_core.TmsChargesRegister">
+        <div class="o_action o_tms_cockpit">
+            <Layout display="{ controlPanel: {} }">
+                <t t-set-slot="layout-actions">
+                    <TmsScopeBar t-if="state.data" scope="state.data.scope" onChange.bind="onScope"/>
+                </t>
+                <t t-set-slot="control-panel-navigation-additional">
+                    <button type="button" t-attf-class="btn btn-sm {{state.data and state.data.pending_only ? 'btn-primary' : 'btn-secondary'}}" t-on-click="togglePending">Pending recovery only</button>
+                    <button type="button" class="btn btn-secondary btn-sm" t-on-click="load" t-att-disabled="state.loading">Refresh</button>
+                </t>
+                <t t-set="d" t-value="state.data"/>
+                <div t-if="state.data" class="o_tms_page">
+                    <div class="o_tms_kpis four">
+                        <t t-foreach="d.tiles" t-as="tile" t-key="tile.key">
+                            <a href="#" class="o_tms_kpi" t-on-click.prevent="() => this.open(tile.action)" t-att-data-key="tile.key">
+                                <div class="hd"><span t-esc="tile.label"/></div>
+                                <div class="v" t-esc="tileValue(tile)"/>
+                                <div class="s" t-esc="tile.sub"/>
+                            </a>
+                        </t>
+                    </div>
+                    <section class="o_tms_panel">
+                        <div class="o_tms_panel_h">
+                            <div class="ttl">Trip charges <span class="text-muted small fw-normal">absorbed / charged to customer / recovered from vendor</span></div>
+                            <span class="text-muted small"><t t-esc="d.charges.length"/> lines</span>
+                        </div>
+                        <table class="o_tms_list sm">
+                            <thead><tr><th>Reference</th><th>Trip</th><th>Category</th><th class="num">Incurred</th><th class="num">Customer charge</th><th class="num">Vendor recovery</th><th>Treatment</th><th>Billing status</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="d.charges" t-as="c" t-key="c.id">
+                                    <td class="text-nowrap"><a href="#" t-on-click.prevent="() => this.open(c.open)" t-esc="c.ref"/></td>
+                                    <td class="text-nowrap"><a t-if="c.trip_open" href="#" t-on-click.prevent="() => this.open(c.trip_open)" t-esc="c.trip"/></td>
+                                    <td t-esc="c.category"/>
+                                    <td class="num" t-esc="c.incurred ? inr(c.incurred) : '—'"/>
+                                    <td class="num" t-esc="c.customer ? inr(c.customer) : '—'"/>
+                                    <td class="num" t-esc="c.vendor ? inr(c.vendor) : '—'"/>
+                                    <td><span t-attf-class="o_tms_badge {{c.recover_from === 'customer' ? 'b-info' : 'b-warning'}}" t-esc="c.treatment"/></td>
+                                    <td><span t-attf-class="o_tms_badge {{billingClass(c.billing_key)}}" t-esc="c.billing"/></td>
+                                </tr>
+                                <tr t-if="!d.charges.length"><td colspan="8" class="text-muted py-3">No charge in this period.</td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+                    <section class="o_tms_panel mt-3">
+                        <div class="o_tms_panel_h">
+                            <div class="ttl">Trip expenses · recoverable</div>
+                            <span class="text-muted small"><t t-esc="d.expenses.length"/> lines</span>
+                        </div>
+                        <table class="o_tms_list sm">
+                            <thead><tr><th>Reference</th><th>Type</th><th>Paid to</th><th class="num">Amount</th><th class="num">Customer recovery</th><th class="num">Vendor recovery</th><th>Recovery status</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="d.expenses" t-as="e" t-key="e.id">
+                                    <td class="text-nowrap"><a href="#" t-on-click.prevent="() => this.open(e.open)" t-esc="e.ref"/></td>
+                                    <td t-esc="e.type"/>
+                                    <td t-esc="e.paid_to"/>
+                                    <td class="num" t-esc="inr(e.amount)"/>
+                                    <td class="num" t-esc="e.customer ? inr(e.customer) : '—'"/>
+                                    <td class="num" t-esc="e.vendor ? inr(e.vendor) : '—'"/>
+                                    <td><span t-attf-class="o_tms_badge {{e.leak ? 'b-danger' : 'b-info'}}" t-esc="e.status"/></td>
+                                </tr>
+                                <tr t-if="!d.expenses.length"><td colspan="7" class="text-muted py-3">No recoverable expense.</td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+                    <p class="text-muted small mt-2">Each recoverable expense raises the charge that carries its recovery; the cost is counted once, as the expense.</p>
+                </div>
+            </Layout>
+        </div>
+    </t>
+
+</templates>

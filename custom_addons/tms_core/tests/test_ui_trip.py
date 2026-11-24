@@ -5,7 +5,7 @@ from lxml import etree
 
 from odoo import fields
 from odoo.exceptions import UserError
-from odoo.tests import tagged
+from odoo.tests import Form, tagged
 
 from .common import TmsCommon
 
@@ -42,6 +42,34 @@ class TestUiTrip(TmsCommon):
         # nothing left to verify
         with self.assertRaises(UserError):
             trip.with_user(self.u_verifier).action_verify_pods()
+
+    def test_uploader_verifies_when_admin_allows(self):
+        """The TMS Administrator may allow the uploader to verify their own POD; each such verification is
+        logged."""
+        trip = self._trip(self._lr())
+        self._deliver_upload(trip, self.u_manager)
+        with self.assertRaises(UserError):
+            trip.with_user(self.u_manager).action_verify_pods()
+        # only the TMS Administrator switches it, and only with a reason
+        with self.assertRaises(UserError):
+            self.company.with_user(self.u_manager).write({"tms_pod_self_verify": True})
+        self.u_admin.groups_id |= self.env.ref("base.group_system")  # saving settings needs it (README #4)
+        with self.assertRaises(UserError):
+            self.company.with_user(self.u_admin).write({"tms_pod_self_verify": True})
+        self.company.with_user(self.u_admin).with_context(tms_reason="Single-verifier branch").write(
+            {"tms_pod_self_verify": True})
+        Log = self.env["tms.override.log"]
+        self.assertTrue(Log.search([("kind", "=", "pod_self_verify_switch")]))
+        self.assertIn("the uploader included", trip.pod_banner)
+        trip.with_user(self.u_manager).action_verify_pods()
+        self.assertEqual(trip.pod_status, "verified")
+        self.assertEqual(trip.consignment_link_ids.verified_by_id, self.u_manager)
+        self.assertTrue(Log.search([("kind", "=", "pod_self_verify")]))
+        # a user who is not a POD Verifier still cannot verify
+        trip2 = self._trip(self._lr(), planned_vehicle_id=self.vehicle2.id, planned_driver_id=self.driver2.id)
+        self._deliver_upload(trip2, self.u_manager)
+        with self.assertRaises(UserError):
+            trip2.with_user(self.u_dispatcher).action_verify_pods()
 
     def test_pod_banner_before_upload(self):
         trip = self._trip(self._lr())
@@ -260,3 +288,33 @@ class TestUiTrip(TmsCommon):
         trip.action_confirm()
         with self.assertRaises(UserError):
             trip.button_start_order()
+
+
+@tagged("post_install", "-at_install")
+class TestUiTripAccess(TmsCommon):
+    """Every TMS role opens the trip form and the documents around it (Odoo limits a Fleet Officer to the
+    vehicles they drive; every TMS role is one)."""
+
+    def test_roles_open_trip_forms(self):
+        lr = self._lr()
+        trip = self._trip(lr)
+        self.env["tms.trip.breakdown"].create({"trip_id": trip.id, "location": "Igatpuri", "cause": "tyre"})
+        expense = self.env["tms.trip.expense"].create({
+            "trip_id": trip.id, "category_id": self.env.ref("tms_core.tms_category_roadside_repair").id,
+            "amount": 1500.0})
+        market = self._trip(self._lr(), fleet="market", start=False)
+        records = [trip, market, lr, trip.breakdown_ids, expense, self.vehicle]
+        Access = self.env["ir.model.access"]
+        roles = (self.u_clerk, self.u_dispatcher, self.u_verifier, self.u_accountant, self.u_manager, self.u_ops,
+                 self.u_finance, self.u_admin, self.u_fleet)
+        for user in roles:
+            for rec in records:
+                if not Access.with_user(user).check(rec._name, "read", raise_exception=False):
+                    continue
+                with self.subTest(user=user.login, model=rec._name):
+                    form = Form(rec.with_user(user))
+                    self.assertTrue(form.id)
+                    # the vehicle shows by name, not as an access error
+                    if rec._name == "tms.order":
+                        self.assertTrue(rec.with_user(user).primary_vehicle_id.display_name
+                                        or rec.with_user(user).planned_market_vehicle_id.display_name)

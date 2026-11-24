@@ -10,6 +10,9 @@
                     <setting string="Contract series" help="This branch's contract numbers; created at the first activation if empty">
                         <field name="tms_contract_sequence_id"/>
                     </setting>
+                    <setting string="Contract validity (months)" help="A new contract runs this long from its start unless another end is given">
+                        <field name="tms_contract_validity_months"/>
+                    </setting>
                     <setting string="Utilisation alert %" help="Invoiced plus reserved as a share of value">
                         <field name="tms_contract_util_alert"/>
                     </setting>

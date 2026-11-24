@@ -67,6 +67,16 @@ class PurchaseOrder(models.Model):
             po.tms_advance_cap = hire * pct / 100.0
             po.tms_balance = hire - po.tms_advance_total
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Hire memos take their own series, HM/YYYY/NNNN."""
+        for vals in vals_list:
+            memo = vals.get("tms_is_hire_memo", self.env.context.get("default_tms_is_hire_memo"))
+            if memo and vals.get("name", "New") in ("New", _("New"), False, "/"):
+                company = self.env["res.company"].browse(vals.get("company_id")) or self.env.company
+                vals["name"] = self.env["ir.sequence"].with_company(company).next_by_code("tms.hire.memo") or "New"
+        return super().create(vals_list)
+
     def button_confirm(self):
         """BR-HIR-03: confirming a hire memo needs the vendor's PAN and bank details."""
         for po in self.filtered("tms_is_hire_memo"):
@@ -336,7 +346,7 @@ class TmsVendorBillMatch(models.Model):
                     continue
                 vals.append({"match_id": match.id, "kind": "extra" if pol.tms_hire_element not in ("hire",) else "hire",
                              "label": "%s/%s %s" % (po.name, pol.tms_item_no, pol.name or ""),
-                             "approved": approved, "billed": billed})
+                             "approved": approved, "billed": billed, "purchase_line_id": pol.id})
             charges = self.env["tms.trip.charge"].search([
                 ("trip_id", "=", po.tms_trip_id.id), ("recover_from", "=", "vendor"),
                 ("partner_id", "child_of", po.partner_id.commercial_partner_id.id),
@@ -439,6 +449,7 @@ class TmsVendorBillMatchLine(models.Model):
     kind = fields.Selection([("hire", "Hire"), ("extra", "Approved extra"), ("recovery", "Vendor recovery"),
                              ("replacement", "Replacement cost")], required=True)
     label = fields.Char()
+    purchase_line_id = fields.Many2one("purchase.order.line", readonly=True)
     charge_id = fields.Many2one("tms.trip.charge")
     approved = fields.Monetary()
     billed = fields.Monetary()

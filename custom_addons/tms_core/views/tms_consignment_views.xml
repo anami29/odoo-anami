@@ -4,24 +4,34 @@
         <field name="name">tms.consignment.list</field>
         <field name="model">tms.consignment</field>
         <field name="arch" type="xml">
-            <list decoration-muted="state == 'cancel'" decoration-info="state == 'draft'">
-                <field name="name"/>
+            <list decoration-muted="state == 'cancel'">
+                <header>
+                    <button name="action_plan_trip" type="object" string="Plan Trip"/>
+                    <button name="action_print_lr" type="object" string="Print LR"/>
+                </header>
+                <field name="name" string="LR number"/>
                 <field name="date"/>
-                <field name="company_id" string="Booking branch" optional="show"/>
+                <field name="company_id" string="Branch" optional="show"/>
                 <field name="consignor_id"/>
                 <field name="consignee_id"/>
                 <field name="billing_partner_id" optional="show"/>
-                <field name="origin_id" optional="show"/>
-                <field name="destination_id" optional="show"/>
-                <field name="freight_basis"/>
+                <field name="origin_id" optional="hide"/>
+                <field name="destination_id" optional="hide"/>
+                <field name="freight_basis" optional="hide"/>
                 <field name="tms_cargo_type" optional="hide"/>
-                <field name="total_packages" optional="hide"/>
-                <field name="charged_weight" sum="Total"/>
-                <field name="freight_amount" sum="Total"/>
+                <field name="total_packages" string="Packages" sum="Total"/>
+                <field name="total_actual_weight" string="Actual wt (kg)" sum="Total"/>
+                <field name="charged_weight" string="Charged wt (kg)" sum="Total"/>
+                <field name="freight_amount" sum="Total" optional="hide"/>
                 <field name="freight_invoiced" optional="hide" sum="Total"/>
-                <field name="vehicle_number" optional="show"/>
-                <field name="pod_status" optional="show"/>
-                <field name="state" widget="badge" decoration-success="state in ('delivered', 'invoiced')" decoration-warning="state == 'not_delivered'"/>
+                <field name="trip_display"/>
+                <field name="ewaybill_coverage"/>
+                <field name="ewaybill_missing" column_invisible="1"/>
+                <field name="vehicle_number" optional="hide"/>
+                <field name="pod_status" optional="hide"/>
+                <field name="state" string="Status" widget="badge" decoration-muted="state == 'draft'"
+                       decoration-info="state == 'confirmed'" decoration-warning="state == 'dispatched'"
+                       decoration-success="state in ('delivered', 'invoiced')" decoration-danger="state == 'not_delivered'"/>
             </list>
         </field>
     </record>
@@ -37,8 +47,11 @@
                     <!-- return-to-origin LRs are phase 2: the action stays in code, the button stays hidden -->
                     <button name="action_return_to_origin" type="object" string="Return to origin" invisible="1" help="New LR billed to the billing party"/>
                     <button name="action_open_credit_override" type="object" string="Confirm over credit block" invisible="state != 'draft'" groups="tms_core.group_branch_manager,tms_core.group_finance_head" help="confirm with a logged reason"/>
-                    <button name="action_invoice" type="object" string="Create invoice" invisible="state in ('draft', 'cancel', 'invoiced')" groups="tms_core.group_booking_clerk,tms_core.group_branch_accountant"/>
-                    <button name="action_print_lr" type="object" string="Print LR" invisible="state == 'draft'"/>
+                    <button name="action_plan_trip" type="object" string="Plan Trip" class="btn-primary" invisible="state != 'confirmed' or unplanned_packages &lt;= 0"/>
+                    <button name="action_open_trip" type="object" string="Open Trip" invisible="not trip_count or state in ('draft', 'cancel')"/>
+                    <button name="action_invoice" type="object" string="Create Invoice" invisible="not invoice_eligible" groups="tms_core.group_booking_clerk,tms_core.group_branch_accountant"/>
+                    <span class="text-muted small align-self-center ms-1" invisible="not invoice_hint"><field name="invoice_hint" readonly="1"/></span>
+                    <button name="action_print_lr" type="object" string="Print LR"/>
                     <button name="action_open_amendment" type="object" string="Request amendment" invisible="state in ('draft', 'cancel', 'invoiced')"/>
                     <button name="action_cancel" type="object" string="Cancel" invisible="state not in ('draft', 'confirmed')" confirm="Cancel this LR?"/>
                     <button name="action_draft" type="object" string="Reset to draft" invisible="state != 'cancel'"/>
@@ -46,8 +59,17 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
-                        <button name="action_view_trips" type="object" class="oe_stat_button" icon="fa-truck" invisible="not trip_count">
+                        <button name="action_view_trips" type="object" class="oe_stat_button" icon="fa-truck">
                             <field name="trip_count" widget="statinfo" string="Trips"/>
+                        </button>
+                        <button name="action_view_ewaybills" type="object" class="oe_stat_button" icon="fa-file-o" invisible="not ewaybill_lines_needed and not ewaybill_ids">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value" invisible="not ewaybill_coverage"><field name="ewaybill_coverage" readonly="1"/></span>
+                                <span class="o_stat_text">E-way bills</span>
+                            </div>
+                        </button>
+                        <button name="action_view_claims" type="object" class="oe_stat_button" icon="fa-exclamation-triangle" invisible="not claim_count">
+                            <field name="claim_count" widget="statinfo" string="Claim"/>
                         </button>
                         <button name="action_view_invoices" type="object" class="oe_stat_button" icon="fa-file-text-o" invisible="not invoice_ids">
                             <field name="freight_invoiced" widget="statinfo" string="Invoiced"/>
@@ -55,32 +77,35 @@
                     </div>
                     <widget name="web_ribbon" title="Godown" bg_color="text-bg-warning" invisible="not godown_hold"/>
                     <div class="oe_title">
-                        <label for="name" string="LR number"/>
+                        <label for="name" string="Consignment Note (LR)"/>
                         <h1><field name="name" readonly="state != 'draft' or not manual_number" placeholder="/"/></h1>
                         <field name="manual_number" invisible="state != 'draft'"/>
                         <label for="manual_number" string="Manual number from printed LR book" invisible="state != 'draft'"/>
                     </div>
-                    <div class="alert alert-warning" role="alert" invisible="not ewaybill_missing or state in ('draft', 'cancel')">
-                        A required e-way bill is missing: the trip cannot start until it is added.
+                    <div class="alert alert-warning" role="alert" invisible="not ewaybill_banner">
+                        <field name="ewaybill_banner" readonly="1"/>
+                        <span invisible="state == 'draft'"> The trip cannot start until it is added.</span>
                     </div>
+                    <field name="ewaybill_lines_needed" invisible="1"/>
+                    <field name="unplanned_packages" invisible="1"/>
                     <group>
                         <group string="Parties">
-                            <field name="consignor_id" readonly="state not in ('draft',)"/>
-                            <field name="consignee_id" readonly="state not in ('draft',)"/>
-                            <field name="freight_basis" readonly="state not in ('draft',)"/>
+                            <field name="consignor_id" readonly="state not in ('draft',)" context="{'show_address': 1}" options="{'always_reload': True}"/>
+                            <field name="consignee_id" readonly="state not in ('draft',)" context="{'show_address': 1}" options="{'always_reload': True}"/>
                             <field name="billing_partner_id" readonly="state not in ('draft',)"/>
+                            <field name="freight_basis" readonly="state not in ('draft',)"/>
                             <field name="gst_payer" readonly="state not in ('draft',)"/>
                         </group>
-                        <group string="Movement">
-                            <field name="date" readonly="state != 'draft'"/>
-                            <field name="company_id" string="Booking branch" readonly="state != 'draft'" groups="base.group_multi_company"/>
-                            <field name="delivery_branch_id"/>
+                        <group string="Booking">
+                            <field name="date" string="LR Date" readonly="state != 'draft'"/>
+                            <field name="company_id" string="Branch" readonly="state != 'draft'" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="tms_mode" string="Operating Mode"/>
+                            <field name="delivery_branch_id" invisible="not delivery_branch_id"/>
                             <field name="origin_id" readonly="state != 'draft'"/>
                             <field name="destination_id" readonly="state != 'draft'"/>
                             <field name="service_type" readonly="state != 'draft'"/>
                             <field name="risk_basis" readonly="state != 'draft'"/>
                             <field name="tms_cargo_type" readonly="state != 'draft'"/>
-                            <field name="tms_mode"/>
                         </group>
                     </group>
                     <group>
@@ -111,7 +136,7 @@
                     <notebook>
                         <page string="Commodities" name="lines">
                             <field name="line_ids">
-                                <list editable="bottom">
+                                <list editable="bottom" decoration-danger="ewaybill_needed">
                                     <field name="sequence" widget="handle"/>
                                     <field name="commodity"/>
                                     <field name="hsn_code" optional="hide"/>
@@ -120,7 +145,10 @@
                                     <field name="actual_weight" sum="Total"/>
                                     <field name="charged_weight" sum="Total" readonly="1"/>
                                     <field name="declared_value" sum="Total"/>
-                                    <field name="ewaybill_id" options="{'no_create': True}"/>
+                                    <field name="ewaybill_id" string="E-way bill no." options="{'no_create_edit': True}"
+                                           context="{'default_consignment_id': parent.id}"
+                                           decoration-danger="ewaybill_needed" placeholder="12-digit EWB no."/>
+                                    <field name="ewaybill_needed" column_invisible="1"/>
                                     <field name="ewaybill_exempt" optional="show"/>
                                     <field name="piece_length" optional="hide"/>
                                     <field name="piece_width" optional="hide"/>
@@ -145,16 +173,23 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Trips and POD" name="trips">
+                        <page string="Trip &amp; Delivery" name="trips">
+                            <div class="alert alert-info" role="status" invisible="not plan_banner">
+                                <field name="plan_banner" readonly="1"/>
+                            </div>
                             <field name="trip_link_ids" readonly="1">
                                 <list>
                                     <field name="trip_id"/>
                                     <field name="packages"/>
                                     <field name="weight"/>
-                                    <field name="delivered_at"/>
+                                    <field name="delivered_at" string="Delivered on"/>
+                                    <field name="received_by" optional="show"/>
                                     <field name="outcome"/>
-                                    <field name="pod_status"/>
-                                    <field name="state"/>
+                                    <field name="pod_status" widget="badge" decoration-success="pod_status == 'verified'" decoration-warning="pod_status == 'uploaded'" decoration-danger="pod_status == 'rejected'"/>
+                                    <field name="verified_by_id" string="Verified by" optional="show"/>
+                                    <field name="verified_on" optional="show"/>
+                                    <field name="remarks" string="Delivery remark" optional="show"/>
+                                    <field name="state" optional="hide"/>
                                 </list>
                             </field>
                             <group>
@@ -199,6 +234,19 @@
                             </field>
                             <group><field name="cancel_reason"/></group>
                         </page>
+                        <page string="Other Info" name="other_info">
+                            <group>
+                                <group>
+                                    <field name="company_id" string="Company" readonly="1" options="{'no_open': True}"/>
+                                    <field name="declared_value" string="Declared value (total)"/>
+                                    <field name="lr_series"/>
+                                </group>
+                                <group>
+                                    <field name="create_uid" string="Created by" readonly="1"/>
+                                    <field name="create_date" string="Created on" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
                     </notebook>
                 </sheet>
                 <chatter/>
@@ -216,6 +264,8 @@
                 <field name="consignee_id"/>
                 <field name="billing_partner_id"/>
                 <field name="vehicle_number"/>
+                <filter name="this_month" string="This Month" domain="[('date', '&gt;=', (context_today() - relativedelta(day=1)).strftime('%Y-%m-%d'))]"/>
+                <separator/>
                 <filter name="confirmed" string="Confirmed, unplanned" domain="[('state', '=', 'confirmed'), ('unplanned_packages', '>', 0)]"/>
                 <filter name="in_transit" string="Dispatched" domain="[('state', '=', 'dispatched')]"/>
                 <filter name="to_invoice" string="Delivered, not invoiced" domain="[('state', 'in', ('delivered', 'not_delivered'))]"/>
@@ -230,6 +280,29 @@
                     <filter name="by_date" string="Date" context="{'group_by': 'date'}"/>
                 </group>
             </search>
+        </field>
+    </record>
+    <record id="tms_consignment_kanban" model="ir.ui.view">
+        <field name="name">tms.consignment.kanban</field>
+        <field name="model">tms.consignment</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column" sample="1" quick_create="false">
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex justify-content-between">
+                            <field name="name" class="fw-bold"/>
+                            <field name="date"/>
+                        </div>
+                        <div class="text-muted"><field name="consignor_id"/> → <field name="consignee_id"/></div>
+                        <div><field name="total_packages"/> pkgs · <field name="charged_weight"/> kg</div>
+                        <div class="d-flex justify-content-between">
+                            <field name="trip_display" class="text-muted"/>
+                            <field name="ewaybill_coverage" class="badge text-bg-light"/>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
         </field>
     </record>
     <record id="tms_consignment_pivot" model="ir.ui.view">
@@ -248,7 +321,8 @@
     <record id="action_tms_consignment" model="ir.actions.act_window">
         <field name="name">Consignment notes (LR)</field>
         <field name="res_model">tms.consignment</field>
-        <field name="view_mode">list,form,pivot</field>
+        <field name="view_mode">list,kanban,form,pivot</field>
+        <field name="context">{'search_default_this_month': 1}</field>
         <field name="help" type="html"><p class="o_view_nocontent_smiling_face">Book the first LR</p></field>
     </record>
     <record id="action_tms_lr_register" model="ir.actions.act_window">

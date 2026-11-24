@@ -31,3 +31,8 @@ from . import tms_ui_trip
 from . import tms_ui_compliance
 from . import tms_ui_billing
 from . import tms_cockpit
+from . import tms_ui_lr
+from . import tms_ui_trip_sheet
+from . import tms_ui_exceptions
+from . import tms_ui_invoice
+from . import tms_ui_registers

@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================ pipeline -->
+    <record id="crm_lead_kanban_tms_ui" model="ir.ui.view">
+        <field name="name">crm.lead.kanban.tms.ui</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_kanban_view_leads"/>
+        <field name="arch" type="xml">
+            <xpath expr="//t[@t-name='card']//field[@name='partner_id']" position="after">
+                <field name="tms_lane_summary" class="small text-muted text-truncate"/>
+                <div t-if="record.tms_order_badge.raw_value" class="small">
+                    <span class="badge rounded-pill text-bg-light border"><field name="tms_order_badge"/></span>
+                </div>
+            </xpath>
+        </field>
+    </record>
+    <record id="crm_lead_list_tms_ui" model="ir.ui.view">
+        <field name="name">crm.lead.list.tms.ui</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_tree_view_oppor"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="attributes">
+                <attribute name="optional">show</attribute>
+                <attribute name="string">Customer</attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="tms_lane_summary" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='contact_name']" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='email_from']" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='recurring_revenue_monthly']" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='probability']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//field[@name='lost_reason_id']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//field[@name='activity_ids']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//field[@name='stage_id']" position="before">
+                <field name="date_deadline" string="Expected Closing" optional="show"/>
+                <field name="tms_order_badge" string="Quotation" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="crm_lead_search_tms_ui" model="ir.ui.view">
+        <field name="name">crm.lead.search.tms.ui</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.view_crm_case_opportunities_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='stage']" position="after">
+                <filter name="group_branch" string="Branch" context="{'group_by': 'company_id'}"/>
+                <filter name="group_customer" string="Customer" context="{'group_by': 'partner_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================================================================ opportunity -->
+    <record id="crm_lead_form_tms_ui" model="ir.ui.view">
+        <field name="name">crm.lead.form.tms.ui</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="tms_estimate.crm_lead_form_tms_estimate"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='expected_revenue']" position="attributes">
+                <attribute name="readonly">tms_lane_ids</attribute>
+            </xpath>
+            <xpath expr="//group[@name='opportunity_partner']/field[@name='partner_id']" position="after">
+                <div colspan="2" class="text-muted small mb-1" invisible="not tms_match_note">
+                    <span class="badge rounded-pill text-bg-success"><field name="tms_match_note" nolabel="1"/></span>
+                </div>
+                <xpath expr="//page[@name='tms_lanes']//field[@name='tms_vat']" position="move"/>
+                <xpath expr="//page[@name='tms_lanes']//field[@name='tms_pan']" position="move"/>
+            </xpath>
+            <xpath expr="//group[@name='opportunity_partner']" position="inside">
+                <field name="team_id" string="Sales Team" options="{'no_open': True, 'no_create': True}"/>
+                <field name="company_id" string="Branch" options="{'no_open': True, 'no_create': True}" readonly="1"/>
+            </xpath>
+            <xpath expr="//page[@name='tms_lanes']" position="attributes">
+                <attribute name="string">Lanes</attribute>
+            </xpath>
+            <xpath expr="//page[@name='tms_lanes']//field[@name='tms_lane_ids']" position="attributes">
+                <attribute name="readonly">not active</attribute>
+            </xpath>
+            <xpath expr="//page[@name='tms_lanes']//field[@name='loads_per_month']" position="attributes">
+                <attribute name="sum">Total a month</attribute>
+            </xpath>
+            <xpath expr="//page[@name='tms_lanes']//field[@name='tms_lane_ids']" position="after">
+                <div class="text-muted small" invisible="not tms_lane_formula">
+                    <field name="tms_lane_formula" nolabel="1"/>
+                    <span invisible="type != 'lead'"> Expected revenue computes once the lead is an opportunity.</span>
+                </div>
+            </xpath>
+        </field>
+    </record>
+    <record id="crm_lead_convert_form_tms_ui" model="ir.ui.view">
+        <field name="name">crm.lead2opportunity.partner.form.tms.ui</field>
+        <field name="model">crm.lead2opportunity.partner</field>
+        <field name="inherit_id" ref="crm.view_crm_lead2opportunity_partner"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='action']" position="after">
+                <field name="tms_match_partner_id" invisible="1"/>
+                <div class="alert alert-info" role="status" invisible="not tms_match_partner_id or action == 'create'">
+                    <field name="tms_match_text" nolabel="1"/>
+                </div>
+                <div class="alert alert-danger" role="alert" invisible="not tms_match_partner_id or action != 'create'">
+                    The GSTIN or PAN already belongs to <field name="tms_match_partner_id" nolabel="1" readonly="1" class="d-inline"/>,
+                    so a second customer is not created: the opportunity links to the existing customer.
+                </div>
+                <div class="alert alert-warning" role="alert" invisible="action != 'nothing'">
+                    The opportunity converts without a customer. Link one before raising a quotation, which needs the
+                    customer master.
+                </div>
+            </xpath>
+        </field>
+    </record>
+    <record id="crm_lead_lost_form_tms_ui" model="ir.ui.view">
+        <field name="name">crm.lead.lost.form.tms.ui</field>
+        <field name="model">crm.lead.lost</field>
+        <field name="inherit_id" ref="crm.crm_lead_lost_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='lost_reason_id']" position="attributes">
+                <attribute name="required">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================================================================ freight quotation -->
+    <record id="sale_order_form_tms_ui" model="ir.ui.view">
+        <field name="name">sale.order.form.tms.ui</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="tms_estimate.sale_order_form_tms_estimate"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@id='send_by_email_primary']" position="attributes">
+                <attribute name="invisible">state != 'draft' or tms_needs_approval</attribute>
+            </xpath>
+            <xpath expr="//header/button[@id='send_by_email']" position="attributes">
+                <attribute name="invisible">state not in ('sent', 'sale') or tms_needs_approval</attribute>
+            </xpath>
+            <xpath expr="//header/button[@id='action_confirm']" position="attributes">
+                <attribute name="name">action_tms_confirm</attribute>
+                <attribute name="invisible">state != 'sent' or tms_needs_approval</attribute>
+            </xpath>
+            <xpath expr="//header/button[@name='action_confirm'][not(@id)]" position="attributes">
+                <attribute name="name">action_tms_confirm</attribute>
+                <attribute name="invisible">state != 'draft' or tms_needs_approval</attribute>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button name="action_tms_request_approval" type="object" string="Request Approval" class="btn-primary"
+                        invisible="tms_rate_approval != 'required'"/>
+                <button name="action_tms_approve_rates" type="object" string="Approve Rates" class="btn-primary"
+                        invisible="tms_rate_approval not in ('pending', 'required')"
+                        groups="tms_core.group_branch_manager,tms_core.group_operations_head"/>
+                <button name="action_tms_reject_rates" type="object" string="Reject"
+                        invisible="tms_rate_approval not in ('pending', 'required')"
+                        groups="tms_core.group_branch_manager,tms_core.group_operations_head"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_tms_view_opportunity" type="object" class="oe_stat_button" icon="fa-star" invisible="not opportunity_id">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value"><field name="tms_opportunity_stage" readonly="1"/></span>
+                        <span class="o_stat_text">Opportunity</span>
+                    </div>
+                </button>
+                <button name="action_view_lrs" type="object" class="oe_stat_button" icon="fa-inr" invisible="not tms_freight_invoiced_total">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value"><field name="tms_freight_invoiced_total" widget="monetary"/></span>
+                        <span class="o_stat_text">Freight invoiced</span>
+                    </div>
+                </button>
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]" position="after">
+                <field name="tms_rate_approval" invisible="1"/>
+                <div class="alert alert-warning" role="alert" invisible="tms_rate_approval not in ('required', 'pending')">
+                    <field name="tms_approval_banner" nolabel="1"/>
+                </div>
+                <div class="alert alert-danger" role="alert" invisible="tms_rate_approval != 'rejected'">
+                    <field name="tms_approval_banner" nolabel="1"/>
+                </div>
+                <div class="alert alert-success" role="status" invisible="tms_rate_approval != 'approved' or state != 'draft'">
+                    <field name="tms_approval_banner" nolabel="1"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <label for="tms_master_status" string="Customer master" invisible="not partner_id"/>
+                <div class="d-flex flex-wrap gap-2 align-items-baseline" invisible="not partner_id">
+                    <field name="tms_master_ok" invisible="1"/>
+                    <span class="badge rounded-pill text-bg-success" invisible="not tms_master_ok"><field name="tms_master_status" nolabel="1"/></span>
+                    <span class="badge rounded-pill text-bg-danger" invisible="tms_master_ok"><field name="tms_master_status" nolabel="1"/></span>
+                    <field name="tms_master_summary" class="text-muted small"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='payment_term_id']" position="after">
+                <field name="tms_rate_approval" string="Rate approval" widget="badge" invisible="tms_rate_approval == 'none'"
+                       decoration-warning="tms_rate_approval in ('required', 'pending')" decoration-danger="tms_rate_approval == 'rejected'"
+                       decoration-success="tms_rate_approval == 'approved'"/>
+                <field name="tms_acceptance_from" invisible="not tms_acceptance_file"/>
+                <field name="tms_acceptance_date" invisible="not tms_acceptance_file"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='tms_origin_id']" position="before">
+                <field name="tms_lane_display" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='tms_origin_id']" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='tms_destination_id']" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//group[@name='tms_cost_summary']" position="after">
+                <div class="text-muted small text-end" invisible="not tms_rcm_note"><field name="tms_rcm_note" nolabel="1"/></div>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Booked on these rates" name="tms_booked" invisible="not tms_booked_html">
+                    <field name="tms_booked_html" nolabel="1"/>
+                </page>
+            </xpath>
+            <xpath expr="//page[@name='other_information']//field[@name='invoice_status']" position="before">
+                <div colspan="2" class="text-muted small" invisible="not tms_rcm_note and not tms_booked_html and not tms_lr_count">
+                    Invoicing: from LRs only. Freight is invoiced from each LR, never from the sales order.
+                </div>
+            </xpath>
+        </field>
+    </record>
+    <record id="tms_quotation_acceptance_wizard_form" model="ir.ui.view">
+        <field name="name">tms.quotation.acceptance.wizard.form</field>
+        <field name="model">tms.quotation.acceptance.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Customer acceptance">
+                <p>The customer has not signed on the portal. To confirm now, attach their written acceptance.</p>
+                <group>
+                    <field name="order_id" readonly="1"/>
+                    <field name="file" filename="file_name"/>
+                    <field name="file_name" invisible="1"/>
+                    <field name="accepted_by"/>
+                    <field name="accepted_on"/>
+                    <field name="master_ok" invisible="1"/>
+                    <field name="master_status" string="Customer master check" decoration-success="master_ok" decoration-danger="not master_ok"/>
+                </group>
+                <footer>
+                    <button name="action_attach_confirm" type="object" string="Attach and Confirm" class="btn-primary"/>
+                    <button string="Wait for Portal Signature" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <template id="report_saleorder_document_tms_title" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//span[@t-elif=&quot;doc.state in ['draft','sent']&quot;]" position="replace">
+            <span t-elif="doc.state in ['draft','sent'] and doc.order_line.filtered('tms_is_movement')">Freight quotation # </span>
+            <span t-elif="doc.state in ['draft','sent']">Quotation # </span>
+        </xpath>
+    </template>
+
+    <!-- ================================================================ cost estimate -->
+    <record id="tms_estimate_form_tms_ui" model="ir.ui.view">
+        <field name="name">tms.estimate.form.tms.ui</field>
+        <field name="model">tms.estimate</field>
+        <field name="inherit_id" ref="tms_estimate.tms_estimate_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_tms_book_cost" type="object" string="Book a Cost" invisible="order_state != 'sale'"/>
+                <button name="action_tms_print_cost_sheet" type="object" string="Print Customer Cost Sheet"/>
+                <field name="order_state" widget="badge" readonly="1" class="ms-2 align-self-center"/>
+            </xpath>
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button name="action_tms_view_documents" type="object" class="oe_stat_button" icon="fa-file-text-o">
+                        <field name="document_line_count" widget="statinfo" string="Bill &amp; expense lines"/>
+                    </button>
+                    <button name="action_tms_view_purchases" type="object" class="oe_stat_button" icon="fa-shopping-cart" invisible="not purchase_count">
+                        <field name="purchase_count" widget="statinfo" string="Purchase orders"/>
+                    </button>
+                    <button name="action_tms_view_so_pnl" type="object" class="oe_stat_button" icon="fa-line-chart">
+                        <div class="o_stat_info"><span class="o_stat_text">Sales order P&amp;L</span></div>
+                    </button>
+                </div>
+            </xpath>
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="inside">
+                <div class="text-muted"><field name="subtitle" readonly="1"/></div>
+                <div class="mt-2" invisible="not sibling_html"><field name="sibling_html" nolabel="1"/></div>
+            </xpath>
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="after">
+                <field name="summary_html" nolabel="1"/>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/button[@name='action_view_documents']" position="replace">
+                <button name="action_tms_open_booked" type="object" icon="fa-file-text-o" title="Booked to this line"/>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='variance']" position="attributes">
+                <attribute name="decoration-danger">variance &gt; 0</attribute>
+                <attribute name="decoration-success">variance &lt; 0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='document_count']" position="attributes">
+                <attribute name="optional">show</attribute>
+                <attribute name="string">Docs</attribute>
+            </xpath>
+        </field>
+    </record>
+    <record id="tms_estimate_line_booked_form" model="ir.ui.view">
+        <field name="name">tms.estimate.line.booked.form</field>
+        <field name="model">tms.estimate.line</field>
+        <field name="priority">40</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0">
+                <field name="booked_html" nolabel="1"/>
+                <footer><button string="Close" special="cancel" class="btn-secondary"/></footer>
+            </form>
+        </field>
+    </record>
+    <record id="tms_estimate_book_wizard_form" model="ir.ui.view">
+        <field name="name">tms.estimate.book.wizard.form</field>
+        <field name="model">tms.estimate.book.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Book a cost to an estimate line">
+                <group>
+                    <field name="estimate_id" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="source" widget="radio" options="{'horizontal': true}"/>
+                    <field name="move_line_id" invisible="source != 'bill'" options="{'no_create': True}"/>
+                    <field name="expense_id" invisible="source != 'expense'" options="{'no_create': True}"/>
+                    <field name="amount"/>
+                    <field name="estimate_line_id" options="{'no_create': True}" context="{'tms_show_remaining': True}"/>
+                </group>
+                <div class="alert alert-warning" role="alert" invisible="not warning"><field name="warning" nolabel="1"/></div>
+                <p class="text-muted small">Each line shows what it has left before it exceeds its estimate.</p>
+                <footer>
+                    <button name="action_book" type="object" string="Book" class="btn-primary"/>
+                    <button string="Discard" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_report_cost_sheet" model="ir.actions.report">
+        <field name="name">Customer cost sheet</field>
+        <field name="model">tms.estimate</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms_estimate.report_cost_sheet</field>
+        <field name="report_file">tms_estimate.report_cost_sheet</field>
+        <field name="binding_model_id" ref="model_tms_estimate"/>
+    </record>
+    <template id="report_cost_sheet">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="est">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h4>Customer cost sheet · <span t-out="est.name"/></h4>
+                        <p>Annexure to quotation <span t-out="est.order_id.name"/> · item <span t-out="est.sale_line_id.tms_item_no"/>:
+                            <span t-out="'{:,.0f}'.format(est.distance_km)"/> km at <span t-out="est.rate_per_km" t-options="{'widget': 'monetary', 'display_currency': est.currency_id}"/> / km</p>
+                        <table class="table table-sm">
+                            <thead><tr><th>Line</th><th>Description</th><th class="text-end">Quantity</th><th class="text-end">Amount</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="est.line_ids" t-as="eline">
+                                    <td t-out="'%02d' % eline.line_no"/>
+                                    <td t-out="eline.name or eline.product_id.name"/>
+                                    <td class="text-end"><span t-out="eline.quantity"/> <span t-out="eline.uom_label"/></td>
+                                    <td class="text-end" t-out="eline.marked_up" t-options="{'widget': 'monetary', 'display_currency': est.currency_id}"/>
+                                </tr>
+                                <tr t-if="est.rounding_difference"><td/><td>Rounding</td><td/>
+                                    <td class="text-end" t-out="est.rounding_difference" t-options="{'widget': 'monetary', 'display_currency': est.currency_id}"/></tr>
+                                <tr class="fw-bold"><td/><td>Item amount</td><td/>
+                                    <td class="text-end" t-out="est.amount" t-options="{'widget': 'monetary', 'display_currency': est.currency_id}"/></tr>
+                            </tbody>
+                        </table>
+                        <p class="small text-muted">Marked-up values only: no cost, markup or vendor is printed.</p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

@@ -4,7 +4,7 @@
     "name": "TMS Document Types (Premier Transport)",
     "summary": "Transport and Standard document types on sales orders, purchase orders, invoices and bills: "
     "plain Odoo for standard, scrap, vehicle and office AMC business, the transport rules for the rest",
-    "version": "18.0.1.5.0",
+    "version": "18.0.1.6.0",
     "category": "TMS",
     "license": "LGPL-3",
     "author": "RLFB (Riamona Luxury and Fashion Brands)",

@@ -226,7 +226,14 @@ class TmsTripConsignment(models.Model):
             raise UserError(_("Only a POD Verifier verifies or rejects PODs."))
         for link in self:
             if link.uploaded_by_id == user:
-                raise UserError(_("You cannot verify a POD you uploaded."))
+                company = link.trip_id.company_id or self.env.company
+                if not company.tms_pod_self_verify:
+                    raise UserError(_("You cannot verify a POD you uploaded."))
+                # allowed by the TMS Administrator's setting: logged as an override
+                self.env["tms.override.log"].log(
+                    "pod_self_verify", link.trip_id,
+                    _("POD of %s verified by its uploader %s", link.consignment_id.name, user.name),
+                    reason=_("Allowed by the branch setting Uploader may verify own POD"))
 
     def action_verify_pod(self):
         self._tms_check_verifier()

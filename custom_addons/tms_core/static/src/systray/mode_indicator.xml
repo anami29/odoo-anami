@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="tms_core.ModeIndicator">
+        <div t-if="state.label" class="o_tms_mode_indicator d-flex align-items-center px-2" title="Operating mode of this branch">
+            <span class="badge rounded-pill border border-light text-white fw-normal">Mode: <t t-esc="state.label"/></span>
+        </div>
+    </t>
+</templates>

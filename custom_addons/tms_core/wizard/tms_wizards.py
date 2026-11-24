@@ -354,9 +354,9 @@ class TmsInvoiceLrWizard(models.TransientModel):
     def _tms_freight_line_vals(self, lr, taxes):
         product = lr.company_id.tms_freight_product_id or self.env.ref("tms_core.product_freight")
         label = _("LR %(no)s dt %(date)s, %(o)s → %(d)s, %(p)s pkgs, %(w)s kg",
-                  no=lr.name, date=lr.date, o=lr.origin_id.city or lr.origin_id.name or "",
+                  no=lr.name, date=lr.date.strftime("%d/%m/%Y") if lr.date else "", o=lr.origin_id.city or lr.origin_id.name or "",
                   d=lr.destination_id.city or lr.destination_id.name or "", p=lr.total_packages,
-                  w=lr.charged_weight)
+                  w="{:,.0f}".format(lr.charged_weight or 0.0))
         vals = {
             "product_id": product.id,
             "name": label,

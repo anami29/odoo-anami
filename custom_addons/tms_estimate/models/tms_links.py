@@ -1,7 +1,7 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
-from odoo.addons.tms_core.models.tools import notify_detached, users_in_group
+from odoo.addons.tms_core.models.tools import inr, notify_detached, users_in_group
 
 ESTIMATE_LINE_DOMAIN = ("[('order_state', '=', 'sale'), ('company_id', '=', company_id)]")
 
@@ -190,6 +190,13 @@ class TmsConsignment(models.Model):
 
     def _tms_has_order_item(self):
         return bool(self.sale_line_id) or super()._tms_has_order_item()
+
+    def _tms_rate_label(self):
+        if self.sale_line_id:
+            line = self.sale_line_id
+            return _("%(i)s · %(r)s / km", i=line.tms_label, r=inr(line.tms_rate_per_km)) if line.tms_rate_per_km \
+                else line.tms_label
+        return super()._tms_rate_label()
 
     item_freight = fields.Monetary(readonly=True, copy=False,
                                    help="This LR's share of its movement's amount, by charged weight.")

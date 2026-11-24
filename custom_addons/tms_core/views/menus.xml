@@ -48,6 +48,7 @@
     <menuitem id="menu_tms_incident" name="Incidents" parent="menu_tms_ops_exceptions" action="action_tms_incident" sequence="10"/>
     <menuitem id="menu_tms_breakdown" name="Breakdowns" parent="menu_tms_ops_exceptions" action="action_tms_breakdown" sequence="20"/>
     <menuitem id="menu_tms_claim" name="Damage and shortage claims" parent="menu_tms_ops_exceptions" action="action_tms_claim" sequence="30"/>
+    <menuitem id="menu_tms_ops_charges_register" name="Charges &amp; expenses" parent="menu_tms_ops_exceptions" action="action_tms_charges_register_page" sequence="40"/>
 
     <menuitem id="menu_tms_ops_fleet" name="Fleet" parent="tms.operations" sequence="50"/>
     <record id="tms.menu_fleet_odometers" model="ir.ui.menu">
@@ -56,8 +57,15 @@
     </record>
 
     <!-- Trip money, grouped: Charges, Driver, Hire, (Period close from tms_profitability) -->
-    <menuitem id="menu_tms_finance" name="Trip money" parent="tms.root" sequence="25"/>
+    <!-- top bar in the mockup's order: Dashboard, Operations, Trip money (billing), Master Data, Reporting, Configuration -->
+    <record id="tms.dashboard" model="ir.ui.menu"><field name="sequence">10</field></record>
+    <record id="tms.operations" model="ir.ui.menu"><field name="sequence">20</field></record>
+    <record id="tms.data" model="ir.ui.menu"><field name="sequence">40</field></record>
+    <record id="tms.reporting" model="ir.ui.menu"><field name="sequence">50</field></record>
+    <record id="tms.config" model="ir.ui.menu"><field name="sequence">60</field></record>
+    <menuitem id="menu_tms_finance" name="Trip money" parent="tms.root" sequence="30"/>
     <menuitem id="menu_tms_money_charges" name="Charges" parent="menu_tms_finance" sequence="10"/>
+    <menuitem id="menu_tms_charges_register" name="Charges &amp; expenses register" parent="menu_tms_money_charges" action="action_tms_charges_register_page" sequence="5"/>
     <menuitem id="menu_tms_charge" name="Charges and recoveries" parent="menu_tms_money_charges" action="action_tms_charge" sequence="10"/>
     <menuitem id="menu_tms_expense" name="Trip expenses" parent="menu_tms_money_charges" action="action_tms_expense" sequence="20"/>
     <menuitem id="menu_tms_money_driver" name="Driver" parent="menu_tms_finance" sequence="20"/>
@@ -65,6 +73,7 @@
     <menuitem id="menu_tms_driver_settlement" name="Driver settlements" parent="menu_tms_money_driver" action="action_tms_driver_settlement" sequence="20"/>
     <menuitem id="menu_tms_money_hire" name="Hire" parent="menu_tms_finance" sequence="30"/>
     <menuitem id="menu_tms_hire_memo" name="Hire memos" parent="menu_tms_money_hire" action="action_tms_hire_memo" sequence="10"/>
+    <menuitem id="menu_tms_vendor_bills" name="Vendor bills" parent="menu_tms_money_hire" action="action_tms_vendor_bills" sequence="15"/>
     <menuitem id="menu_tms_match" name="Three-way matches" parent="menu_tms_money_hire" action="action_tms_vendor_bill_match" sequence="20"/>
 
     <menuitem id="menu_tms_market_vehicle" name="Market vehicles" parent="tms.data" action="action_tms_market_vehicle" sequence="15"/>
